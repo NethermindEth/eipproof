@@ -39,14 +39,21 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       - id: sha
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          CI_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          head=$(git rev-parse HEAD)
+          if [ -n "$CI_SHA" ] && [ "$CI_SHA" != "$head" ]; then
+            echo "::error::main moved from $CI_SHA to $head; the ci run for $head deploys it"
+            exit 1
+          fi
+          echo "sha=$head" >> "$GITHUB_OUTPUT"
       - run: make test
       - id: live
         if: ${{ !inputs.force_fallback }}
@@ -55,13 +62,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - if: steps.live.outcome != 'success'
+        env:
+          OUTCOME: ${{ steps.live.outcome }}
         run: |
-          make offline ARGS="--prev-status $SITE_URL/api/status.json ${{ steps.live.outcome == 'failure' && '--live-failed' || '' }}"
-          echo "::warning title=site built from snapshot::live build ${{ steps.live.outcome }}; site shows data from snapshot $(jq -r .snapshot site/api/status.json)"
+          flag=""
+          if [ "$OUTCOME" = failure ]; then flag="--live-failed"; fi
+          make offline ARGS="--prev-status $SITE_URL/api/status.json $flag"
+          echo "::warning title=site built from snapshot::live build $OUTCOME; site shows data from snapshot $(jq -r .snapshot site/api/status.json)"
       - id: source
         run: echo "source=$(jq -r .source site/api/status.json)" >> "$GITHUB_OUTPUT"
       - run: make check
-      - run: .venv/bin/python -m eipproof.smoke site "${{ steps.sha.outputs.sha }}"
+      - env:
+          SHA: ${{ steps.sha.outputs.sha }}
+        run: .venv/bin/python -m eipproof.smoke site "$SHA"
       - if: steps.live.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,10 +115,14 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ needs.build.outputs.sha }}
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
-      - run: python -m eipproof.smoke "${{ needs.deploy.outputs.page_url }}" "${{ needs.build.outputs.sha }}"
-      - run: echo "deployed ${{ needs.build.outputs.sha }} source=${{ needs.build.outputs.source }}" >> "$GITHUB_STEP_SUMMARY"
+      - env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          SHA: ${{ needs.build.outputs.sha }}
+          SOURCE: ${{ needs.build.outputs.source }}
+        run: |
+          python -m eipproof.smoke "$PAGE_URL" "$SHA"
+          echo "deployed $SHA source=$SOURCE" >> "$GITHUB_STEP_SUMMARY"
