@@ -1,0 +1,19 @@
+eip: '7906'
+commit: 9099f412
+kind: normative
+eels:
+  repo: ethereum/execution-specs
+  ref: tests-bogota-devnet@v2.0.0
+  commit: ca8c60947b8b1541d9278bdc9a4d100287f033f9
+tests: tests/bogota/eip7906_transaction_assertions
+mutant: 7906-9099f412.patch
+baseline:
+  cases: 184
+  passed: 184
+with_mutant:
+  cases: 184
+  passed: 183
+killed:
+- tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]
+command: python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8
+date: '2026-11-03'

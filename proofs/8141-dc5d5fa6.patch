@@ -1,0 +1,13 @@
+diff --git a/src/ethereum/forks/bogota/transactions/frame_transaction.py b/src/ethereum/forks/bogota/transactions/frame_transaction.py
+index 093f15405..64ec6f7e2 100644
+--- a/src/ethereum/forks/bogota/transactions/frame_transaction.py
++++ b/src/ethereum/forks/bogota/transactions/frame_transaction.py
+@@ -706,8 +706,6 @@ def validate_frame_transaction(
+     from ..vm.gas import GasCosts
+     from . import BLOB_COUNT_LIMIT, VERSIONED_HASH_VERSION_KZG
+ 
+-    if tx.nonce_keys == LEGACY_NONCE_KEYS and tx.nonce_seq == MAX_NONCE_SEQ:
+-        raise NonceOverflowError("Nonce too high")
+     validate_nonce_keys(tx.nonce_keys)
+ 
+     if tx.fees.max_fee > Uint(U256.MAX_VALUE):
