@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 
 import pytest
@@ -59,3 +60,24 @@ def test_open_spec_pr_is_overlay_only(live):
     spec = cells[("7906", "nethermind")]["links"]["spec"]
     assert spec["behind"] == 1
     assert all(d["commit"][:8] == "9099f412" for d in snap["eips"]["7906"]["deltas"])
+
+
+def test_site_writes_eip_and_client_pages_with_json(live, tmp_path):
+    snap, _ = live
+    render.site(snap, cli.load_proofs(), str(tmp_path))
+    for eip in snap["eips"]:
+        assert (tmp_path / f"eip-{eip}.html").exists()
+    page = (tmp_path / "eip-7906.html").read_text()
+    assert "9099f412" in page and "client-nethermind.html" in page
+    doc = json.loads((tmp_path / "api" / "client" / "besu.json").read_text())
+    assert {c["eip"] for c in doc["cells"]} == set(snap["eips"])
+    assert all(c["client"] == "besu" for c in doc["cells"])
+    assert doc["newest_release"] == snap["newest_release"]
+    besu = (tmp_path / "client-besu.html").read_text()
+    assert "newest is v2.0.0" in besu
+
+
+def test_matrix_counts_match_cells(live):
+    _, cells = live
+    nm = [c for c in cells.values() if c["client"] == "nethermind"]
+    assert sum(n for _, n in render.headline_counts(nm)) == len(nm)

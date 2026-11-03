@@ -1,4 +1,5 @@
 import html
+import json
 import os
 import re
 
@@ -181,12 +182,12 @@ nav a{margin-right:14px;color:var(--mut)}nav a.on{color:var(--fg);font-weight:60
 main{padding:20px 28px}.strip{background:#1a1320;border:1px solid #3b1d2a;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;color:#fca5a5}
 table.m{border-collapse:separate;border-spacing:6px;width:100%}th{color:var(--mut);font-weight:600;font-size:13px;text-align:left;padding:0 8px}
 th.row{width:150px}th.row a{color:var(--fg);font-size:15px}th.row small{display:block;color:var(--mut);font-weight:400;font-size:12.5px}th small{font-size:12px}
-.wrap{overflow-x:auto}td.c:focus-visible,a:focus-visible,.x:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-h2{text-wrap:balance}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
+.wrap{overflow-x:auto}table td.c:focus-visible,a:focus-visible,.x:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+h2{text-wrap:balance;font-size:22px}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
 td.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;vertical-align:top}
-td.c:hover{border-color:#475569;transform:translateY(-1px)}td.c.sel{outline:2px solid #e5e7eb}
+td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outline:2px solid #e5e7eb;outline-offset:-1px}
 .hl{font-weight:700;font-size:15px}.ok .hl,.hl.ok{color:var(--ok)}.warn .hl,.hl.warn{color:var(--warn)}.bad .hl{color:var(--bad)}.stale .hl{color:var(--stale)}.none .hl{color:var(--mut)}
-td.c.ok{border-left:4px solid var(--ok)}td.c.warn{border-left:4px solid var(--warn)}td.c.bad{border-left:4px solid var(--bad)}td.c.stale{border-left:4px solid var(--stale)}td.c.none{border-left:4px solid var(--none)}
+td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px solid var(--warn);outline-offset:-3px}td.c.bad{outline:1px solid var(--bad);outline-offset:-3px}td.c.stale{outline:1px solid var(--stale);outline-offset:-3px}td.c.none{outline:1px solid var(--none);outline-offset:-3px}
 .sub{color:var(--mut);font-size:12px;margin-top:2px}.dots{float:right;margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px;background:var(--none)}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
@@ -195,8 +196,8 @@ td.c.ok{border-left:4px solid var(--ok)}td.c.warn{border-left:4px solid var(--wa
 #d.on{transform:none}.dhead{display:flex;justify-content:space-between}.x{background:none;border:0;color:var(--mut);font-size:28px;cursor:pointer}
 .headline{font-size:26px;font-weight:800}.headline.ok{color:var(--ok)}.headline.warn{color:var(--warn)}.headline.bad{color:var(--bad)}.headline.stale{color:var(--stale)}.headline.none{color:var(--mut)}
 .why{color:#cbd5e1;background:#151d2c;border-radius:10px;padding:10px 12px;margin:12px 0}
-section.link{border:1px solid var(--line);border-left:4px solid var(--none);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--card)}
-section.link.ok{border-left-color:var(--ok)}section.link.warn{border-left-color:var(--warn)}section.link.bad{border-left-color:var(--bad)}section.link.stale{border-left-color:var(--stale)}
+section.link{border:1px solid var(--none);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--card)}
+section.link.ok{border-color:var(--ok)}section.link.warn{border-color:var(--warn)}section.link.bad{border-color:var(--bad)}section.link.stale{border-color:var(--stale)}
 section.link header{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:6px}section.link header .pill{margin-left:auto}
 .pill{font-size:11px;padding:1px 8px;border-radius:99px;background:#1f2937;color:var(--mut);font-weight:600}.pill.ok{background:#0f2a1a;color:var(--ok)}.pill.warn{background:#2a2112;color:var(--warn)}.pill.bad{background:#2a1212;color:var(--bad)}.pill.stale{background:#1c1d3a;color:var(--stale)}
 .kv{margin:3px 0}.kv>span:first-child{display:inline-block;width:78px;color:var(--mut);font-size:13px}.big{font-size:20px;color:var(--fg)}
@@ -205,7 +206,10 @@ section.link header{display:flex;gap:8px;align-items:center;font-weight:700;marg
 .fails{font-size:12.5px;max-height:150px;overflow:auto;background:#1a1010;border-radius:8px;padding:6px 10px}
 .q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}.q .k{font-weight:700}.q .k.bad{color:var(--bad)}.q .k.warn{color:var(--warn)}.q .k.stale{color:var(--stale)}
 .q .act{float:right;font-size:13px;color:#0b0f17;background:var(--fg);padding:2px 10px;border-radius:99px;margin:0 0 6px 8px}
-@media (max-width:700px){header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}}
+h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:22px 0 8px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.rev{margin:4px 0;font-size:14px}table.list td.c{cursor:default;width:190px}table.list td.c:hover{transform:none}a.hl{display:block}
+td.why-cell{color:#cbd5e1;font-size:13.5px;vertical-align:top;padding:8px 10px}tr.counts th{font-weight:400;padding-top:0}tr.counts small .hl{font-size:12px}.hl.bad{color:var(--bad)}.hl.stale{color:var(--stale)}.hl.none{color:var(--mut)}
+@media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}}
 """
 
 JS = """
@@ -215,6 +219,124 @@ function closeD(){document.getElementById('d').classList.remove('on');document.q
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
 addEventListener('load',()=>{const h=location.hash.slice(1);if(h&&document.getElementById('t-'+h))openD(h,document.getElementById('c-'+h))});
 """
+
+
+COUNT_WORD = {"pass": "pass", "open": "untested", "stale-release": "old tests", "fail": "fails", "no-run": "no run", "no-tests": "no tests"}
+COUNT_ORDER = ["fail", "open", "stale-release", "no-tests", "no-run", "pass"]
+
+
+def eip_href(eip):
+    return f"eip-{eip}.html"
+
+
+def client_href(client):
+    return f"client-{client}.html"
+
+
+def eip_name(info):
+    return info["test_dir"].rsplit("/", 1)[-1].split("_", 1)[1].replace("_", " ")
+
+
+def headline_counts(cells):
+    counts = {}
+    for c in cells:
+        counts[c["headline"]] = counts.get(c["headline"], 0) + 1
+    return [(h, counts[h]) for h in COUNT_ORDER if h in counts]
+
+
+def counts_html(cells):
+    return " &middot; ".join(f'<span class="hl {STATE_CLASS[h]}">{n} {E(COUNT_WORD[h])}</span>' for h, n in headline_counts(cells))
+
+
+def delta_word(eip, commit, attestations):
+    mine = [a for a in attestations if a["eip"] == eip and commit.startswith(str(a["commit"]))]
+    if not mine:
+        return "open"
+    at = mine[-1]
+    if at.get("kind") == "editorial":
+        return "editorial"
+    if "killed" not in at:
+        return "open"
+    return "covered" if at["killed"] else "mutant-survived"
+
+
+def eip_page_html(eip, snap, cells, attestations):
+    info = snap["eips"][eip]
+    mine = [c for c in cells if c["eip"] == eip]
+    deltas = {d["commit"]: d for d in info["deltas"]}
+    rows = []
+    for c in mine:
+        r = c["links"]["run"]
+        tests = E(release_short(r.get("release"))) if r["state"] != "no-run" else "-"
+        rows.append(f'<tr><th class="row">{a_local(client_href(c["client"]), config.CLIENT_LABEL[c["client"]])}</th>'
+                    f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{eip}-{c["client"]}">{E(headline_text(c))}</a>'
+                    f'<div class="sub">tests {tests}</div></td><td class="why-cell">{E(why(c, snap))}</td></tr>')
+    timeline = []
+    pin = info["pin"]["commit"]
+    for rev in reversed(info["revisions"]):
+        if rev["commit"] in deltas:
+            st = delta_word(eip, rev["commit"], attestations)
+            tag = f'<span class="pill {STATE_CLASS[st]}">{E(LABEL[st])}</span>'
+        elif rev["commit"] == pin:
+            tag = f'<span class="pill ok">EELS {E(release_short(info["pin"]["release"]))} implements this text</span>'
+        else:
+            tag = '<span class="pill none">older</span>'
+        timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
+                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} {tag}</div>')
+    pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
+                   f'<em>not merged, not counted</em></div>' for p in info["pending"])
+    return (f'<h2>EIP-{eip} <span class="muted">{E(eip_name(info))}</span></h2>'
+            f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
+            f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
+            f'{a_local(f"api/eip/{eip}.json", "JSON")}</p>'
+            f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
+            f'<h3>Spec changes, newest first</h3><div class="card">{"".join(timeline)}</div>'
+            + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
+
+
+def client_page_html(client, snap, cells, items):
+    label = config.CLIENT_LABEL[client]
+    mine = [c for c in cells if c["client"] == client]
+    run = snap["runs"].get(client)
+    if run:
+        stale = (f' <span class="pill stale">newest is {E(release_short(snap["newest_release"]))}</span>'
+                 if run["release"] != snap["newest_release"] else "")
+        receipt = (f'<div class="card"><div class="kv"><span>tests</span><code>{E(run["release"])}</code>{stale}</div>'
+                   f'<div class="kv"><span>image</span><code>{E(run["image"] or "?")}</code></div>'
+                   f'<div class="kv"><span>version</span><code>{E(run["version"])}</code></div>'
+                   f'<div class="kv"><span>run</span>{E(run["start"][:16].replace("T", " "))}Z &rarr; {a(run["url"], "hive run")} &middot; {a(run["sim_log"], "sim log")}</div>'
+                   f'<div class="kv"><span>outside</span>{len(run["client_wide_failures"])} failing case(s) outside the tracked EIP dirs, not counted</div></div>')
+    else:
+        receipt = f'<div class="card muted">No {E(config.SIMULATOR)} run for {E(label)}.</div>'
+    todo = [it for it in items if client in it["clients"]]
+    todo_html = "".join(f'<div class="q"><a class="act" href="index.html#{it["eip"]}-{client}">{E(it["action"])}</a>'
+                        f'<span class="k {STATE_CLASS[QUEUE_STATE[it["kind"]]]}">EIP-{it["eip"]} &middot; {E(QUEUE_WORD[it["kind"]])}</span> '
+                        f'{E(queue_detail(it, snap))}</div>' for it in todo) or '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
+    rows = "".join(f'<tr><th class="row">{a_local(eip_href(c["eip"]), "EIP-" + c["eip"])}<small>{E(eip_name(snap["eips"][c["eip"]]))}</small></th>'
+                   f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{c["eip"]}-{client}">{E(headline_text(c))}</a></td>'
+                   f'<td class="why-cell">{E(why(c, snap))}</td></tr>' for c in mine)
+    return (f'<h2>{E(label)} <span class="muted">{counts_html(mine)}</span></h2>'
+            f'<p class="muted">{a(f"{config.GITHUB}/{config.CLIENT_REPO[client]}", config.CLIENT_REPO[client])} &middot; {a_local(f"api/client/{client}.json", "JSON")}</p>'
+            f'<h3>To do, most important first</h3>{todo_html}'
+            f'<h3>Run</h3>{receipt}'
+            f'<h3>EIPs</h3><div class="wrap"><table class="m list">{rows}</table></div>')
+
+
+QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release"}
+QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-release": "old tests"}
+
+
+def queue_detail(it, snap):
+    if it["kind"] == "run-fail":
+        return f'{len(it["failed"])} failing: ' + ", ".join(short_test(f) for f in it["failed"][:3])
+    if it["kind"] == "open-delta":
+        delta = next(d for d in snap["eips"][it["eip"]]["deltas"] if d["commit"] == it["commit"])
+        return f'{it["commit"][:8]} {delta["subject"]}'
+    return f'last ran {release_short(it["release"])}'
+
+
+def a_local(href, text):
+    return f'<a href="{E(href)}">{E(text)}</a>'
 
 
 def page(title, nav, body, snap):
@@ -252,7 +374,9 @@ def cell_sub(cell):
 
 def matrix_html(snap, cells):
     by = {(c["eip"], c["client"]): c for c in cells}
-    head = "<tr><th></th>" + "".join(f"<th>{E(config.CLIENT_LABEL[c])}<br><small class=muted>{E(release_short(snap['runs'][c]['release']) if c in snap['runs'] else '-')}</small></th>" for c in config.CLIENTS) + "</tr>"
+    head = "<tr><th></th>" + "".join(f"<th>{a_local(client_href(c), config.CLIENT_LABEL[c])}<br><small class=muted>{E(release_short(snap['runs'][c]['release']) if c in snap['runs'] else '-')}</small></th>" for c in config.CLIENTS) + "</tr>"
+    head += ('<tr class="counts"><th class="row"><small>cells by weakest check</small></th>'
+             + "".join(f'<th><small>{counts_html([c for c in cells if c["client"] == cl])}</small></th>' for cl in config.CLIENTS) + "</tr>")
     rows, templates = [], []
     for eip in config.ROW_ORDER:
         if eip not in snap["eips"]:
@@ -260,7 +384,7 @@ def matrix_html(snap, cells):
         info = snap["eips"][eip]
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{len(info["deltas"])} spec change(s) since EELS</div>' if info["deltas"] else ""
         pend = f'<div class="badge" style="background:#1f2937;color:#8b95a7" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
-        tr = [f'<th class="row">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP-" + eip)}<small>{E(info["test_dir"].rsplit("/", 1)[-1].split("_", 1)[1].replace("_", " "))}</small>{badge}{pend}</th>']
+        tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{badge}{pend}</th>']
         for client in config.CLIENTS:
             c = by[(eip, client)]
             cid = f"{eip}-{client}"
@@ -306,4 +430,27 @@ def site(snap, attestations, out_dir):
     qbody, items = queue_html(snap, cells)
     with open(os.path.join(out_dir, "queue.html"), "w") as f:
         f.write(page(f"{config.NAME} · queue", "queue", qbody, snap))
+    for sub in ("eip", "client"):
+        os.makedirs(os.path.join(out_dir, "api", sub), exist_ok=True)
+    for eip in config.ROW_ORDER:
+        if eip not in snap["eips"]:
+            continue
+        with open(os.path.join(out_dir, eip_href(eip)), "w") as f:
+            f.write(page(f"{config.NAME} · EIP-{eip}", "", eip_page_html(eip, snap, cells, attestations), snap))
+        write_json(os.path.join(out_dir, "api", "eip", f"{eip}.json"), snap, [c for c in cells if c["eip"] == eip],
+                   [it for it in items if it["eip"] == eip])
+    for client in config.CLIENTS:
+        with open(os.path.join(out_dir, client_href(client)), "w") as f:
+            f.write(page(f"{config.NAME} · {config.CLIENT_LABEL[client]}", "", client_page_html(client, snap, cells, items), snap))
+        write_json(os.path.join(out_dir, "api", "client", f"{client}.json"), snap, [c for c in cells if c["client"] == client],
+                   [it for it in items if client in it["clients"]])
     return cells, items
+
+
+def write_json(path, snap, cells, items):
+    doc = {"fork": config.FORK, "snapshot": snap["taken_at"], "newest_release": snap["newest_release"], "listing_url": snap["listing_url"],
+           "cells": [{"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c), "why": why(c, snap),
+                      "links": {k: v for k, v in c["links"].items() if not k.startswith("_")}} for c in cells],
+           "todo": items}
+    with open(path, "w") as f:
+        json.dump(doc, f, indent=1, sort_keys=True, default=str)
