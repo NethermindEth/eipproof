@@ -1,0 +1,9 @@
+eip: '7906'
+commit: 9099f412
+tests:
+- test_txtrace.py::test_sender_nonce_change
+author: unsigned draft, awaiting sign-off
+date: '2026-11-03'
+kind: normative
+status: draft
+note: The keyed case asserts the APPROVE nonce write lands in slots_changed (NONCE_MANAGER slot) and not in nonces_changed, which is the sentence 9099f412 adds.
