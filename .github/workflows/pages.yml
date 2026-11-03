@@ -26,6 +26,8 @@ jobs:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v6
       - run: make build || make offline
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
