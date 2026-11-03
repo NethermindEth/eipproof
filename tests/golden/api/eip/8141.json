@@ -809,8 +809,23 @@
  "fork": "bogota",
  "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
  "newest_release": "tests-bogota-devnet@v2.0.0",
- "snapshot": "2026-11-03T21:21:33Z",
+ "snapshot": "2026-11-03T23:25:54Z",
  "source": "live",
+ "spec": {
+  "constants": {
+   "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f": []
+  },
+  "meta": {
+   "eip": "8081",
+   "name": "Hegot\u00e1",
+   "url": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-8081.md"
+  },
+  "stage": [
+   "Scheduled"
+  ],
+  "status": "Draft",
+  "title": "Frame Transaction"
+ },
  "todo": [
   {
    "action": "run v2.0.0",

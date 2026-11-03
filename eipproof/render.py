@@ -120,7 +120,7 @@ def test_html(cell, eip_info):
         att = proof_html(d.get("attestation"))
         rows.append(f'<div class="delta" data-mark="delta"><div class="kv"><span>change</span><code>{a(gh(config.EIPS_REPO, "commit", d["commit"]), d["commit"][:8])}</code> '
                     f'{E(info["date"][:10])} {E(info["subject"])} <span class="pill {STATE_CLASS.get(d["state"], "none")}">{E(LABEL.get(d["state"], d["state"]))}</span></div>'
-                    f'<div class="diff">{diff}</div>{cands}{att}</div>')
+                    f'{constants_html(info)}<div class="diff">{diff}</div>{cands}{att}</div>')
     return link_block(2, "Tests: does a test catch each spec change?", t["state"], "".join(rows))
 
 
@@ -190,6 +190,7 @@ td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outlin
 td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px solid var(--warn);outline-offset:-3px}td.c.bad{outline:1px solid var(--bad);outline-offset:-3px}td.c.stale{outline:1px solid var(--stale);outline-offset:-3px}td.c.none{outline:1px solid var(--none);outline-offset:-3px}
 .sub{color:var(--mut);font-size:12px;margin-top:2px}.dots{float:right;margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px;background:var(--none)}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
+.stage{font-size:12px;color:#8b95a7;margin-top:2px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
 .legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend i{margin:0 4px 0 12px}
 #d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
@@ -231,6 +232,24 @@ def eip_href(eip):
 
 def client_href(client):
     return f"client-{client}.html"
+
+
+def stage_html(info, snap):
+    meta = snap.get("meta")
+    if not meta:
+        return ""
+    stage = " / ".join(info.get("stage") or ["not listed"])
+    status = f' &middot; EIP status {E(info["status"])}' if info.get("status") else ""
+    return f'<div class="stage">{a(meta["url"], meta["name"])}: {E(stage)}{status}</div>'
+
+
+def constants_html(delta):
+    rows = []
+    for c in delta.get("constants", []):
+        before = ", ".join(c["before"]) or "none"
+        after = ", ".join(c["after"]) or "removed"
+        rows.append(f'<div class="const"><code>{E(c["name"])}</code> {E(before)} &rarr; <b>{E(after)}</b></div>')
+    return f'<div class="consts" data-mark="constants">{"".join(rows)}</div>' if rows else ""
 
 
 def eip_name(info):
@@ -281,11 +300,12 @@ def eip_page_html(eip, snap, cells, attestations):
             tag = f'<span class="pill ok">EELS {E(release_short(info["pin"]["release"]))} implements this text</span>'
         else:
             tag = '<span class="pill none">older</span>'
+        consts = constants_html(deltas[rev["commit"]]) if rev["commit"] in deltas else ""
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} {tag}</div>')
+                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} {tag}{consts}</div>')
     pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
                    f'<em>not merged, not counted</em></div>' for p in info["pending"])
-    return (f'<h2>EIP-{eip} <span class="muted">{E(eip_name(info))}</span></h2>'
+    return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h2>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
             f'{a_local(f"api/eip/{eip}.json", "JSON")}</p>'
@@ -391,7 +411,7 @@ def matrix_html(snap, cells):
         info = snap["eips"][eip]
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{len(info["deltas"])} spec change(s) since EELS</div>' if info["deltas"] else ""
         pend = f'<div class="badge" style="background:#1f2937;color:#8b95a7" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
-        tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{badge}{pend}</th>']
+        tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}{badge}{pend}</th>']
         for client in config.CLIENTS:
             c = by[(eip, client)]
             cid = f"{eip}-{client}"
@@ -418,7 +438,7 @@ def queue_html(snap, cells):
             delta = next(d for d in info["deltas"] if d["commit"] == it["commit"])
             cands = "".join(f'<div class="cand"><code>{E(t)}</code> <em>passes on: {", ".join(f"{config.CLIENT_LABEL[c]} {p}/{n}" for c, (p, n) in v.items())}</em></div>' for t, v in it["candidates"].items())
             body = (f'<span class="k warn">EIP-{it["eip"]} &middot; spec change untested</span> {a(gh(config.EIPS_REPO, "commit", it["commit"]), it["commit"][:8])} {E(delta["subject"])}'
-                    f'<div class="muted">affects {E(clients)}</div>{cands}')
+                    f'<div class="muted">affects {E(clients)}</div>{constants_html(delta)}{cands}')
         elif it["kind"] == "run-fail":
             body = (f'<span class="k bad">EIP-{it["eip"]} &middot; fail</span> {E(clients)}: {len(it["failed"])} failing'
                     + "".join(f'<div><code>{E(short_test(f))}</code></div>' for f in it["failed"][:3]))
@@ -444,8 +464,11 @@ def site(snap, attestations, out_dir):
             continue
         with open(os.path.join(out_dir, eip_href(eip)), "w") as f:
             f.write(page(f"{config.NAME} · EIP-{eip}", "", eip_page_html(eip, snap, cells, attestations), snap))
+        info = snap["eips"][eip]
         write_json(os.path.join(out_dir, "api", "eip", f"{eip}.json"), snap, [c for c in cells if c["eip"] == eip],
-                   [it for it in items if it["eip"] == eip])
+                   [it for it in items if it["eip"] == eip],
+                   {"title": info.get("title"), "status": info.get("status"), "stage": info.get("stage"), "meta": snap.get("meta"),
+                    "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}})
     for client in config.CLIENTS:
         with open(os.path.join(out_dir, client_href(client)), "w") as f:
             f.write(page(f"{config.NAME} · {config.CLIENT_LABEL[client]}", "", client_page_html(client, snap, cells, items), snap))
@@ -454,10 +477,12 @@ def site(snap, attestations, out_dir):
     return cells, items
 
 
-def write_json(path, snap, cells, items):
+def write_json(path, snap, cells, items, spec=None):
     doc = {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"], "listing_url": snap["listing_url"],
            "cells": [{"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c), "why": why(c, snap),
                       "links": {k: v for k, v in c["links"].items() if not k.startswith("_")}} for c in cells],
            "todo": items}
+    if spec is not None:
+        doc["spec"] = spec
     with open(path, "w") as f:
         json.dump(doc, f, indent=1, sort_keys=True, default=str)
