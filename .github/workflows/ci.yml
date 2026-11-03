@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
       - run: make test
       - run: make offline
       - run: test -f site/index.html && test -f site/eip-7906.html && test -f site/client-nethermind.html && test -f site/api/eip/7906.json
