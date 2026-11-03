@@ -71,6 +71,22 @@ def test_attested_delta_with_failing_case_fails():
     assert cell["headline"] == "fail"
 
 
+def test_proof_kill_ids_must_pass_in_the_run():
+    killed = SENDER + "[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+    proof = [{"eip": "7906", "commit": "9099f412", "kind": "normative", "killed": [killed]}]
+    green = chain.chain("7906", "nethermind", snap(run(results={killed: True}), eip_info([delta()])), proof)
+    red = chain.chain("7906", "nethermind", snap(run(results={killed: False}), eip_info([delta()])), proof)
+    assert (green["headline"], red["headline"]) == ("pass", "fail")
+
+
+def test_surviving_mutant_keeps_delta_open():
+    proof = [{"eip": "7906", "commit": "9099f412", "kind": "normative", "killed": []}]
+    cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), proof)
+    assert cell["links"]["test"]["deltas"][0]["state"] == "mutant-survived"
+    assert cell["headline"] == "open"
+    assert chain.queue([cell], ["7906"])[0]["action"] == "write a test that kills the mutant"
+
+
 def test_attested_test_missing_from_run_stays_open():
     att = [{"eip": "7906", "commit": "9099f412", "tests": ["test_txtrace.py::test_nope"], "author": "x", "date": "d", "kind": "normative"}]
     cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), att)

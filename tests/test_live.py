@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(not SNAPS, reason="no live snapshot; run make bu
 @pytest.fixture(scope="module")
 def live():
     snap = build.load_snapshot(SNAPS[-1])
-    cells = {(c["eip"], c["client"]): c for c in render.cells_for(snap, cli.load_attestations())}
+    cells = {(c["eip"], c["client"]): c for c in render.cells_for(snap, cli.load_proofs())}
     return snap, cells
 
 
@@ -22,7 +22,7 @@ def test_nethermind_7906_passes_on_devnet_image(live):
     cell = cells[("7906", "nethermind")]
     run = cell["links"]["run"]
     assert (run["passed"], run["total"]) == (184, 184)
-    assert headline_text(cell) == "sign-off Δ1"
+    assert headline_text(cell) == "pass 184/184"
     assert run["release"] == snap["newest_release"] == "tests-bogota-devnet@v2.0.0"
     assert "bogota-devnet" in run["image"]
     assert run["url"].startswith("https://hive.ethpandaops.io/bogota/suite.html?")
@@ -35,12 +35,21 @@ def test_besu_7906_is_stale_release(live):
     assert (run["passed"], run["total"], run["release"]) == (299, 305, "tests-bogota-devnet@v1.1.1")
 
 
-def test_7906_pin_lag_covered_by_sender_nonce_change(live):
+def test_7906_pin_lag_covered_by_mutant_kill(live):
     _, cells = live
     deltas = cells[("7906", "nethermind")]["links"]["test"]["deltas"]
     assert [d["commit"][:8] for d in deltas] == ["9099f412"]
-    assert deltas[0]["state"] == "covered-draft"
-    assert deltas[0]["attestation"]["tests"] == ["test_txtrace.py::test_sender_nonce_change"]
+    assert deltas[0]["state"] == "covered"
+    assert deltas[0]["attestation"]["killed"] == [
+        "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change"
+        "[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"]
+
+
+def test_8141_nonce_bound_covered_by_mutant_kill(live):
+    _, cells = live
+    deltas = cells[("8141", "nethermind")]["links"]["test"]["deltas"]
+    assert [(d["commit"][:8], d["state"]) for d in deltas] == [("dc5d5fa6", "covered")]
+    assert deltas[0]["cases"] == 1
 
 
 def test_open_spec_pr_is_overlay_only(live):

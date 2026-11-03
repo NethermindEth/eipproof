@@ -1,0 +1,21 @@
+diff --git a/src/ethereum/forks/bogota/vm/transaction_diff.py b/src/ethereum/forks/bogota/vm/transaction_diff.py
+index ea8e803d1..88bbac409 100644
+--- a/src/ethereum/forks/bogota/vm/transaction_diff.py
++++ b/src/ethereum/forks/bogota/vm/transaction_diff.py
+@@ -29,6 +29,7 @@ from ethereum.crypto.hash import Hash32
+ from ethereum.state import EMPTY_ACCOUNT, Account, Address
+ 
+ from ..blocks import Log
++from ..transactions.frame_transaction import NONCE_MANAGER
+ from ..state_tracker import TransactionState, get_pre_state_account_optional
+ from . import FrameContext
+ 
+@@ -283,6 +284,8 @@ def transaction_diff(
+ 
+     slots = []
+     for address in sorted(tx_state.storage_writes, key=address_order):
++        if address == NONCE_MANAGER:
++            continue
+         written_slots = tx_state.storage_writes[address]
+         for key in sorted(written_slots, key=storage_key_order):
+             value_before = pre_state_storage(tx_state, address, key)

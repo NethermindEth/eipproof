@@ -20,3 +20,4 @@ CLIENT_REPO = {
     "besu": "besu-eth/besu",
 }
 GITHUB = "https://github.com"
+SELF_REPO = "NethermindEth/eipproof"

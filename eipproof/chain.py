@@ -55,8 +55,11 @@ def delta_state(delta, attestations, results):
     att = mine[-1]
     if att.get("kind") == "editorial":
         return {"state": "editorial", "attestation": att}
+    selectors = att["killed"] if "killed" in att else att["tests"]
+    if not selectors:
+        return {"state": "mutant-survived", "attestation": att}
     hits = {}
-    for selector in att["tests"]:
+    for selector in selectors:
         found = matching_cases(selector, results)
         if not found:
             return {"state": "attested-not-run", "attestation": att, "missing": selector}
@@ -88,13 +91,13 @@ def test_link(eip_info, run, newest_release, attestations):
     states = {d["state"] for d in deltas}
     if "attested-failed" in states:
         state = "fail"
-    elif states & {"open", "attested-not-run"}:
+    elif states & {"open", "attested-not-run", "mutant-survived"}:
         state = "open"
     elif "covered-draft" in states:
         state = "draft"
     else:
         state = "pass"
-    return {"state": state, "deltas": deltas, "open": sum(d["state"] in ("open", "attested-not-run") for d in deltas),
+    return {"state": state, "deltas": deltas, "open": sum(d["state"] in ("open", "attested-not-run", "mutant-survived") for d in deltas),
             "draft": sum(d["state"] == "covered-draft" for d in deltas)}
 
 
@@ -174,12 +177,12 @@ def queue(cells, row_order):
             items.append({"kind": "stale-release", "eip": cell["eip"], "clients": [cell["client"]], "rank": rank,
                           "release": cell["links"]["run"]["release"], "action": f"run {release_short(cell['links']['run']['newest_release'])}"})
         for d in cell["links"]["test"]["deltas"]:
-            if d["state"] in ("open", "attested-not-run"):
+            if d["state"] in ("open", "attested-not-run", "mutant-survived"):
                 key = (cell["eip"], d["commit"])
                 item = seen_deltas.get(key)
                 if item is None:
                     item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "rank": rank,
-                            "candidates": {}, "action": "attest covering test or draft one"}
+                            "candidates": {}, "action": "write a test that kills the mutant" if d["state"] == "mutant-survived" else "prove with a mutant"}
                     seen_deltas[key] = item
                     items.append(item)
                 item["clients"].append(cell["client"])
