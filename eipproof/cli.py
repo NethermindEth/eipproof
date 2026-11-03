@@ -60,7 +60,7 @@ def cmd_why(args):
     print(f"EIP-{args.eip} x {config.CLIENT_LABEL[args.client]}: {headline_text(cell)}")
     print(render.why(cell, snap))
     for key in ("spec", "test", "run"):
-        print(f"  {key:<5} {cell['links'][key]['state']}")
+        print(f"  {render.DOT[key]:<12} {render.LABEL.get(cell['links'][key]['state'], cell['links'][key]['state'])}")
 
 
 def cmd_prove(args):

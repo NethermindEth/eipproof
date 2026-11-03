@@ -1,6 +1,6 @@
 import re
 
-SEVERITY = ["fail", "no-run", "stale-release", "no-tests", "open", "draft", "pass"]
+SEVERITY = ["fail", "no-run", "stale-release", "no-tests", "open", "pass"]
 
 _CASE = re.compile(r"^(?P<file>[^:]+)::(?P<func>[A-Za-z0-9_]+)(?:\[(?P<params>.*)\])?$")
 
@@ -55,7 +55,9 @@ def delta_state(delta, attestations, results):
     att = mine[-1]
     if att.get("kind") == "editorial":
         return {"state": "editorial", "attestation": att}
-    selectors = att["killed"] if "killed" in att else att["tests"]
+    if "killed" not in att:
+        return {"state": "open", "attestation": att}
+    selectors = att["killed"]
     if not selectors:
         return {"state": "mutant-survived", "attestation": att}
     hits = {}
@@ -66,8 +68,6 @@ def delta_state(delta, attestations, results):
         hits.update(found)
     if not all(hits.values()):
         return {"state": "attested-failed", "attestation": att, "failed": sorted(k for k, v in hits.items() if not v)}
-    if att.get("status") == "draft":
-        return {"state": "covered-draft", "attestation": att, "cases": len(hits)}
     return {"state": "covered", "attestation": att, "cases": len(hits)}
 
 
@@ -93,12 +93,9 @@ def test_link(eip_info, run, newest_release, attestations):
         state = "fail"
     elif states & {"open", "attested-not-run", "mutant-survived"}:
         state = "open"
-    elif "covered-draft" in states:
-        state = "draft"
     else:
         state = "pass"
-    return {"state": state, "deltas": deltas, "open": sum(d["state"] in ("open", "attested-not-run", "mutant-survived") for d in deltas),
-            "draft": sum(d["state"] == "covered-draft" for d in deltas)}
+    return {"state": state, "deltas": deltas, "open": sum(d["state"] in ("open", "attested-not-run", "mutant-survived") for d in deltas)}
 
 
 def spec_link(eip_info):
@@ -123,8 +120,8 @@ def chain(eip, client, snap, attestations):
         "test": test_link(eip_info, run, newest, [a for a in attestations if a["eip"] == eip]),
         "run": run_link(run, eip, newest),
     }
-    if links["spec"]["state"] == "open" and links["test"]["state"] in ("pass", "draft"):
-        links["spec"]["state"] = "covered" if links["test"]["state"] == "pass" else "draft"
+    if links["spec"]["state"] == "open" and links["test"]["state"] == "pass":
+        links["spec"]["state"] = "covered"
     headline = weakest(links)
     return {"eip": eip, "client": client, "headline": headline, "links": links}
 
@@ -135,8 +132,8 @@ def weakest(links):
         return run_state
     if links["test"]["state"] == "fail":
         return "fail"
-    if links["test"]["state"] in ("open", "draft"):
-        return links["test"]["state"]
+    if links["test"]["state"] == "open":
+        return "open"
     return "pass"
 
 
@@ -148,13 +145,12 @@ def headline_text(cell):
     if h == "fail":
         if run["state"] == "fail":
             return f"fail {run['passed']}/{run['total']}"
-        return "attested test fails"
+        return "proof test fails"
     if h == "stale-release":
-        return f"stale-release {release_short(run['release'])}"
+        return f"old tests {release_short(run['release'])}"
     if h == "open":
-        return f"open Δ{cell['links']['test']['open']}"
-    if h == "draft":
-        return f"sign-off Δ{cell['links']['test']['draft']}"
+        n = cell['links']['test']['open']
+        return f"{n} spec change{'s' if n > 1 else ''} untested"
     if h == "no-tests":
         return "no tests in run"
     return "no run"
@@ -182,21 +178,12 @@ def queue(cells, row_order):
                 item = seen_deltas.get(key)
                 if item is None:
                     item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "rank": rank,
-                            "candidates": {}, "action": "write a test that kills the mutant" if d["state"] == "mutant-survived" else "prove with a mutant"}
+                            "candidates": {}, "action": "write a test that kills the mutant" if d["state"] == "mutant-survived" else "run eipproof prove"}
                     seen_deltas[key] = item
                     items.append(item)
                 item["clients"].append(cell["client"])
                 for c in d["candidates"]:
                     item["candidates"].setdefault(c["test"], {})[cell["client"]] = (c["passed"], c["cases"])
-            elif d["state"] == "covered-draft":
-                key = (cell["eip"], d["commit"], "sign")
-                item = seen_deltas.get(key)
-                if item is None:
-                    item = {"kind": "sign-attestation", "eip": cell["eip"], "commit": d["commit"], "clients": [], "rank": rank,
-                            "tests": d["attestation"]["tests"], "action": "sign attestation"}
-                    seen_deltas[key] = item
-                    items.append(item)
-                item["clients"].append(cell["client"])
-    kind_rank = {"run-fail": 0, "open-delta": 1, "sign-attestation": 2, "stale-release": 3}
+    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2}
     items.sort(key=lambda i: (i["rank"], kind_rank[i["kind"]], -len(i["clients"])))
     return items

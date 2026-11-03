@@ -33,40 +33,37 @@ def test_old_release_is_stale_even_if_green():
     cell = chain.chain("7906", "nethermind", snap(run(release="tests-bogota-devnet@v1.1.1", passed=299, total=305), eip_info()), [])
     assert cell["headline"] == "stale-release"
     assert cell["links"]["test"]["state"] == "n/a"
-    assert chain.headline_text(cell) == "stale-release v1.1.1"
+    assert chain.headline_text(cell) == "old tests v1.1.1"
 
 
 def test_unattested_delta_is_open():
     cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), [])
     assert cell["headline"] == "open"
-    assert chain.headline_text(cell) == "open Δ1"
+    assert chain.headline_text(cell) == "1 spec change untested"
 
 
 def test_attested_delta_with_passing_case_is_covered():
     results = {SENDER + "[fork_Bogota-state_test-keyed_True]": True, SENDER + "[fork_Bogota-state_test-keyed_False]": True}
-    att = [{"eip": "7906", "commit": "9099f412", "tests": ["test_txtrace.py::test_sender_nonce_change"], "author": "x", "date": "d", "kind": "normative"}]
+    att = [{"eip": "7906", "commit": "9099f412", "killed": ["test_txtrace.py::test_sender_nonce_change"], "kind": "normative"}]
     cell = chain.chain("7906", "nethermind", snap(run(results=results), eip_info([delta()])), att)
     assert cell["links"]["test"]["deltas"][0]["state"] == "covered"
     assert cell["links"]["test"]["deltas"][0]["cases"] == 2
     assert cell["headline"] == "pass"
 
 
-def test_draft_attestation_asks_for_sign_off():
+def test_hand_attestation_without_mutant_stays_open():
     results = {SENDER + "[fork_Bogota-keyed_True]": True}
     att = [{"eip": "7906", "commit": "9099f412", "tests": ["test_txtrace.py::test_sender_nonce_change"], "author": "x", "date": "d", "kind": "normative", "status": "draft"}]
-    s = snap(run(results=results), eip_info([delta()]))
-    cell = chain.chain("7906", "nethermind", s, att)
-    assert cell["links"]["test"]["deltas"][0]["state"] == "covered-draft"
-    assert cell["headline"] == "draft"
-    assert cell["links"]["spec"]["state"] == "draft"
-    assert chain.headline_text(cell) == "sign-off Δ1"
+    cell = chain.chain("7906", "nethermind", snap(run(results=results), eip_info([delta()])), att)
+    assert cell["links"]["test"]["deltas"][0]["state"] == "open"
+    assert cell["headline"] == "open"
     items = chain.queue([cell], ["7906"])
-    assert [(i["kind"], i["action"], i["tests"]) for i in items] == [("sign-attestation", "sign attestation", ["test_txtrace.py::test_sender_nonce_change"])]
+    assert [(i["kind"], i["action"]) for i in items] == [("open-delta", "run eipproof prove")]
 
 
 def test_attested_delta_with_failing_case_fails():
     results = {SENDER + "[fork_Bogota-state_test-keyed_True]": False}
-    att = [{"eip": "7906", "commit": "9099f412", "tests": ["test_txtrace.py::test_sender_nonce_change"], "author": "x", "date": "d", "kind": "normative"}]
+    att = [{"eip": "7906", "commit": "9099f412", "killed": ["test_txtrace.py::test_sender_nonce_change"], "kind": "normative"}]
     cell = chain.chain("7906", "nethermind", snap(run(results=results), eip_info([delta()])), att)
     assert cell["headline"] == "fail"
 
@@ -88,7 +85,7 @@ def test_surviving_mutant_keeps_delta_open():
 
 
 def test_attested_test_missing_from_run_stays_open():
-    att = [{"eip": "7906", "commit": "9099f412", "tests": ["test_txtrace.py::test_nope"], "author": "x", "date": "d", "kind": "normative"}]
+    att = [{"eip": "7906", "commit": "9099f412", "killed": ["test_txtrace.py::test_nope"], "kind": "normative"}]
     cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), att)
     assert cell["links"]["test"]["deltas"][0]["state"] == "attested-not-run"
     assert cell["headline"] == "open"
