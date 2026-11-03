@@ -24,16 +24,24 @@ Live site: https://nethermindeth.github.io/eipproof/
 Needs Python 3.11+ and git.
 
 ```bash
-make test        # unit + snapshot tests
+make test        # unit, golden and site tests
+make golden      # rewrite tests/golden/ after an intended output change
 make build       # fetch public data, write snapshots/ and site/
 make offline     # rebuild site/ from the latest snapshot, no network
+make check       # HTML balance and internal links of site/
 make serve       # http://localhost:8765
 python -m eipproof.cli why 7906 nethermind   # explain one cell
 ```
 
 Data sources, all public: `ethereum/EIPs`, `ethereum/execution-specs` release tags, `https://hive.ethpandaops.io/bogota`.
 
-The site is rebuilt every hour by `.github/workflows/pages.yml`.
+## CI and deploy
+
+- `ci` runs on every PR and on `main`: tests, an offline build, `make check` and the smoke check on the built site. `main` is protected: changes land through a PR with a green `test` check on an up-to-date branch.
+- `pages` deploys only after `ci` passes on the same commit of `main`, and every hour after `make test`.
+- If the live build fails, the site is built from the committed snapshot. Every page then shows "data from snapshot <date>", `api/status.json` has `"source": "snapshot"`, and the run has a warning. After 3 failures in a row the run opens or updates the issue "pages: live build falls back to snapshot"; the next live build closes it.
+- After each deploy, `python -m eipproof.smoke <url> <sha>` checks the live pages and JSON, and fails the run if they are wrong.
+- Run `pages` by hand with `force_fallback` to test the snapshot path.
 
 ## Prove a spec change
 

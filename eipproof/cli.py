@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-from . import build, config, prove, render
+from . import build, config, health, prove, render
 from .chain import headline_text
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,6 +29,18 @@ def latest_snapshot():
     return snaps[-1]
 
 
+def write_site(snap, out_dir):
+    cells, items = render.site(snap, load_proofs(), out_dir)
+    with open(os.path.join(out_dir, "receipts.jsonl"), "w") as f:
+        for c in cells:
+            f.write(json.dumps({"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c),
+                                "run": {k: v for k, v in c["links"]["run"].items() if k != "failed"}}, sort_keys=True) + "\n")
+    with open(os.path.join(out_dir, "queue.jsonl"), "w") as f:
+        for it in items:
+            f.write(json.dumps(it, sort_keys=True) + "\n")
+    return cells, items
+
+
 def cmd_build(args):
     snap_dir = os.path.join(ROOT, "snapshots")
     if args.offline:
@@ -37,14 +49,14 @@ def cmd_build(args):
         path = build.write_snapshot(build.snapshot(snap_dir), snap_dir)
     print(f"snapshot {path}")
     snap = build.load_snapshot(path)
-    cells, items = render.site(snap, load_proofs(), os.path.join(ROOT, "site"))
-    with open(os.path.join(ROOT, "site", "receipts.jsonl"), "w") as f:
-        for c in cells:
-            f.write(json.dumps({"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c),
-                                "run": {k: v for k, v in c["links"]["run"].items() if k != "failed"}}, sort_keys=True) + "\n")
-    with open(os.path.join(ROOT, "site", "queue.jsonl"), "w") as f:
-        for it in items:
-            f.write(json.dumps(it, sort_keys=True) + "\n")
+    snap["source"] = "snapshot" if args.offline else "live"
+    out_dir = os.path.join(ROOT, "site")
+    cells, items = write_site(snap, out_dir)
+    failures = health.live_failures(health.fetch_status(args.prev_status), args.live_failed)
+    doc = health.status_doc(snap, len(cells), failures, health.head_commit(ROOT))
+    with open(os.path.join(out_dir, "api", "status.json"), "w") as f:
+        json.dump(doc, f, indent=1, sort_keys=True)
+    print(f"source {doc['source']}  live_failures {failures}")
     width = max(len(config.CLIENT_LABEL[c]) for c in config.CLIENTS)
     print("EIP     " + "  ".join(f"{config.CLIENT_LABEL[c]:<22}" for c in config.CLIENTS))
     by = {(c["eip"], c["client"]): c for c in cells}
@@ -94,6 +106,8 @@ def main(argv=None):
     sub = p.add_subparsers(required=True)
     b = sub.add_parser("build")
     b.add_argument("--offline", action="store_true")
+    b.add_argument("--prev-status", metavar="URL", help="status.json of the deployed site, to count live failures in a row")
+    b.add_argument("--live-failed", action="store_true", help="this build is a fallback after a failed live build")
     b.set_defaults(fn=cmd_build)
     w = sub.add_parser("why")
     w.add_argument("eip")
