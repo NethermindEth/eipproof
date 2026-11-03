@@ -9,6 +9,14 @@ _EIP_DIR = re.compile(r"^" + re.escape(config.TEST_ROOT) + r"/eip(\d+)_[^/]+/")
 _PIN = re.compile(r"ref_spec_(\d+)\s*=\s*ReferenceSpec\(\s*(?:git_path=)?\"(EIPS/eip-\d+\.md)\",\s*(?:version=)?\"([0-9a-f]{40})\"", re.S)
 _RELEASE = re.compile(r"fixtures release: (\S+)")
 _TICK = re.compile(r"`([^`]+)`")
+_CONST = re.compile(r"\b([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\s*[:=]=?\s*([^\s|,;)\]}`]+)")
+_ROW = re.compile(r"^\s*\|\s*`?([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`?\s*\|\s*`?([^|`]*?)`?\s*\|")
+_HEADING = re.compile(r"^#{2,6}\s+(.*)$")
+_LISTED = re.compile(r"^\s*(?:[*+-]|\|)\s*\[?EIP-(\d+)\]?")
+_FRONT = re.compile(r"^---\n(.*?)\n---", re.S)
+_STAGE_WORDS = [("proposed", "Proposed"), ("tentatively", "Considered"), ("considered", "Considered"), ("scheduled", "Scheduled"),
+                ("accepted", "Scheduled"), ("declined", "Declined"), ("rejected", "Declined"), ("included", "Included")]
+_TIER_WORDS = ["core", "other", "networking", "informational"]
 
 
 def iso(ts):
@@ -156,3 +164,66 @@ def bitmap(results):
             bits[i // 8] |= 1 << (i % 8)
     ids_blob = "\n".join(ids).encode()
     return hashlib.sha256(ids_blob).hexdigest(), ids_blob, bytes(bits)
+
+
+def frontmatter(text):
+    m = _FRONT.match(text)
+    if not m:
+        return {}
+    out = {}
+    for line in m.group(1).splitlines():
+        key, sep, value = line.partition(":")
+        if sep and key.strip() in ("title", "status"):
+            out[key.strip()] = value.strip()
+    return out
+
+
+def _has_word(text, word):
+    return re.search(r"(?<![A-Za-z])" + word + r"(?![A-Za-z])", text, re.I) is not None
+
+
+def stage_of_heading(heading):
+    return next((stage for word, stage in _STAGE_WORDS if _has_word(heading, word)), None)
+
+
+def meta_stages(text):
+    seen, stage = {}, None
+    for line in text.splitlines():
+        h = _HEADING.match(line)
+        if h:
+            found = stage_of_heading(h.group(1))
+            if found or not any(_has_word(h.group(1), w) for w in _TIER_WORDS):
+                stage = found
+            continue
+        m = _LISTED.match(line)
+        if m and stage:
+            stages = seen.setdefault(m.group(1), [])
+            if stage not in stages:
+                stages.append(stage)
+    return seen
+
+
+def constants(lines):
+    out = {}
+    for line in lines:
+        row = _ROW.match(line)
+        pairs = [(row.group(1), " ".join(row.group(2).split()))] if row else _CONST.findall(line)
+        for name, value in pairs:
+            out.setdefault(name, set()).add(value)
+    return out
+
+
+def constant_changes(diff):
+    added, removed = [], []
+    for line in diff.splitlines():
+        if line.startswith("+") and not line.startswith("+++"):
+            added.append(line[1:])
+        elif line.startswith("-") and not line.startswith("---"):
+            removed.append(line[1:])
+    before, after = constants(removed), constants(added)
+    changes = []
+    for name in sorted(set(before) | set(after)):
+        old, new = before.get(name, set()), after.get(name, set())
+        if old != new:
+            changes.append({"name": name, "before": sorted(old - new), "after": sorted(new - old)})
+    return [c for c in changes if c["before"] or c["after"]]
