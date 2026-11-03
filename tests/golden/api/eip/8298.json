@@ -1,0 +1,186 @@
+{
+ "cells": [
+  {
+   "client": "nethermind",
+   "eip": "8298",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 274,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 274,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 274/274",
+   "why": "All 274 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "go-ethereum",
+   "eip": "8298",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/geth:bogota-devnet-2-linux-amd64",
+     "passed": 274,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 274,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793679225-c102576d555e741fab65a6cb5c9d4447.json&suitename=eels%2Fconsume-engine",
+     "version": "Geth/v1.17.6-unstable-f71f4be8-20261028/linux-amd64/go1.27.3"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 274/274",
+   "why": "All 274 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "reth",
+   "eip": "8298",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/reth:bogota-devnet-2-linux-amd64",
+     "passed": 274,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 274,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793677677-1ec9ba4e8cd0e1e7555b4e7bbddff610.json&suitename=eels%2Fconsume-engine",
+     "version": "Reth Version: 2.5.2-dev+6a627643"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 274/274",
+   "why": "All 274 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "ethrex",
+   "eip": "8298",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/ethrex:bogota-devnet-2-linux-amd64",
+     "passed": 274,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 274,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793676817-7476752e543d308b24625c3106846cd0.json&suitename=eels%2Fconsume-engine",
+     "version": "ethrex/v29.0.1-bogota-devnet-2-c9d292a4997faec4578598805f13ad04c1566c5d/x86_64-unknown-linux-gnu/rustc-v1.93.1"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 274/274",
+   "why": "All 274 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "besu",
+   "eip": "8298",
+   "headline": "stale-release",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/besu:bogota-devnet-1-linux-amd64",
+     "newest_release": "tests-bogota-devnet@v2.0.0",
+     "passed": 0,
+     "release": "tests-bogota-devnet@v1.1.1",
+     "state": "stale-release",
+     "total": 0,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+     "version": "besu/v26.10-develop-7c5847e/linux-x86_64/openjdk-java-25"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "state": "n/a"
+    }
+   },
+   "text": "old tests v1.1.1",
+   "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 0/0 is shown but does not count. Next: run v2.0.0."
+  }
+ ],
+ "fork": "bogota",
+ "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
+ "newest_release": "tests-bogota-devnet@v2.0.0",
+ "snapshot": "2026-11-03T21:21:33Z",
+ "source": "live",
+ "todo": [
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8298",
+   "kind": "stale-release",
+   "rank": 5,
+   "release": "tests-bogota-devnet@v1.1.1"
+  }
+ ]
+}

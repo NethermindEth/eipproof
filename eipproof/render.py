@@ -339,6 +339,13 @@ def a_local(href, text):
     return f'<a href="{E(href)}">{E(text)}</a>'
 
 
+def fallback_banner(snap):
+    if snap.get("source") != "snapshot":
+        return ""
+    return (f'<div class="strip" id="fallback" role="alert">data from snapshot {E(snap["taken_at"][:10])}: '
+            f'the live rebuild did not run, so this page may be out of date</div>')
+
+
 def page(title, nav, body, snap):
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
                     [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue")])
@@ -346,7 +353,7 @@ def page(title, nav, body, snap):
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div><nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
             f'snapshot {E(snap["taken_at"])} &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
-            f'<main>{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'<main>{fallback_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):
@@ -448,7 +455,7 @@ def site(snap, attestations, out_dir):
 
 
 def write_json(path, snap, cells, items):
-    doc = {"fork": config.FORK, "snapshot": snap["taken_at"], "newest_release": snap["newest_release"], "listing_url": snap["listing_url"],
+    doc = {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"], "listing_url": snap["listing_url"],
            "cells": [{"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c), "why": why(c, snap),
                       "links": {k: v for k, v in c["links"].items() if not k.startswith("_")}} for c in cells],
            "todo": items}

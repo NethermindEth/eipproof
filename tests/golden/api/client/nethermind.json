@@ -1,0 +1,535 @@
+{
+ "cells": [
+  {
+   "client": "nethermind",
+   "eip": "8141",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 307,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 307,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12596",
+       "head": "b09b53c5902de007b0c2abfbf76961b204738320",
+       "merged": false,
+       "number": 12596,
+       "state": "open",
+       "title": "Update EIP-8141: clarify EXTCODEHASH restrictions for precompiles",
+       "url": "https://github.com/ethereum/EIPs/pull/12596"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12505",
+       "head": "ac896dca64003c2ab962e7c489446913e77351d3",
+       "merged": false,
+       "number": 12505,
+       "state": "open",
+       "title": "Update EIP-8141: Check signer key authority",
+       "url": "https://github.com/ethereum/EIPs/pull/12505"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12588",
+       "head": "5e34aa5df9b2e091cf71aba96ceb0c6551cdae7a",
+       "merged": false,
+       "number": 12588,
+       "state": "open",
+       "title": "Update EIP-8141: charge the EIP-8037 legacy share as extra execution gas",
+       "url": "https://github.com/ethereum/EIPs/pull/12588"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12537",
+       "head": "66e56ad87c8f35c60464750b5dd15a47b202b1d8",
+       "merged": false,
+       "number": 12537,
+       "state": "open",
+       "title": "Update EIP-8141: explain gas refunds and block limits",
+       "url": "https://github.com/ethereum/EIPs/pull/12537"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12559",
+       "head": "c2286a209e6e45323133c47ea0c232940b85ef91",
+       "merged": false,
+       "number": 12559,
+       "state": "open",
+       "title": "Update EIP-8141: price frame and signature entries at the floor",
+       "url": "https://github.com/ethereum/EIPs/pull/12559"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12506",
+       "head": "506491150ffbc249a76a155453c6a28789be88c5",
+       "merged": false,
+       "number": 12506,
+       "state": "open",
+       "title": "Update EIP-8141: set code from the default code in SENDER mode",
+       "url": "https://github.com/ethereum/EIPs/pull/12506"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12321",
+       "head": "887057ecb7fae3837405791dbda9cef53da8bd82",
+       "merged": false,
+       "number": 12321,
+       "state": "open",
+       "title": "Update EIP-8141: define early rejection and payer revalidation rules",
+       "url": "https://github.com/ethereum/EIPs/pull/12321"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12494",
+       "head": "3fee1a0468554c61f92d0f0b6e4b4cf9699fae7d",
+       "merged": false,
+       "number": 12494,
+       "state": "open",
+       "title": "Update EIP-8141: clarify transient storage and deploy targets in trace rules",
+       "url": "https://github.com/ethereum/EIPs/pull/12494"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12041",
+       "head": "4a98fcefa5c6f02a25289bf55b9d92902d02b4c6",
+       "merged": false,
+       "number": 12041,
+       "state": "open",
+       "title": "Update EIP-8141: assembled canonical paymaster reference bytecode",
+       "url": "https://github.com/ethereum/EIPs/pull/12041"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12301",
+       "head": "c3d964218f359ca5c1012626f1dc96f78bdba879",
+       "merged": false,
+       "number": 12301,
+       "state": "open",
+       "title": "Update EIP-8141: define MAX_VERIFY_GAS as a shared mempool floor",
+       "url": "https://github.com/ethereum/EIPs/pull/12301"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12252",
+       "head": "eb25dcdcb330bee08a811164cc7d604fc1d01159",
+       "merged": false,
+       "number": 12252,
+       "state": "open",
+       "title": "Update EIP-8141: add valid_after to the expiry verifier frame",
+       "url": "https://github.com/ethereum/EIPs/pull/12252"
+      }
+     ],
+     "pin_ambiguous": true,
+     "pin_blob": "39bbb12f10f24beb1a60c6c42f5eba4b6008c44e",
+     "pin_commit": "7372d10a457b29eceb02cd052345af165de1fb60",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 307,
+         "passed": 307
+        },
+        "command": "python -m eipproof.cli prove 8141 dc5d5fa6 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip8141_frame_transactions --mutant proofs/8141-dc5d5fa6.patch -n 8",
+        "commit": "dc5d5fa6",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "8141",
+        "file": "8141-dc5d5fa6.yaml",
+        "killed": [
+         "tests/bogota/eip8141_frame_transactions/test_static_validity.py::test_invalid_tx_fields[fork_Bogota-blockchain_test_engine_from_state_test-nonce_overflow]"
+        ],
+        "kind": "normative",
+        "mutant": "8141-dc5d5fa6.patch",
+        "tests": "tests/bogota/eip8141_frame_transactions",
+        "with_mutant": {
+         "cases": 307,
+         "passed": 306
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 307/307",
+   "why": "All 307 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "nethermind",
+   "eip": "7906",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 184,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 184,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 184,
+         "passed": 184
+        },
+        "command": "python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8",
+        "commit": "9099f412",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "7906",
+        "file": "7906-9099f412.yaml",
+        "killed": [
+         "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+        ],
+        "kind": "normative",
+        "mutant": "7906-9099f412.patch",
+        "tests": "tests/bogota/eip7906_transaction_assertions",
+        "with_mutant": {
+         "cases": 184,
+         "passed": 183
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 184/184",
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "nethermind",
+   "eip": "8250",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 134,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 134,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12039",
+       "head": "646187cddd478c50c72b3d3a70e64e47852e539e",
+       "merged": false,
+       "number": 12039,
+       "state": "open",
+       "title": "Update EIP-8250: Define keyed mempool concurrency",
+       "url": "https://github.com/ethereum/EIPs/pull/12039"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "10bd1d84c9534c9db65f9ccbffcf8d5902b9c1ae",
+     "pin_commit": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 134/134",
+   "why": "All 134 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "nethermind",
+   "eip": "8151",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 374,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 374,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12605",
+       "head": "3158b531deb0492306aa8a4ed0630d140d28a3a1",
+       "merged": false,
+       "number": 12605,
+       "state": "open",
+       "title": "Update EIP-8151: treat the 0xef0200 opt-out marker as an eligible EOA",
+       "url": "https://github.com/ethereum/EIPs/pull/12605"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "81d0372e97adda22e02471b44639e242556c59de",
+     "pin_commit": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 374/374",
+   "why": "All 374 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "nethermind",
+   "eip": "8272",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 80,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 80,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "5e32ce9abb16d8a8d1a55b65fc2aa55b606b882c",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12310",
+       "head": "883c2245a7b589271aa3b7898c6972424a9a182a",
+       "merged": false,
+       "number": 12310,
+       "state": "open",
+       "title": "Update EIP-8272: clarify public mempool scope",
+       "url": "https://github.com/ethereum/EIPs/pull/12310"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "0acc21ad8359be83c0929c7cc70e45326be8acff",
+     "pin_commit": "5e32ce9abb16d8a8d1a55b65fc2aa55b606b882c",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 80/80",
+   "why": "All 80 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "nethermind",
+   "eip": "8298",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 274,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 274,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "94f01555581bef0588f71aa8520b6c289c468890",
+     "pin_commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 274/274",
+   "why": "All 274 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "nethermind",
+   "eip": "4758",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 68,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 68,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 68/68",
+   "why": "All 68 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "nethermind",
+   "eip": "8253",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 82,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 82,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+     "pending": [],
+     "pin_ambiguous": false,
+     "pin_blob": "0c7875bbc55420068c0cd60b8ec31293a8007f78",
+     "pin_commit": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 82/82",
+   "why": "All 82 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  }
+ ],
+ "fork": "bogota",
+ "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
+ "newest_release": "tests-bogota-devnet@v2.0.0",
+ "snapshot": "2026-11-03T21:21:33Z",
+ "source": "live",
+ "todo": []
+}

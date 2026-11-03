@@ -1,0 +1,600 @@
+{
+ "cells": [
+  {
+   "client": "nethermind",
+   "eip": "7906",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 184,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 184,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 184,
+         "passed": 184
+        },
+        "command": "python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8",
+        "commit": "9099f412",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "7906",
+        "file": "7906-9099f412.yaml",
+        "killed": [
+         "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+        ],
+        "kind": "normative",
+        "mutant": "7906-9099f412.patch",
+        "tests": "tests/bogota/eip7906_transaction_assertions",
+        "with_mutant": {
+         "cases": 184,
+         "passed": 183
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 184/184",
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "go-ethereum",
+   "eip": "7906",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/geth:bogota-devnet-2-linux-amd64",
+     "passed": 184,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 184,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793679225-c102576d555e741fab65a6cb5c9d4447.json&suitename=eels%2Fconsume-engine",
+     "version": "Geth/v1.17.6-unstable-f71f4be8-20261028/linux-amd64/go1.27.3"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 184,
+         "passed": 184
+        },
+        "command": "python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8",
+        "commit": "9099f412",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "7906",
+        "file": "7906-9099f412.yaml",
+        "killed": [
+         "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+        ],
+        "kind": "normative",
+        "mutant": "7906-9099f412.patch",
+        "tests": "tests/bogota/eip7906_transaction_assertions",
+        "with_mutant": {
+         "cases": 184,
+         "passed": 183
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 184/184",
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "reth",
+   "eip": "7906",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/reth:bogota-devnet-2-linux-amd64",
+     "passed": 184,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 184,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793677677-1ec9ba4e8cd0e1e7555b4e7bbddff610.json&suitename=eels%2Fconsume-engine",
+     "version": "Reth Version: 2.5.2-dev+6a627643"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 184,
+         "passed": 184
+        },
+        "command": "python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8",
+        "commit": "9099f412",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "7906",
+        "file": "7906-9099f412.yaml",
+        "killed": [
+         "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+        ],
+        "kind": "normative",
+        "mutant": "7906-9099f412.patch",
+        "tests": "tests/bogota/eip7906_transaction_assertions",
+        "with_mutant": {
+         "cases": 184,
+         "passed": 183
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 184/184",
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "ethrex",
+   "eip": "7906",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/ethrex:bogota-devnet-2-linux-amd64",
+     "passed": 184,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 184,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793676817-7476752e543d308b24625c3106846cd0.json&suitename=eels%2Fconsume-engine",
+     "version": "ethrex/v29.0.1-bogota-devnet-2-c9d292a4997faec4578598805f13ad04c1566c5d/x86_64-unknown-linux-gnu/rustc-v1.93.1"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "covered"
+    },
+    "test": {
+     "deltas": [
+      {
+       "attestation": {
+        "baseline": {
+         "cases": 184,
+         "passed": 184
+        },
+        "command": "python -m eipproof.cli prove 7906 9099f412 --eels <execution-specs at tests-bogota-devnet@v2.0.0> --tests tests/bogota/eip7906_transaction_assertions --mutant proofs/7906-9099f412.patch -n 8",
+        "commit": "9099f412",
+        "date": "2026-11-03",
+        "eels": {
+         "commit": "ca8c60947b8b1541d9278bdc9a4d100287f033f9",
+         "ref": "tests-bogota-devnet@v2.0.0",
+         "repo": "ethereum/execution-specs"
+        },
+        "eip": "7906",
+        "file": "7906-9099f412.yaml",
+        "killed": [
+         "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change[fork_Bogota-blockchain_test_engine_from_state_test-keyed_nonce]"
+        ],
+        "kind": "normative",
+        "mutant": "7906-9099f412.patch",
+        "tests": "tests/bogota/eip7906_transaction_assertions",
+        "with_mutant": {
+         "cases": 184,
+         "passed": 183
+        }
+       },
+       "candidates": [],
+       "cases": 1,
+       "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+       "state": "covered"
+      }
+     ],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 184/184",
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+  },
+  {
+   "client": "besu",
+   "eip": "7906",
+   "headline": "stale-release",
+   "links": {
+    "run": {
+     "failed": [
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-verify_after_post_tx]",
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-post_tx_with_atomic_batch_flag]",
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-batch_ends_on_post_tx]",
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-failing_batch_skips_assertion]",
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-default_after_post_tx]",
+      "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-sender_after_post_tx]"
+     ],
+     "image": "ethpandaops/besu:bogota-devnet-1-linux-amd64",
+     "newest_release": "tests-bogota-devnet@v2.0.0",
+     "passed": 299,
+     "release": "tests-bogota-devnet@v1.1.1",
+     "state": "stale-release",
+     "total": 305,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+     "version": "besu/v26.10-develop-7c5847e/linux-x86_64/openjdk-java-25"
+    },
+    "spec": {
+     "behind": 1,
+     "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11267",
+       "head": "3c9da75efb398776dc825e06d0b7f4f817b929cd",
+       "merged": false,
+       "number": 11267,
+       "state": "open",
+       "title": "Update EIP-7906: fix typos",
+       "url": "https://github.com/ethereum/EIPs/pull/11267"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12304",
+       "head": "a729cea2cb05b7badaf4d67059c5268487ae7a18",
+       "merged": false,
+       "number": 12304,
+       "state": "open",
+       "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+       "url": "https://github.com/ethereum/EIPs/pull/12304"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11199",
+       "head": "630f28fe406e9077b77ecc02fa0410af600fe3be",
+       "merged": false,
+       "number": 11199,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/11199"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10899",
+       "head": "4a9b804eaa72b417713cc7adf6486bf645bd0add",
+       "merged": false,
+       "number": 10899,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode",
+       "url": "https://github.com/ethereum/EIPs/pull/10899"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/11072",
+       "head": "ae308e7ea3e287f0763cabf0270804bbcd2aac08",
+       "merged": false,
+       "number": 11072,
+       "state": "open",
+       "title": "Update EIP-7906: fix CALL opcode value",
+       "url": "https://github.com/ethereum/EIPs/pull/11072"
+      },
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/10972",
+       "head": "e4c996139ebf1bce585a8eeb3606f05f208839fe",
+       "merged": false,
+       "number": 10972,
+       "state": "open",
+       "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+       "url": "https://github.com/ethereum/EIPs/pull/10972"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "bc7b52baf2668b0741453669713a2ba49911b48b",
+     "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+     "state": "open"
+    },
+    "test": {
+     "deltas": [],
+     "state": "n/a"
+    }
+   },
+   "text": "old tests v1.1.1",
+   "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 299/305 is shown but does not count. Next: run v2.0.0."
+  }
+ ],
+ "fork": "bogota",
+ "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
+ "newest_release": "tests-bogota-devnet@v2.0.0",
+ "snapshot": "2026-11-03T21:21:33Z",
+ "source": "live",
+ "todo": [
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "7906",
+   "kind": "stale-release",
+   "rank": 1,
+   "release": "tests-bogota-devnet@v1.1.1"
+  }
+ ]
+}

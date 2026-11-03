@@ -1,0 +1,9 @@
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8141", "kind": "stale-release", "rank": 0, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "7906", "kind": "stale-release", "rank": 1, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8250", "kind": "stale-release", "rank": 2, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8151", "kind": "stale-release", "rank": 3, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8272", "kind": "stale-release", "rank": 4, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8298", "kind": "stale-release", "rank": 5, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "4758", "kind": "stale-release", "rank": 6, "release": "tests-bogota-devnet@v1.1.1"}
+{"action": "fix client or report test", "clients": ["reth"], "eip": "8253", "failed": ["tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts/test_block_access_lists_invalid.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"], "kind": "run-fail", "rank": 7}
+{"action": "run v2.0.0", "clients": ["besu"], "eip": "8253", "kind": "stale-release", "rank": 7, "release": "tests-bogota-devnet@v1.1.1"}

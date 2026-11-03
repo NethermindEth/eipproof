@@ -1,0 +1,236 @@
+{
+ "cells": [
+  {
+   "client": "nethermind",
+   "eip": "4758",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/nethermind:bogota-devnet-2-linux-amd64",
+     "passed": 68,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 68,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793712527-66f2a4cf2266b95abb190a0a754fdb8f.json&suitename=eels%2Fconsume-engine",
+     "version": "2.3.0-preview+d087d9a2"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 68/68",
+   "why": "All 68 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "go-ethereum",
+   "eip": "4758",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/geth:bogota-devnet-2-linux-amd64",
+     "passed": 68,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 68,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793679225-c102576d555e741fab65a6cb5c9d4447.json&suitename=eels%2Fconsume-engine",
+     "version": "Geth/v1.17.6-unstable-f71f4be8-20261028/linux-amd64/go1.27.3"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 68/68",
+   "why": "All 68 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "reth",
+   "eip": "4758",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/reth:bogota-devnet-2-linux-amd64",
+     "passed": 68,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 68,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793677677-1ec9ba4e8cd0e1e7555b4e7bbddff610.json&suitename=eels%2Fconsume-engine",
+     "version": "Reth Version: 2.5.2-dev+6a627643"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 68/68",
+   "why": "All 68 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "ethrex",
+   "eip": "4758",
+   "headline": "pass",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/ethrex:bogota-devnet-2-linux-amd64",
+     "passed": 68,
+     "release": "tests-bogota-devnet@v2.0.0",
+     "state": "pass",
+     "total": 68,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793676817-7476752e543d308b24625c3106846cd0.json&suitename=eels%2Fconsume-engine",
+     "version": "ethrex/v29.0.1-bogota-devnet-2-c9d292a4997faec4578598805f13ad04c1566c5d/x86_64-unknown-linux-gnu/rustc-v1.93.1"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "open": 0,
+     "state": "pass"
+    }
+   },
+   "text": "pass 68/68",
+   "why": "All 68 tests for this EIP passed on v2.0.0, and EELS implements the current EIP text."
+  },
+  {
+   "client": "besu",
+   "eip": "4758",
+   "headline": "stale-release",
+   "links": {
+    "run": {
+     "failed": [],
+     "image": "ethpandaops/besu:bogota-devnet-1-linux-amd64",
+     "newest_release": "tests-bogota-devnet@v2.0.0",
+     "passed": 0,
+     "release": "tests-bogota-devnet@v1.1.1",
+     "state": "stale-release",
+     "total": 0,
+     "url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+     "version": "besu/v26.10-develop-7c5847e/linux-x86_64/openjdk-java-25"
+    },
+    "spec": {
+     "behind": 0,
+     "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "pending": [
+      {
+       "api": "https://api.github.com/repos/ethereum/EIPs/pulls/12492",
+       "head": "57bce6cde86f705885de10e13e6e6b1f3364f311",
+       "merged": false,
+       "number": 12492,
+       "state": "open",
+       "title": "Update EIP-4758: Move to Draft",
+       "url": "https://github.com/ethereum/EIPs/pull/12492"
+      }
+     ],
+     "pin_ambiguous": false,
+     "pin_blob": "df7433a9a0f56d5629e9ec2219623540590487ef",
+     "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+     "state": "pass"
+    },
+    "test": {
+     "deltas": [],
+     "state": "n/a"
+    }
+   },
+   "text": "old tests v1.1.1",
+   "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 0/0 is shown but does not count. Next: run v2.0.0."
+  }
+ ],
+ "fork": "bogota",
+ "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
+ "newest_release": "tests-bogota-devnet@v2.0.0",
+ "snapshot": "2026-11-03T21:21:33Z",
+ "source": "live",
+ "todo": [
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "4758",
+   "kind": "stale-release",
+   "rank": 6,
+   "release": "tests-bogota-devnet@v1.1.1"
+  }
+ ]
+}
