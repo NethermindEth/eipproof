@@ -3,8 +3,11 @@ import sys
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
+from . import config
+
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 RAW = {"script", "style"}
+FORK_DIRS = {v["SUBDIR"] for v in config.FORKS.values() if v["SUBDIR"]}
 
 
 class Checker(HTMLParser):
@@ -69,6 +72,9 @@ def check_dir(root):
                 if u.scheme or u.netloc or href.startswith(("#", "mailto:", "javascript:")) or not u.path:
                     continue
                 target = os.path.normpath(os.path.join(dirpath, u.path))
+                top = os.path.relpath(target, root).split(os.sep)[0]
+                if top in FORK_DIRS and not os.path.isdir(os.path.join(root, top)):
+                    continue
                 if not os.path.exists(target):
                     errs.append(f"{rel}: broken link {href}")
     return errs

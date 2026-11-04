@@ -1,3 +1,4 @@
+import glob
 import hashlib
 import html
 import json
@@ -9,7 +10,7 @@ from datetime import datetime
 
 import pytest
 
-from eipproof import build, chain, cli, health, render, sitecheck, smoke
+from eipproof import build, chain, cli, config, health, render, sitecheck, smoke
 
 SNAP = os.path.join(cli.ROOT, "snapshots", "2026-11-03.json")
 GOLDEN = os.path.join(os.path.dirname(__file__), "golden")
@@ -345,3 +346,53 @@ def test_queue_filters_by_owner_and_links_each_row_to_its_matrix_cell(wide_site)
     rows = [int(e) for _, e, _ in owners]
     order = ["8141", "7805", "7906", "8250", "8151", "8272", "8298", "4758", "8253", "8077"]
     assert [order.index(str(e)) for e in rows] == sorted(order.index(str(e)) for e in rows)
+
+
+GLAMSTERDAM = sorted(glob.glob(os.path.join(cli.ROOT, "snapshots", "glamsterdam", "*.json")))[-1]
+GLAMSTERDAM_EIPS = ["2780", "7708", "7778", "7843", "7928", "7954", "7976", "7981", "7997", "8024", "8037", "8038", "8070", "8246", "8282"]
+
+
+def test_both_forks_render_with_a_fork_selector(live_site, tmp_path):
+    snap = build.load_snapshot(GLAMSTERDAM)
+    snap["source"] = "live"
+    shutil.copytree(live_site, tmp_path, dirs_exist_ok=True)
+    try:
+        config.use("glamsterdam")
+        cells, _ = cli.write_site(snap, str(tmp_path / "glamsterdam"))
+        (tmp_path / "glamsterdam" / "api" / "status.json").write_text(json.dumps(health.status_doc(snap, len(cells), 0, "c0ffee")))
+        assert smoke.check(local_get(tmp_path / "glamsterdam")) == []
+    finally:
+        config.use(config.DEFAULT_FORK)
+    rows = json.loads((tmp_path / "glamsterdam" / "api" / "eips.json").read_text())["eips"]
+    assert sorted(r["eip"] for r in rows if r["test_dir"]) == GLAMSTERDAM_EIPS
+    assert all(r["page"].startswith(config.SITE_ROOT + "/glamsterdam/") for r in rows)
+    assert '<a href="glamsterdam/index.html" class="">Glamsterdam</a>' in (tmp_path / "index.html").read_text()
+    assert '<a href="../index.html" class="">Bogotá</a>' in (tmp_path / "glamsterdam" / "index.html").read_text()
+    assert sitecheck.check_dir(str(tmp_path)) == []
+
+
+def test_proofs_apply_only_to_their_fork(tmp_path):
+    (tmp_path / "a.yaml").write_text("eip: 7928\ncommit: aaaaaaaa\nkind: editorial\nfork: glamsterdam\n")
+    (tmp_path / "b.yaml").write_text("eip: 7906\ncommit: bbbbbbbb\nkind: editorial\n")
+    try:
+        config.use("glamsterdam")
+        assert [p["eip"] for p in cli.load_proofs(str(tmp_path))] == ["7928"]
+    finally:
+        config.use(config.DEFAULT_FORK)
+    assert [p["eip"] for p in cli.load_proofs(str(tmp_path))] == ["7906"]
+
+
+def test_failed_live_fork_falls_back_alone(monkeypatch):
+    calls = []
+
+    def fake(args, offline, live_failed):
+        calls.append((config.FORK, offline, live_failed))
+        if config.FORK == "glamsterdam" and not offline:
+            raise RuntimeError("hive down")
+
+    monkeypatch.setattr(cli, "build_fork", fake)
+    cli.main(["build", "--fallback"])
+    assert calls == [("bogota", False, False), ("glamsterdam", False, False), ("glamsterdam", True, True)]
+    calls.clear()
+    with pytest.raises(RuntimeError):
+        cli.main(["build"])

@@ -28,7 +28,7 @@ def case_ids(junit_path):
 def fill(eels, tests, workers):
     tmp = tempfile.mkdtemp(prefix="eipproof-fill-")
     junit = os.path.join(tmp, "junit.xml")
-    cmd = ["uv", "run", "fill", tests, "--fork", config.FORK.capitalize(), "--output", os.path.join(tmp, "out"),
+    cmd = ["uv", "run", "fill", tests, "--fork", config.FILL_FORK, "--output", os.path.join(tmp, "out"),
            "--clean", "-q", f"--junitxml={junit}"]
     if workers > 1:
         cmd += ["-n", str(workers)]
@@ -66,13 +66,14 @@ def proof_doc(eip, commit, eels, tests, patch_name, baseline, mutant, workers):
         "eip": eip,
         "commit": commit,
         "kind": "normative",
+        "fork": config.FORK,
         "eels": {"repo": config.EELS_REPO, "ref": ref, "commit": head},
         "tests": tests,
         "mutant": patch_name,
         "baseline": {"cases": len(baseline), "passed": sum(baseline.values())},
         "with_mutant": {"cases": len(mutant), "passed": sum(mutant.values())},
         "killed": killed(baseline, mutant),
-        "command": f"python -m eipproof.cli prove {eip} {commit} --eels <execution-specs at {ref}> "
+        "command": f"python -m eipproof.cli prove {eip} {commit} --fork {config.FORK} --eels <execution-specs at {ref}> "
                    f"--tests {tests} --mutant proofs/{patch_name}" + (f" -n {workers}" if workers > 1 else ""),
         "date": date.today().isoformat(),
     }

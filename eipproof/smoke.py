@@ -6,7 +6,7 @@ import urllib.request
 
 from . import config
 
-PAGES = ["index.html", "queue.html", "changes.html", "eip-7906.html", "client-nethermind.html"]
+PAGES = ["index.html", "queue.html", "changes.html", "client-nethermind.html"]
 HEADLINES = {"pass", "open", "fail", "stale-release", "no-run", "no-tests"}
 CELL_KEYS = {"eip", "client", "headline", "text", "why", "links"}
 DOC_KEYS = {"fork", "snapshot", "source", "newest_release", "listing_url", "cells", "todo"}
@@ -45,7 +45,7 @@ def check(get, commit=""):
         return [f"api/status.json: {e}"]
     if commit and status.get("commit") != commit:
         return [f"api/status.json: commit {status.get('commit')!r}, want {commit!r}"]
-    for p in PAGES:
+    for p in PAGES + [f"eip-{config.PROBE_EIP}.html"]:
         try:
             body = get(p)
         except Exception as e:
@@ -75,13 +75,24 @@ def check(get, commit=""):
             errs.append("api/changes.json: no changes")
     except Exception as e:
         errs.append(f"api/changes.json: {e}")
+    eip = config.PROBE_EIP
     try:
-        doc = json.loads(get("api/eip/7906.json"))
-        errs += check_doc(doc, "api/eip/7906.json")
-        if not any(c.get("client") == "nethermind" and c.get("eip") == "7906" for c in doc.get("cells") or []):
-            errs.append("api/eip/7906.json: no 7906 x nethermind cell")
+        doc = json.loads(get(f"api/eip/{eip}.json"))
+        errs += check_doc(doc, f"api/eip/{eip}.json")
+        if not any(c.get("client") == "nethermind" and c.get("eip") == eip for c in doc.get("cells") or []):
+            errs.append(f"api/eip/{eip}.json: no {eip} x nethermind cell")
     except Exception as e:
-        errs.append(f"api/eip/7906.json: {e}")
+        errs.append(f"api/eip/{eip}.json: {e}")
+    return errs
+
+
+def check_forks(get, commit=""):
+    errs = []
+    for fork, v in config.FORKS.items():
+        config.use(fork)
+        prefix = f"{v['SUBDIR']}/" if v["SUBDIR"] else ""
+        errs += [f"{prefix}{e}" for e in check(lambda p: get(prefix + p), commit)]
+    config.use(config.DEFAULT_FORK)
     return errs
 
 
@@ -91,7 +102,7 @@ def main(argv=None):
     remote = base.startswith(("http://", "https://"))
     for attempt in range(10 if remote else 1):
         get = http_fetch(base, f"{commit[:12]}-{attempt}") if remote else lambda p: open(os.path.join(base, p)).read()
-        errs = check(get, commit)
+        errs = check_forks(get, commit)
         if not errs:
             print(f"smoke ok {base} {commit}")
             return 0

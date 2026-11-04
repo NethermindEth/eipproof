@@ -58,7 +58,7 @@ jobs:
       - id: live
         if: ${{ !inputs.force_fallback }}
         continue-on-error: true
-        run: make build
+        run: make build ARGS="--prev-site $SITE_URL --fallback"
         env:
           GH_TOKEN: ${{ github.token }}
       - if: steps.live.outcome != 'success'
@@ -67,10 +67,10 @@ jobs:
         run: |
           flag=""
           if [ "$OUTCOME" = failure ]; then flag="--live-failed"; fi
-          make offline ARGS="--prev-status $SITE_URL/api/status.json $flag"
+          make offline ARGS="--prev-site $SITE_URL $flag"
           echo "::warning title=site built from snapshot::live build $OUTCOME; site shows data from snapshot $(jq -r .snapshot site/api/status.json)"
       - id: source
-        run: echo "source=$(jq -r .source site/api/status.json)" >> "$GITHUB_OUTPUT"
+        run: echo "source=$(jq -rs 'map(.fork + ":" + .source) | join(",")' site/api/status.json site/*/api/status.json)" >> "$GITHUB_OUTPUT"
       - run: make check
       - env:
           SHA: ${{ steps.sha.outputs.sha }}
@@ -81,11 +81,13 @@ jobs:
           OUTCOME: ${{ steps.live.outcome }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          n=$(jq .live_failures site/api/status.json)
+          n=$(jq -s 'map(.live_failures) | max' site/api/status.json site/*/api/status.json)
+          fell=$(jq -rs 'map(select(.source == "snapshot") | "\(.fork) from snapshot \(.snapshot)") | join("; ")' site/api/status.json site/*/api/status.json)
+          if [ -n "$fell" ]; then OUTCOME=failure; fi
           num=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "in:title \"$FALLBACK_ISSUE\"" --json number,title \
             -q ".[] | select(.title == env.FALLBACK_ISSUE) | .number" | head -1)
           if [ "$OUTCOME" = failure ] && [ "$n" -ge 3 ]; then
-            body="Live build failed $n times in a row; the site is built from snapshot $(jq -r .snapshot site/api/status.json). Latest run: $RUN_URL"
+            body="Live build failed $n times in a row; $fell. Latest run: $RUN_URL"
             if [ -n "$num" ]; then gh issue comment "$num" -R "$GITHUB_REPOSITORY" --body "$body"; else gh issue create -R "$GITHUB_REPOSITORY" --title "$FALLBACK_ISSUE" --body "$body"; fi
           elif [ "$OUTCOME" = success ] && [ -n "$num" ]; then
             gh issue close "$num" -R "$GITHUB_REPOSITORY" --comment "Live build is green again: $RUN_URL"
