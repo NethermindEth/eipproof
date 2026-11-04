@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import config
+from . import config, index
 from .chain import chain, headline_text, queue, release_short
 
 E = html.escape
@@ -238,7 +238,7 @@ td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outlin
 td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px solid var(--warn);outline-offset:-3px}td.c.bad{outline:1px solid var(--bad);outline-offset:-3px}td.c.stale{outline:1px solid var(--stale);outline-offset:-3px}td.c.none{outline:1px solid var(--none);outline-offset:-3px}
 .sub{color:var(--mut);font-size:12px;margin-top:2px}.dots{float:right;margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px;background:var(--none)}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
-.stage{font-size:12px;color:#8b95a7;margin-top:2px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
+.stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
 .legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend i{margin:0 4px 0 12px}
 #d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
@@ -299,7 +299,7 @@ def stage_html(info, snap):
         return ""
     stage = " / ".join(info.get("stage") or ["not listed"])
     status = f' &middot; EIP status {E(info["status"])}' if info.get("status") else ""
-    return f'<div class="stage">{a(meta["url"], meta["name"])}: {E(stage)}{status}</div>'
+    return f'<div class="stage">{stage_badge(info)}{a(meta["url"], meta["name"])}: {E(stage)}{status}</div>'
 
 
 def constants_html(delta):
@@ -312,7 +312,37 @@ def constants_html(delta):
 
 
 def eip_name(info):
+    if not info.get("test_dir"):
+        return info.get("title") or ""
     return info["test_dir"].rsplit("/", 1)[-1].split("_", 1)[1].replace("_", " ")
+
+
+def tested(snap):
+    return [e for e in index.row_order(snap["eips"]) if snap["eips"][e].get("test_dir")]
+
+
+def untested(snap):
+    return [e for e in index.row_order(snap["eips"]) if not snap["eips"][e].get("test_dir")]
+
+
+def stage_badge(info):
+    short = [config.STAGE_SHORT.get(s, s) for s in info.get("stage") or []]
+    return "".join(f'<span class="pill sb">{E(s)}</span> ' for s in short)
+
+
+def no_tests_text(info, snap):
+    return f'no EELS tests at {release_short(snap["newest_release"])}: checked {info["checked"]}'
+
+
+def coverage_html(snap):
+    rows = index.row_order(snap["eips"])
+    listed = [e for e in rows if set(snap["eips"][e].get("stage") or []) & set(config.TRACKED_STAGES)]
+    with_tests = [e for e in listed if snap["eips"][e].get("test_dir")]
+    net = [e for e in listed if snap["eips"][e].get("category") == "Networking"]
+    line = f'SFI+CFI in {E(snap["meta"]["name"])}: {len(listed)} EIPs, {len(with_tests)} with EELS tests, {len(listed) - len(with_tests)} without'
+    if net:
+        line += f' &middot; Networking EIPs ({", ".join("EIP-" + e for e in net)}) are out of EELS scope'
+    return f'<p class="muted cov" data-mark="coverage">{line} &middot; {a_local("api/eips.json", "JSON")}</p>'
 
 
 def headline_counts(cells):
@@ -342,13 +372,32 @@ def rev_state(eip, info, rev, attestations):
     if any(d["commit"] == rev["commit"] for d in info["deltas"]):
         st = delta_word(eip, rev["commit"], attestations)
         return st, LABEL[st]
+    if not info.get("pin"):
+        return "n/a", "no EELS tests"
     if rev["commit"] == info["pin"]["commit"]:
         return "pass", f'EELS {release_short(info["pin"]["release"])} implements this text'
     return "n/a", "older"
 
 
+def untested_page_html(eip, snap, attestations):
+    info = snap["eips"][eip]
+    timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
+                       f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}</div>' for rev in reversed(info["revisions"]))
+    pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
+                   f'<em>not merged, not counted</em></div>' for p in info["pending"])
+    return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h2>{stage_html(info, snap)}'
+            f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
+            f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
+            f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
+            f'No client cell is shown: there is nothing to run.</span></div>'
+            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>'
+            + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
+
+
 def eip_page_html(eip, snap, cells, attestations):
     info = snap["eips"][eip]
+    if not info.get("test_dir"):
+        return untested_page_html(eip, snap, attestations)
     mine = [c for c in cells if c["eip"] == eip]
     deltas = {d["commit"]: d for d in info["deltas"]}
     rows = []
@@ -423,10 +472,8 @@ def a_local(href, text):
 
 def feed_rows(snap, attestations):
     rows = []
-    for eip in config.ROW_ORDER:
-        info = snap["eips"].get(eip)
-        if not info:
-            continue
+    for eip in index.row_order(snap["eips"]):
+        info = snap["eips"][eip]
         for rev in info["revisions"]:
             st, word = rev_state(eip, info, rev, attestations)
             rows.append({"eip": eip, "commit": rev["commit"], "date": rev["date"], "subject": rev["subject"], "state": st, "word": word,
@@ -435,7 +482,7 @@ def feed_rows(snap, attestations):
 
 
 def feed_html(snap, rows):
-    eips = [e for e in config.ROW_ORDER if e in snap["eips"]]
+    eips = index.row_order(snap["eips"])
     opts = '<option value="">all EIPs</option>' + "".join(
         f'<option value="{e}">EIP-{e} ({sum(r["eip"] == e for r in rows)})</option>' for e in eips)
     items = "".join(f'<div class="rev" data-eip="{r["eip"]}">{a_local(eip_href(r["eip"]), "EIP-" + r["eip"])} '
@@ -471,9 +518,7 @@ def page(title, nav, body, snap):
 
 def cells_for(snap, attestations):
     cells = []
-    for eip in config.ROW_ORDER:
-        if eip not in snap["eips"]:
-            continue
+    for eip in tested(snap):
         for client in config.CLIENTS:
             cell = chain(eip, client, snap, attestations)
             cell["links"]["_dir"] = snap["eips"][eip]["test_dir"].rsplit("/", 1)[-1]
@@ -498,10 +543,12 @@ def matrix_html(snap, cells):
     head += ('<tr class="counts"><th class="row"><small>cells by weakest check</small></th>'
              + "".join(f'<th><small>{counts_html([c for c in cells if c["client"] == cl])}</small></th>' for cl in config.CLIENTS) + "</tr>")
     rows, templates = [], []
-    for eip in config.ROW_ORDER:
-        if eip not in snap["eips"]:
-            continue
+    for eip in index.row_order(snap["eips"]):
         info = snap["eips"][eip]
+        if not info.get("test_dir"):
+            rows.append(f'<tr class="nt" id="r-{eip}"><th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}</th>'
+                        f'<td class="c none" colspan="{len(config.CLIENTS)}" data-mark="no-tests"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></td></tr>')
+            continue
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{len(info["deltas"])} spec change(s) since EELS</div>' if info["deltas"] else ""
         pend = f'<div class="badge" style="background:#1f2937;color:#8b95a7" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
         tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}{badge}{pend}</th>']
@@ -518,11 +565,12 @@ def matrix_html(snap, cells):
             f'{E(config.CLIENT_LABEL[c])} {len(v)}' for c, v in wide.items()) + "</div>"
     legend = ('<div class="legend">A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
               '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</div>')
-    return strip + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
+    cov = coverage_html(snap) if snap.get("meta") else ""
+    return strip + cov + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
 
 
 def queue_html(snap, cells):
-    items = queue(cells, config.ROW_ORDER)
+    items = queue(cells, tested(snap))
     out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action</span></h2>']
     for i, it in enumerate(items, 1):
         clients = ", ".join(config.CLIENT_LABEL[c] for c in it["clients"])
@@ -557,12 +605,14 @@ def site(snap, attestations, out_dir):
         f.write(page(f"{config.NAME} · spec changes", "changes", feed_html(snap, rows), snap))
     with open(os.path.join(out_dir, "api", "changes.json"), "w") as f:
         json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "changes": rows}, f, indent=1, sort_keys=True)
-    for eip in config.ROW_ORDER:
-        if eip not in snap["eips"]:
-            continue
+    with open(os.path.join(out_dir, "api", "eips.json"), "w") as f:
+        json.dump(eips_doc(snap), f, indent=1, sort_keys=True)
+    for eip in index.row_order(snap["eips"]):
         with open(os.path.join(out_dir, eip_href(eip)), "w") as f:
             f.write(page(f"{config.NAME} · EIP-{eip}", "", eip_page_html(eip, snap, cells, attestations), snap))
         info = snap["eips"][eip]
+        if not info.get("test_dir"):
+            continue
         write_json(os.path.join(out_dir, "api", "eip", f"{eip}.json"), snap, [c for c in cells if c["eip"] == eip],
                    [it for it in items if it["eip"] == eip],
                    {"title": info.get("title"), "status": info.get("status"), "stage": info.get("stage"), "meta": snap.get("meta"),
@@ -573,6 +623,17 @@ def site(snap, attestations, out_dir):
         write_json(os.path.join(out_dir, "api", "client", f"{client}.json"), snap, [c for c in cells if c["client"] == client],
                    [it for it in items if client in it["clients"]])
     return cells, items
+
+
+def eips_doc(snap):
+    rows = []
+    for eip in index.row_order(snap["eips"]):
+        info = snap["eips"][eip]
+        rows.append({"eip": eip, "title": info.get("title"), "status": info.get("status"), "category": info.get("category"),
+                     "stage": info.get("stage") or [], "test_dir": info.get("test_dir"), "checked": info.get("checked"),
+                     "behind": len(info["deltas"]) if info.get("pin") else None, "page": f'{config.SITE_URL}/{eip_href(eip)}'})
+    return {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"],
+            "meta": snap.get("meta"), "eips": rows}
 
 
 def write_json(path, snap, cells, items, spec=None):

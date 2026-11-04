@@ -60,9 +60,10 @@ def cmd_build(args):
     width = max(len(config.CLIENT_LABEL[c]) for c in config.CLIENTS)
     print("EIP     " + "  ".join(f"{config.CLIENT_LABEL[c]:<22}" for c in config.CLIENTS))
     by = {(c["eip"], c["client"]): c for c in cells}
-    for eip in config.ROW_ORDER:
-        if (eip, config.CLIENTS[0]) in by:
-            print(f"{eip:<8}" + "  ".join(f"{headline_text(by[(eip, c)]):<22}" for c in config.CLIENTS))
+    for eip in render.tested(snap):
+        print(f"{eip:<8}" + "  ".join(f"{headline_text(by[(eip, c)]):<22}" for c in config.CLIENTS))
+    for eip in render.untested(snap):
+        print(f"{eip:<8}" + render.no_tests_text(snap["eips"][eip], snap))
     print(f"site {os.path.join(ROOT, 'site')}/index.html  ({len(cells)} cells, {len(items)} queue items)")
 
 

@@ -65,7 +65,7 @@ def check(get, commit=""):
             continue
         errs += check_doc(doc, f"api/client/{client}.json")
         cells += doc.get("cells") or []
-    lo, hi = MIN_EIPS * len(config.CLIENTS), len(config.ROW_ORDER) * len(config.CLIENTS)
+    lo, hi = MIN_EIPS * len(config.CLIENTS), config.MAX_ROWS * len(config.CLIENTS)
     if not lo <= len(cells) <= hi:
         errs.append(f"cells: {len(cells)} not in [{lo}, {hi}]")
     if status.get("cells") != len(cells):

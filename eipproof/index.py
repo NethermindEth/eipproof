@@ -173,9 +173,30 @@ def frontmatter(text):
     out = {}
     for line in m.group(1).splitlines():
         key, sep, value = line.partition(":")
-        if sep and key.strip() in ("title", "status"):
+        if sep and key.strip() in ("title", "status", "category"):
             out[key.strip()] = value.strip()
     return out
+
+
+def listed_eips(stages):
+    return [e for e, st in stages.items() if set(st) & set(config.TRACKED_STAGES)]
+
+
+def row_order(eips):
+    def key(e):
+        stages = eips[e].get("stage") or []
+        rank = min((config.TRACKED_STAGES.index(s) for s in stages if s in config.TRACKED_STAGES), default=len(config.TRACKED_STAGES))
+        tested = config.ROW_ORDER.index(e) if e in config.ROW_ORDER else len(config.ROW_ORDER)
+        return (rank, eips[e].get("test_dir") is None, tested, int(e))
+    return sorted(eips, key=key)
+
+
+def stage_counts(stages):
+    counts = {}
+    for st in stages.values():
+        for s in st:
+            counts[s] = counts.get(s, 0) + 1
+    return counts
 
 
 def _has_word(text, word):
