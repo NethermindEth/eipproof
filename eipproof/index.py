@@ -178,6 +178,36 @@ def frontmatter(text):
     return out
 
 
+def pr_number(subject):
+    m = re.search(r"\(#(\d+)\)\s*$", subject)
+    return int(m.group(1)) if m else None
+
+
+def pin_moves(history):
+    out, last = [], None
+    for h in history:
+        if h["blob"] != last:
+            out.append(h)
+            last = h["blob"]
+    return out
+
+
+def pin_at(history, release):
+    hits = [h for h in history if h.get("release") and release_key(h["release"]) <= release_key(release)]
+    return hits[-1]["blob"] if hits else None
+
+
+def rev_tests(rev, info, runs):
+    history = info.get("pin_history") or []
+    move = next((h for h in pin_moves(history) if h["blob"] == rev["blob"]), None)
+    if not move:
+        later = info.get("pin") and any(d["commit"] == rev["commit"] for d in info["deltas"])
+        return {"state": "waiting" if later else "never", "move": None, "ran": []}
+    ran = [c for c in config.CLIENTS if (runs.get(c) or {}).get("release") and pin_at(history, runs[c]["release"]) == rev["blob"]]
+    state = "pinned" if move.get("release") else "superseded" if move.get("superseded") else "unreleased"
+    return {"state": state, "move": move, "ran": ran}
+
+
 def listed_eips(stages):
     return [e for e, st in stages.items() if set(st) & set(config.TRACKED_STAGES)]
 
