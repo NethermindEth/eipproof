@@ -92,6 +92,8 @@ def pending_prs(eip):
     hits = sources.gh_api(f"search/issues?q=repo:{config.EIPS_REPO}+is:pr+is:open+in:title+EIP-{eip}&per_page=20")
     out = []
     for item in hits.get("items", []):
+        if "pull_request" not in item:
+            continue
         files = sources.gh_api(f"repos/{config.EIPS_REPO}/pulls/{item['number']}/files?per_page=100")
         if any(f["filename"] == f"EIPS/eip-{eip}.md" for f in files):
             pr = sources.gh_api(f"repos/{config.EIPS_REPO}/pulls/{item['number']}")
