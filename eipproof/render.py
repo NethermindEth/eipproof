@@ -278,7 +278,7 @@ const u=new URL(location.href);if(on)u.searchParams.set('view','action');else u.
 function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&q.dataset.owner!==v);const u=new URL(location.href);if(v)u.searchParams.set('owner',v);else u.searchParams.delete('owner');history.replaceState(null,'',u)}
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
 addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
-const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+p.get('owner')+'"]')){o.value=p.get('owner');own(o.value)}
+const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
 const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
 const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
@@ -512,8 +512,9 @@ def client_page_html(client, snap, cells, items):
             f'<h3>EIPs</h3><div class="wrap"><table class="m list">{rows}</table></div>')
 
 
-QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release"}
-QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-release": "old tests"}
+QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release", "run-missing": "no-run"}
+MISSING_WORD = {"no-run": "no run", "no-tests": "no tests in run"}
+QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-release": "old tests", "run-missing": "not run on newest tests"}
 
 
 def queue_detail(it, snap):
@@ -522,6 +523,8 @@ def queue_detail(it, snap):
     if it["kind"] == "open-delta":
         delta = next(d for d in snap["eips"][it["eip"]]["deltas"] if d["commit"] == it["commit"])
         return f'{it["commit"][:8]} {delta["subject"]}'
+    if it["kind"] == "run-missing":
+        return f'{MISSING_WORD[it["headline"]]} at {release_short(snap["newest_release"])}'
     return f'last ran {release_short(it["release"])}'
 
 
@@ -683,10 +686,10 @@ def owner_filter(shown):
 
 
 def queue_html(snap, cells):
-    items = queue(cells, tested(snap))
+    items = queue(cells, tested(snap), snap["newest_release"])
     order = index.row_order(snap["eips"])
-    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2, "no-tests": 3}
-    shown = sorted(items + [{"kind": "no-tests", "eip": e, "clients": [], "owner": EELS, "action": "write test"} for e in untested(snap)],
+    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2, "run-missing": 3, "no-tests": 4}
+    shown = sorted(items + [{"kind": "no-tests", "eip": e, "clients": [], "owner": EELS, "action": "write test", "verb": "write test"} for e in untested(snap)],
                    key=lambda it: (order.index(it["eip"]), kind_rank[it["kind"]]))
     out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action, highest-ranked EIP first</span></h2>',
            owner_filter(shown), '<div id="queue">']
@@ -703,11 +706,14 @@ def queue_html(snap, cells):
         elif it["kind"] == "run-fail":
             body = (f'<span class="k bad">EIP-{it["eip"]} &middot; fail</span> {E(clients)}: {len(it["failed"])} failing'
                     + "".join(f'<div><code>{E(short_test(f))}</code></div>' for f in it["failed"][:3]))
+        elif it["kind"] == "run-missing":
+            body = f'<span class="k none">EIP-{it["eip"]} &middot; {E(MISSING_WORD[it["headline"]])}</span> {E(clients)} at {E(release_short(snap["newest_release"]))}'
         else:
             body = f'<span class="k stale">EIP-{it["eip"]} &middot; old tests</span> {E(clients)} last ran {E(release_short(it["release"]))}'
         cid = f'{it["eip"]}-{it["owner"]}'
         out.append(f'<div class="q" id="q{i}" data-owner="{it["owner"]}"><a class="act" href="index.html?view=action#{cid}" title="open the matrix cell">'
-                   f'{E(it["action"])} &middot; {E(OWNER_LABEL[it["owner"]])}</a>{body}</div>')
+                   f'{E(it["verb"])} &middot; {E(OWNER_LABEL[it["owner"]])}</a>{body}'
+                   + (f'<div class="muted">next: {E(it["action"])}</div>' if it["action"] != it["verb"] else "") + '</div>')
     out.append("</div>")
     return "".join(out), items
 

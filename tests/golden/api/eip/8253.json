@@ -198,7 +198,8 @@
    ],
    "kind": "run-fail",
    "owner": "reth",
-   "rank": 7
+   "rank": 7,
+   "verb": "fix client"
   },
   {
    "action": "run v2.0.0",
@@ -209,7 +210,8 @@
    "kind": "stale-release",
    "owner": "besu",
    "rank": 7,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   }
  ]
 }
