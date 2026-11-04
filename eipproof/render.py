@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 
 from . import config, index
-from .chain import EELS, cell_action, chain, eels_action, headline_text, queue, release_short
+from .chain import EELS, cell_action, chain, delta_verbs, eels_action, headline_text, queue, release_short
 
 E = html.escape
 STATE_CLASS = {"pass": "ok", "covered": "ok", "open": "warn", "attested-not-run": "warn", "stale-release": "stale",
@@ -662,8 +662,9 @@ def eels_cell(eip, info, cells, snap):
     else:
         verb, n = eels_action(cells)
         behind = len(info["deltas"])
+        untested_n = len(delta_verbs(cells))
         if verb:
-            state, text, sub = "warn", f"{n} spec change{'s' if n > 1 else ''} untested", f"{behind} since the EELS pin"
+            state, text, sub = "warn", f"{untested_n} spec change{'s' if untested_n > 1 else ''} untested", f"{behind} since the EELS pin"
         elif behind and not any(c["links"]["test"]["deltas"] for c in cells):
             state, text, sub = "none", "spec changes not checked", f"{behind} since the EELS pin, no run on the newest tests"
         elif behind:
