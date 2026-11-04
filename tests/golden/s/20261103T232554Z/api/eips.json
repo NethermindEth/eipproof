@@ -4,6 +4,24 @@
    "behind": 1,
    "category": null,
    "checked": null,
+   "eels_todo": {
+    "action": "update tests to EIP version dc5d5fa6",
+    "behind": 1,
+    "changes": [
+     "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f"
+    ],
+    "clients": [],
+    "constants": [],
+    "diff_url": "https://github.com/ethereum/EIPs/compare/7372d10a457b29eceb02cd052345af165de1fb60...dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+    "eip": "8141",
+    "head": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+    "head_date": "2026-11-01T04:20:25-07:00",
+    "kind": "eels-update",
+    "owner": "eels",
+    "pin_commit": "7372d10a457b29eceb02cd052345af165de1fb60",
+    "pin_release": "tests-bogota-devnet@v2.0.0",
+    "verb": "update tests"
+   },
    "eip": "8141",
    "page": "https://nethermindeth.github.io/eipproof/eip-8141.html",
    "stage": [
@@ -17,6 +35,24 @@
    "behind": 1,
    "category": null,
    "checked": null,
+   "eels_todo": {
+    "action": "update tests to EIP version 9099f412",
+    "behind": 1,
+    "changes": [
+     "9099f412d228ec80ec27b713df6da61993bf4702"
+    ],
+    "clients": [],
+    "constants": [],
+    "diff_url": "https://github.com/ethereum/EIPs/compare/25ac2920ea3a958911e380498bb7c8fbca201542...9099f412d228ec80ec27b713df6da61993bf4702",
+    "eip": "7906",
+    "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+    "head_date": "2026-10-27T11:42:30Z",
+    "kind": "eels-update",
+    "owner": "eels",
+    "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+    "pin_release": "tests-bogota-devnet@v2.0.0",
+    "verb": "update tests"
+   },
    "eip": "7906",
    "page": "https://nethermindeth.github.io/eipproof/eip-7906.html",
    "stage": [
@@ -30,6 +66,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "8250",
    "page": "https://nethermindeth.github.io/eipproof/eip-8250.html",
    "stage": [
@@ -43,6 +80,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "8151",
    "page": "https://nethermindeth.github.io/eipproof/eip-8151.html",
    "stage": [
@@ -56,6 +94,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "8272",
    "page": "https://nethermindeth.github.io/eipproof/eip-8272.html",
    "stage": [
@@ -69,6 +108,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "8298",
    "page": "https://nethermindeth.github.io/eipproof/eip-8298.html",
    "stage": [
@@ -82,6 +122,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "4758",
    "page": "https://nethermindeth.github.io/eipproof/eip-4758.html",
    "stage": [
@@ -95,6 +136,7 @@
    "behind": 0,
    "category": null,
    "checked": null,
+   "eels_todo": null,
    "eip": "8253",
    "page": "https://nethermindeth.github.io/eipproof/eip-8253.html",
    "stage": [

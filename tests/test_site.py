@@ -312,7 +312,8 @@ def test_eip_page_links_each_spec_change_to_its_eels_pr_release_and_runs(tmp_pat
     page = (tmp_path / "eip-7906.html").read_text()
     assert "execution-specs/pull/3895" in page and "releases/tag/tests-bogota-devnet%40v2.0.0" in page
     assert html.escape(snap["runs"]["go-ethereum"]["url"]) in page and "test_txtrace.py" in page
-    assert "replaced it before any release" in page and "not updated yet" in page
+    assert "replaced it before any release" in page and "not updated to this text" in page
+    assert 'data-mark="eels-todo"' in page and f"update tests to EIP version {info['head'][:8]}" in page
     feed = json.loads((tmp_path / "api" / "changes.json").read_text())["changes"]
     row = next(r for r in feed if r["commit"] == pin["commit"])
     assert (row["tests"]["eels_pr"], row["tests"]["release"], row["tests"]["state"]) == (3895, pin["release"], "pinned")
@@ -330,7 +331,7 @@ def test_matrix_toggle_renders_one_action_per_cell_with_owner(wide_site):
     reth = re.search(r'<td class="c [a-z]+" id="c-8253-reth".*?</td>', page).group(0)
     assert '<div class="hl av">fix client</div><div class="sub">owner: Reth</div>' in reth
     untested = re.search(r'<td class="c eels none" id="c-7805-eels">.*?</td>', page).group(0)
-    assert "no tests" in untested and '<div class="hl av">write test</div><div class="sub">owner: EELS</div>' in untested
+    assert "no tests" in untested and '<div class="hl av">write tests for EIP-7805 in v2.0.0 or later</div><div class="sub">owner: EELS</div>' in untested
     assert page.count('<td class="c eels') == 10 and page.count("<table") == 1
 
 
@@ -342,10 +343,66 @@ def test_queue_filters_by_owner_and_links_each_row_to_its_matrix_cell(wide_site)
     index_page = (root / "index.html").read_text()
     assert all(f'id="c-{eip}-{o}"' in index_page for o, eip, _ in owners)
     assert ("eels", "7805", "eels") in owners and ("reth", "8253", "reth") in owners
-    assert '<option value="besu">Besu (8)</option>' in page and '<option value="eels">EELS (2)</option>' in page
+    assert '<option value="besu">Besu (8)</option>' in page and '<option value="eels">EELS (4)</option>' in page
     rows = [int(e) for _, e, _ in owners]
     order = ["8141", "7805", "7906", "8250", "8151", "8272", "8298", "4758", "8253", "8077"]
     assert [order.index(str(e)) for e in rows] == sorted(order.index(str(e)) for e in rows)
+
+
+def test_eels_is_told_to_update_tests_to_the_newest_eip_text_and_to_write_missing_ones(wide_site):
+    root, _ = wide_site
+    snap = build.load_snapshot(SNAP)
+    queue_page = (root / "queue.html").read_text()
+    for eip in ("8141", "7906"):
+        info = snap["eips"][eip]
+        doc = json.loads((root / "api" / "eip" / f"{eip}.json").read_text())
+        todo = doc["eels_todo"]
+        assert (todo["kind"], todo["owner"], todo["head"], todo["behind"]) == ("eels-update", "eels", info["head"], len(info["deltas"]))
+        assert todo["action"] == f"update tests to EIP version {info['head'][:8]}"
+        assert todo["diff_url"].endswith(f"/compare/{info['pin']['commit']}...{info['head']}")
+        assert todo["diff_url"] in queue_page.replace("&amp;", "&")
+        assert f'href="index.html?view=action#{eip}-eels"' in queue_page
+    rows = {r["eip"]: r for r in json.loads((root / "api" / "eips.json").read_text())["eips"]}
+    for eip in ("7805", "8077"):
+        assert rows[eip]["eels_todo"]["verb"] == "write tests"
+        assert f"write tests for EIP-{eip}" in (root / f"eip-{eip}.html").read_text()
+
+
+def test_eels_update_lists_named_constants_once_with_their_first_and_last_value():
+    deltas = [{"commit": "a", "constants": [{"name": "X", "before": ["1"], "after": ["2"]}]},
+              {"commit": "b", "constants": [{"name": "X", "before": ["2"], "after": ["3"]}, {"name": "Y", "before": ["5"], "after": ["5"]}]}]
+    assert chain.merged_constants(deltas) == [{"name": "X", "before": ["1"], "after": ["3"]}]
+    info = {"test_dir": "t", "deltas": deltas, "head": "b" * 40, "head_date": "2026-11-04", "path": "EIPS/eip-1.md",
+            "pin": {"commit": None, "release": "tests-bogota-devnet@v2.0.0"}}
+    todo = chain.eels_todo("1", info, "tests-bogota-devnet@v2.0.0", "https://github.com", "ethereum/EIPs")
+    assert todo["diff_url"] == f"https://github.com/ethereum/EIPs/commits/{'b' * 40}/EIPS/eip-1.md"
+    assert chain.eels_todo("1", {**info, "deltas": []}, "r", "g", "e") is None
+
+
+def test_a_pin_by_eip_commit_sha_resolves_to_that_commits_text():
+    revs = [{"commit": "c" * 40, "blob": "b" * 40}]
+    assert index.pin_blob(revs, "c" * 40) == "b" * 40
+    assert index.pin_blob(revs, "d" * 40) == "d" * 40
+
+
+def test_header_only_edits_and_commits_for_other_eips_are_marked():
+    assert index.header_only("--- a\n+++ b\n-status: Draft\n+status: Last Call\n")
+    assert not index.header_only("-status: Draft\n+status: Final\n+GAS = 5\n")
+    assert index.subject_eips("Update EIP-2780: Move to Last Call (#1)") == {"2780"}
+
+
+def test_glamsterdam_timeline_never_prints_an_unknown_pin_date(tmp_path):
+    snap = build.load_snapshot(GLAMSTERDAM)
+    snap["source"] = "live"
+    try:
+        config.use("glamsterdam")
+        cli.write_site(snap, str(tmp_path))
+    finally:
+        config.use(config.DEFAULT_FORK)
+    for page in tmp_path.glob("eip-*.html"):
+        assert "the text from ?" not in page.read_text(), page.name
+    assert any(r["commit"].startswith("5ef38012") for r in snap["eips"]["7976"]["revisions"])
+    assert 'EIP-2780; it also edits this EIP' in (tmp_path / "eip-7976.html").read_text()
 
 
 GLAMSTERDAM = sorted(glob.glob(os.path.join(cli.ROOT, "snapshots", "glamsterdam", "*.json")))[-1]
