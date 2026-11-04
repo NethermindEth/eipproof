@@ -1,4 +1,4 @@
-from eipproof import chain, index
+from eipproof import build, chain, index
 
 NEWEST = "tests-bogota-devnet@v2.0.0"
 SENDER = "tests/bogota/eip7906_transaction_assertions/test_txtrace.py::test_sender_nonce_change"
@@ -237,3 +237,19 @@ def test_mutant_count_ignores_other_open_deltas():
     cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta(), delta("a" * 40)])), proof)
     assert chain.eels_action([cell]) == ("mutant uncovered", 1)
     assert sorted(i["verb"] for i in chain.queue([cell], ["7906"], NEWEST)) == ["mutant uncovered", "write test"]
+
+
+def test_pending_prs_skips_issues_that_search_returns(monkeypatch):
+    calls = []
+
+    def fake(path):
+        calls.append(path)
+        if path.startswith("search/"):
+            return {"items": [{"number": 1}, {"number": 2, "pull_request": {}}]}
+        if path.endswith("/files?per_page=100"):
+            return [{"filename": "EIPS/eip-7928.md"}]
+        return {"number": 2, "title": "t", "html_url": "u", "state": "open", "merged": False, "head": {"sha": "s"}}
+
+    monkeypatch.setattr(build.sources, "gh_api", fake)
+    assert [p["number"] for p in build.pending_prs("7928")] == [2]
+    assert not any("/pulls/1" in c for c in calls)
