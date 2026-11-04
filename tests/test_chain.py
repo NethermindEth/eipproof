@@ -204,3 +204,36 @@ def test_rev_tests_credits_a_release_on_a_side_branch():
     assert (old["state"], old["release"], old["ran"]) == ("pinned", "tests-bogota-devnet@v1.1.1", ["besu"])
     side = index.rev_tests({"commit": "s", "blob": "side"}, {**info, "release_pins": {"tests-bogota-devnet@v1.1.0": "side"}}, runs)
     assert (side["state"], side["move"], side["release"]) == ("pinned", None, "tests-bogota-devnet@v1.1.0")
+
+
+def test_client_cells_get_fix_or_run_and_spec_work_goes_to_eels():
+    s = {"eips": {"7906": eip_info([delta()])}, "runs": {"nethermind": run(passed=183, failed=["t"]), "reth": run(), "besu": run(release="tests-bogota-devnet@v1.1.1")},
+         "newest_release": NEWEST}
+    cells = {c: chain.chain("7906", c, s, []) for c in ("nethermind", "reth", "besu", "ethrex")}
+    assert {c: chain.cell_action(v, NEWEST) for c, v in cells.items()} == {"nethermind": "fix client", "reth": None, "besu": "run v2.0.0", "ethrex": "run v2.0.0"}
+    assert chain.eels_action(list(cells.values())) == ("write test", 1)
+    items = chain.queue(list(cells.values()), ["7906"], NEWEST)
+    assert {(i["kind"], i["owner"], i["verb"]) for i in items} == {("run-fail", "nethermind", "fix client"), ("open-delta", "eels", "write test"),
+                                                                    ("stale-release", "besu", "run v2.0.0"), ("run-missing", "ethrex", "run v2.0.0")}
+
+
+def test_client_with_no_cases_on_newest_tests_must_run_them():
+    s = {"eips": {"7906": eip_info()}, "runs": {"nethermind": run(passed=0, total=0)}, "newest_release": NEWEST}
+    cell = chain.chain("7906", "nethermind", s, [])
+    assert cell["headline"] == "no-tests"
+    assert chain.cell_action(cell, NEWEST) == "run v2.0.0"
+    assert [(i["kind"], i["owner"], i["verb"]) for i in chain.queue([cell], ["7906"], NEWEST)] == [("run-missing", "nethermind", "run v2.0.0")]
+
+
+def test_surviving_mutant_is_named_in_the_eels_action():
+    proof = [{"eip": "7906", "commit": "9099f412", "kind": "normative", "killed": []}]
+    cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), proof)
+    assert chain.eels_action([cell]) == ("mutant uncovered", 1)
+    assert chain.eels_action([chain.chain("7906", "nethermind", snap(run(), eip_info()), [])]) == (None, 0)
+
+
+def test_mutant_count_ignores_other_open_deltas():
+    proof = [{"eip": "7906", "commit": "9099f412", "kind": "normative", "killed": []}]
+    cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta(), delta("a" * 40)])), proof)
+    assert chain.eels_action([cell]) == ("mutant uncovered", 1)
+    assert sorted(i["verb"] for i in chain.queue([cell], ["7906"], NEWEST)) == ["mutant uncovered", "write test"]

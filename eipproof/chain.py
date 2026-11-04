@@ -1,6 +1,10 @@
 import re
 
 SEVERITY = ["fail", "no-run", "stale-release", "no-tests", "open", "pass"]
+EELS = "eels"
+OPEN_DELTA = ("open", "attested-not-run", "mutant-survived")
+DELTA_VERB = {"mutant-survived": "mutant uncovered", "open": "write test", "attested-not-run": "release test"}
+DELTA_ACTION = {"mutant-survived": "write a test that kills the mutant", "open": "run eipproof prove", "attested-not-run": "ship the attested test in an EELS release"}
 
 _CASE = re.compile(r"^(?P<file>[^:]+)::(?P<func>[A-Za-z0-9_]+)(?:\[(?P<params>.*)\])?$")
 
@@ -160,30 +164,65 @@ def release_short(release):
     return release.split("@", 1)[-1] if release else "?"
 
 
-def queue(cells, row_order):
+def cell_action(cell, newest_release):
+    h = cell["headline"]
+    if h == "fail":
+        return "fix client"
+    if h in ("stale-release", "no-run", "no-tests"):
+        return f"run {release_short(newest_release)}"
+    return None
+
+
+def delta_verbs(cells):
+    order = list(DELTA_VERB)
+    worst = {}
+    for c in cells:
+        for d in c["links"]["test"]["deltas"]:
+            if d["state"] in OPEN_DELTA:
+                worst[d["commit"]] = min(worst.get(d["commit"], d["state"]), d["state"], key=order.index)
+    return {commit: DELTA_VERB[state] for commit, state in worst.items()}
+
+
+def eels_action(cells):
+    verbs = list(delta_verbs(cells).values())
+    verb = next((v for v in DELTA_VERB.values() if v in verbs), None)
+    return verb, verbs.count(verb)
+
+
+def queue(cells, row_order, newest_release=None):
     items = []
     seen_deltas = {}
     for cell in cells:
         rank = row_order.index(cell["eip"]) if cell["eip"] in row_order else len(row_order)
         h = cell["headline"]
         if h == "fail":
-            items.append({"kind": "run-fail", "eip": cell["eip"], "clients": [cell["client"]], "rank": rank,
+            items.append({"kind": "run-fail", "eip": cell["eip"], "clients": [cell["client"]], "owner": cell["client"], "rank": rank,
                           "failed": cell["links"]["run"]["failed"], "action": "fix client or report test"})
         elif h == "stale-release":
-            items.append({"kind": "stale-release", "eip": cell["eip"], "clients": [cell["client"]], "rank": rank,
+            items.append({"kind": "stale-release", "eip": cell["eip"], "clients": [cell["client"]], "owner": cell["client"], "rank": rank,
                           "release": cell["links"]["run"]["release"], "action": f"run {release_short(cell['links']['run']['newest_release'])}"})
+        elif h in ("no-run", "no-tests"):
+            items.append({"kind": "run-missing", "headline": h, "eip": cell["eip"], "clients": [cell["client"]], "owner": cell["client"], "rank": rank,
+                          "action": f"run {release_short(newest_release)}"})
         for d in cell["links"]["test"]["deltas"]:
-            if d["state"] in ("open", "attested-not-run", "mutant-survived"):
+            if d["state"] in OPEN_DELTA:
                 key = (cell["eip"], d["commit"])
                 item = seen_deltas.get(key)
                 if item is None:
-                    item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "rank": rank,
-                            "candidates": {}, "action": "write a test that kills the mutant" if d["state"] == "mutant-survived" else "run eipproof prove"}
+                    item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "owner": EELS, "rank": rank,
+                            "candidates": {}, "action": DELTA_ACTION[d["state"]]}
                     seen_deltas[key] = item
                     items.append(item)
                 item["clients"].append(cell["client"])
                 for c in d["candidates"]:
                     item["candidates"].setdefault(c["test"], {})[cell["client"]] = (c["passed"], c["cases"])
-    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2}
+    verbs = {}
+    for item in items:
+        if item["kind"] == "open-delta":
+            per_eip = verbs.setdefault(item["eip"], delta_verbs([c for c in cells if c["eip"] == item["eip"]]))
+            item["verb"] = per_eip[item["commit"]]
+        else:
+            item["verb"] = "fix client" if item["kind"] == "run-fail" else item["action"]
+    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2, "run-missing": 3}
     items.sort(key=lambda i: (i["rank"], kind_rank[i["kind"]], -len(i["clients"])))
     return items

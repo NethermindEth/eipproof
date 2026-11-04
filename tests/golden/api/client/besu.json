@@ -488,8 +488,10 @@
    ],
    "eip": "8141",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 0,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -498,8 +500,10 @@
    ],
    "eip": "7906",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 1,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -508,8 +512,10 @@
    ],
    "eip": "8250",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 2,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -518,8 +524,10 @@
    ],
    "eip": "8151",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 3,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -528,8 +536,10 @@
    ],
    "eip": "8272",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 4,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -538,8 +548,10 @@
    ],
    "eip": "8298",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 5,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -548,8 +560,10 @@
    ],
    "eip": "4758",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 6,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   },
   {
    "action": "run v2.0.0",
@@ -558,8 +572,10 @@
    ],
    "eip": "8253",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 7,
-   "release": "tests-bogota-devnet@v1.1.1"
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
   }
  ]
 }

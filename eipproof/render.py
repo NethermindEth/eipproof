@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 
 from . import config, index
-from .chain import chain, headline_text, queue, release_short
+from .chain import EELS, cell_action, chain, delta_verbs, eels_action, headline_text, queue, release_short
 
 E = html.escape
 STATE_CLASS = {"pass": "ok", "covered": "ok", "open": "warn", "attested-not-run": "warn", "stale-release": "stale",
@@ -254,6 +254,9 @@ section.link header{display:flex;gap:8px;align-items:center;font-weight:700;marg
 .cand,.att,.overlay{margin:6px 0;font-size:13.5px}.overlay{color:var(--mut)}em{color:var(--mut);font-style:normal}.muted{color:var(--mut)}
 .fails{font-size:12.5px;max-height:150px;overflow:auto;background:#1a1010;border-radius:8px;padding:6px 10px}
 .q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}.q .k{font-weight:700}.q .k.bad{color:var(--bad)}.q .k.warn{color:var(--warn)}.q .k.stale{color:var(--stale)}
+.q .k.none{color:var(--mut)}.ac{display:none}body.act .ac{display:block}body.act .st{display:none}.hl.av{color:var(--fg)}th.eels a{color:var(--fg)}
+.tog{display:inline-flex;border:1px solid var(--line);border-radius:99px;margin:0 6px 8px;overflow:hidden}.tog button{font:inherit;font-size:13px;background:none;color:var(--mut);border:0;padding:4px 14px;cursor:pointer}
+.tog button[aria-pressed="true"]{background:var(--fg);color:#0b0f17;font-weight:600}.tog button:focus-visible{outline:2px solid #93c5fd;outline-offset:-2px}
 .q .act{float:right;font-size:13px;color:#0b0f17;background:var(--fg);padding:2px 10px;border-radius:99px;margin:0 0 6px 8px}
 h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:22px 0 8px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 .rev{margin:4px 0;font-size:14px}table.list td.c{cursor:default;width:190px}table.list td.c:hover{transform:none}a.hl{display:block}
@@ -269,9 +272,14 @@ select{font:inherit;font-size:14px;background:var(--card);color:var(--fg);border
 JS = """
 function openD(id,el){document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));if(el)el.classList.add('sel');
 document.getElementById('dc').innerHTML=document.getElementById('t-'+id).innerHTML;document.getElementById('d').classList.add('on');history.replaceState(null,'','#'+id)}
-function closeD(){document.getElementById('d').classList.remove('on');document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));history.replaceState(null,'',location.pathname)}
+function closeD(){document.getElementById('d').classList.remove('on');document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));history.replaceState(null,'',location.pathname+location.search)}
+function view(v){const on=v==='ac';document.body.classList.toggle('act',on);['st','ac'].forEach(k=>{const b=document.getElementById('v-'+k);if(b)b.setAttribute('aria-pressed',String(k===v))});
+const u=new URL(location.href);if(on)u.searchParams.set('view','action');else u.searchParams.delete('view');history.replaceState(null,'',u)}
+function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&q.dataset.owner!==v);const u=new URL(location.href);if(v)u.searchParams.set('owner',v);else u.searchParams.delete('owner');history.replaceState(null,'',u)}
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
-addEventListener('load',()=>{const h=location.hash.slice(1);if(h&&document.getElementById('t-'+h))openD(h,document.getElementById('c-'+h));
+addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
+const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
+const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
 const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
 function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
@@ -504,8 +512,9 @@ def client_page_html(client, snap, cells, items):
             f'<h3>EIPs</h3><div class="wrap"><table class="m list">{rows}</table></div>')
 
 
-QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release"}
-QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-release": "old tests"}
+QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release", "run-missing": "no-run"}
+MISSING_WORD = {"no-run": "no run", "no-tests": "no tests in run"}
+QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-release": "old tests", "run-missing": "not run on newest tests"}
 
 
 def queue_detail(it, snap):
@@ -514,6 +523,8 @@ def queue_detail(it, snap):
     if it["kind"] == "open-delta":
         delta = next(d for d in snap["eips"][it["eip"]]["deltas"] if d["commit"] == it["commit"])
         return f'{it["commit"][:8]} {delta["subject"]}'
+    if it["kind"] == "run-missing":
+        return f'{MISSING_WORD[it["headline"]]} at {release_short(snap["newest_release"])}'
     return f'last ran {release_short(it["release"])}'
 
 
@@ -602,15 +613,17 @@ def cell_sub(cell):
 
 def matrix_html(snap, cells):
     by = {(c["eip"], c["client"]): c for c in cells}
-    head = "<tr><th></th>" + "".join(f"<th>{a_local(client_href(c), config.CLIENT_LABEL[c])}<br><small class=muted>{E(release_short(snap['runs'][c]['release']) if c in snap['runs'] else '-')}</small></th>" for c in config.CLIENTS) + "</tr>"
+    head = ("<tr><th></th>" + "".join(f"<th>{a_local(client_href(c), config.CLIENT_LABEL[c])}<br><small class=muted>{E(release_short(snap['runs'][c]['release']) if c in snap['runs'] else '-')}</small></th>" for c in config.CLIENTS)
+            + f'<th class="eels">{a(gh(config.EELS_REPO, "releases/tag", snap["newest_release"].replace("@", "%40")), "EELS")}<br><small class=muted>tests {E(release_short(snap["newest_release"]))}</small></th></tr>')
     head += ('<tr class="counts"><th class="row"><small>cells by weakest check</small></th>'
-             + "".join(f'<th><small>{counts_html([c for c in cells if c["client"] == cl])}</small></th>' for cl in config.CLIENTS) + "</tr>")
+             + "".join(f'<th><small>{counts_html([c for c in cells if c["client"] == cl])}</small></th>' for cl in config.CLIENTS) + "<th></th></tr>")
     rows, templates = [], []
     for eip in index.row_order(snap["eips"]):
         info = snap["eips"][eip]
         if not info.get("test_dir"):
             rows.append(f'<tr class="nt" id="r-{eip}"><th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}</th>'
-                        f'<td class="c none" colspan="{len(config.CLIENTS)}" data-mark="no-tests"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></td></tr>')
+                        f'<td class="c none" colspan="{len(config.CLIENTS)}" data-mark="no-tests"><div class="st"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></div>'
+                        f'{action_html(None, "")}</td>{eels_cell(eip, info, [], snap)}</tr>')
             continue
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{len(info["deltas"])} spec change(s) since EELS</div>' if info["deltas"] else ""
         pend = f'<div class="badge" style="background:#1f2937;color:#8b95a7" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
@@ -618,8 +631,10 @@ def matrix_html(snap, cells):
         for client in config.CLIENTS:
             c = by[(eip, client)]
             cid = f"{eip}-{client}"
-            tr.append(f'<td class="c {STATE_CLASS[c["headline"]]}" id="c-{cid}" tabindex="0" role="button" onclick="openD(\'{cid}\',this)">{dots(c)}<div class="hl">{E(headline_text(c))}</div><div class="sub">{cell_sub(c)}</div></td>')
+            tr.append(f'<td class="c {STATE_CLASS[c["headline"]]}" id="c-{cid}" tabindex="0" role="button" onclick="openD(\'{cid}\',this)"><div class="st">{dots(c)}<div class="hl">{E(headline_text(c))}</div><div class="sub">{cell_sub(c)}</div></div>'
+                      f'{action_html(cell_action(c, snap["newest_release"]), config.CLIENT_LABEL[client])}</td>')
             templates.append(f'<template id="t-{cid}">{drawer(c, snap)}</template>')
+        tr.append(eels_cell(eip, info, [by[(eip, cl)] for cl in config.CLIENTS], snap))
         rows.append("<tr>" + "".join(tr) + "</tr>")
     strip = ""
     wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == snap["newest_release"]}
@@ -629,13 +644,57 @@ def matrix_html(snap, cells):
     legend = ('<div class="legend">A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
               '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</div>')
     cov = coverage_html(snap) if snap.get("meta") else ""
-    return strip + cov + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
+    toggle = ('<div class="tog" role="group" aria-label="Cell view"><button type="button" id="v-st" aria-pressed="true" onclick="view(\'st\')">Status</button>'
+              '<button type="button" id="v-ac" aria-pressed="false" onclick="view(\'ac\')">Next action</button></div>')
+    return strip + cov + toggle + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
+
+
+def action_html(verb, owner):
+    if verb is None:
+        return '<div class="ac" data-mark="act"><div class="hl none">nothing to do</div></div>'
+    return f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}</div><div class="sub">owner: {E(owner)}</div></div>'
+
+
+def eels_cell(eip, info, cells, snap):
+    link = a_local(eip_href(eip), "EIP page")
+    if not info.get("test_dir"):
+        state, text, sub, verb, n = "none", "no tests", f"no test dir at {E(release_short(snap['newest_release']))}", "write test", 0
+    else:
+        verb, n = eels_action(cells)
+        behind = len(info["deltas"])
+        untested_n = len(delta_verbs(cells))
+        if verb:
+            state, text, sub = "warn", f"{untested_n} spec change{'s' if untested_n > 1 else ''} untested", f"{behind} since the EELS pin"
+        elif behind and not any(c["links"]["test"]["deltas"] for c in cells):
+            state, text, sub = "none", "spec changes not checked", f"{behind} since the EELS pin, no run on the newest tests"
+        elif behind:
+            state, text, sub = "ok", "spec changes proven", f"{behind} since the EELS pin"
+        else:
+            state, text, sub = "ok", "implements current text", f"pin {E(info['pin']['blob'][:8])}"
+    count = f" &times;{n}" if n > 1 else ""
+    act = (f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}{count}</div><div class="sub">owner: EELS</div></div>' if verb
+           else action_html(None, ""))
+    return (f'<td class="c eels {state}" id="c-{eip}-{EELS}"><div class="st"><div class="hl">{text}</div><div class="sub">{sub} &middot; {link}</div></div>{act}</td>')
+
+
+OWNER_LABEL = {**config.CLIENT_LABEL, EELS: "EELS"}
+
+
+def owner_filter(shown):
+    owners = [o for o in [*config.CLIENTS, EELS] if any(it["owner"] == o for it in shown)]
+    opts = "".join(f'<option value="{o}">{E(OWNER_LABEL[o])} ({sum(it["owner"] == o for it in shown)})</option>' for o in owners)
+    return (f'<p><label for="own">Owner</label> <select id="own" onchange="own(this.value)"><option value="">all ({len(shown)})</option>{opts}</select></p>')
 
 
 def queue_html(snap, cells):
-    items = queue(cells, tested(snap))
-    out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action</span></h2>']
-    for i, it in enumerate(items, 1):
+    items = queue(cells, tested(snap), snap["newest_release"])
+    order = index.row_order(snap["eips"])
+    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2, "run-missing": 3, "no-tests": 4}
+    shown = sorted(items + [{"kind": "no-tests", "eip": e, "clients": [], "owner": EELS, "action": "write test", "verb": "write test"} for e in untested(snap)],
+                   key=lambda it: (order.index(it["eip"]), kind_rank[it["kind"]]))
+    out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action, highest-ranked EIP first</span></h2>',
+           owner_filter(shown), '<div id="queue">']
+    for i, it in enumerate(shown, 1):
         clients = ", ".join(config.CLIENT_LABEL[c] for c in it["clients"])
         if it["kind"] == "open-delta":
             info = snap["eips"][it["eip"]]
@@ -643,13 +702,20 @@ def queue_html(snap, cells):
             cands = "".join(f'<div class="cand"><code>{E(t)}</code> <em>passes on: {", ".join(f"{config.CLIENT_LABEL[c]} {p}/{n}" for c, (p, n) in v.items())}</em></div>' for t, v in it["candidates"].items())
             body = (f'<span class="k warn">EIP-{it["eip"]} &middot; spec change untested</span> {a(gh(config.EIPS_REPO, "commit", it["commit"]), it["commit"][:8])} {E(delta["subject"])}'
                     f'<div class="muted">affects {E(clients)}</div>{constants_html(delta)}{cands}')
+        elif it["kind"] == "no-tests":
+            body = f'<span class="k none">EIP-{it["eip"]} &middot; no tests yet</span> {E(no_tests_text(snap["eips"][it["eip"]], snap))}'
         elif it["kind"] == "run-fail":
             body = (f'<span class="k bad">EIP-{it["eip"]} &middot; fail</span> {E(clients)}: {len(it["failed"])} failing'
                     + "".join(f'<div><code>{E(short_test(f))}</code></div>' for f in it["failed"][:3]))
+        elif it["kind"] == "run-missing":
+            body = f'<span class="k none">EIP-{it["eip"]} &middot; {E(MISSING_WORD[it["headline"]])}</span> {E(clients)} at {E(release_short(snap["newest_release"]))}'
         else:
             body = f'<span class="k stale">EIP-{it["eip"]} &middot; old tests</span> {E(clients)} last ran {E(release_short(it["release"]))}'
-        cid = f'{it["eip"]}-{it["clients"][0]}'
-        out.append(f'<div class="q" id="q{i}"><a class="act" href="index.html#{cid}">{E(it["action"])}</a>{body}</div>')
+        cid = f'{it["eip"]}-{it["owner"]}'
+        out.append(f'<div class="q" id="q{i}" data-owner="{it["owner"]}"><a class="act" href="index.html?view=action#{cid}" title="open the matrix cell">'
+                   f'{E(it["verb"])} &middot; {E(OWNER_LABEL[it["owner"]])}</a>{body}'
+                   + (f'<div class="muted">next: {E(it["action"])}</div>' if it["action"] != it["verb"] else "") + '</div>')
+    out.append("</div>")
     return "".join(out), items
 
 
