@@ -139,3 +139,30 @@ def test_infra_broken_runs_are_skipped():
 def test_delta_tokens_from_added_lines_only():
     diff = "--- a\n+++ b\n-old `nonces_changed`\n+new `slots_changed` and `APPROVE`\n"
     assert index.delta_tokens(diff) == ["slots_changed", "APPROVE"]
+
+
+def test_meta_stages_reads_headings_and_list_items():
+    text = ("## Specification\n\n### EIPs Scheduled for Inclusion\n\n* [EIP-8141](./eip-8141.md): Frame\n\n"
+            "### Considered for Inclusion\n\n* [EIP-7906](./eip-7906.md): Assertions\n\n#### Core\n\n* [EIP-8250](./eip-8250.md): Nonces\n\n"
+            "### Proposed for Inclusion\n\n* [EIP-7907](./eip-7907.md): Code size\n\n## Rationale\n\n* [EIP-1](./eip-1.md): x\n")
+    assert index.meta_stages(text) == {"8141": ["Scheduled"], "7906": ["Considered"], "8250": ["Considered"], "7907": ["Proposed"]}
+
+
+def test_frontmatter_title_and_status():
+    text = "---\neip: 7906\ntitle: Transaction Assertions via State Diff Opcode\nstatus: Draft\ntype: Standards Track\n---\n\n## Abstract\n"
+    assert index.frontmatter(text) == {"title": "Transaction Assertions via State Diff Opcode", "status": "Draft"}
+
+
+def test_constant_changes_from_table_rows():
+    diff = ("--- a\n+++ b\n-| `PER_AUTH_BASE_COST`     | `15000`  |\n+| `PER_AUTH_BASE_COST`     | `12500` |\n"
+            "-| `KEYED_NONCE_FIRST_USE_GAS` | `20000` |\n+| `NEW_LIMIT` | `16` |\n | `UNCHANGED_VALUE` | `1` |\n")
+    assert index.constant_changes(diff) == [
+        {"name": "KEYED_NONCE_FIRST_USE_GAS", "before": ["20000"], "after": []},
+        {"name": "NEW_LIMIT", "before": [], "after": ["16"]},
+        {"name": "PER_AUTH_BASE_COST", "before": ["15000"], "after": ["12500"]},
+    ]
+
+
+def test_constant_changes_from_python_assignments():
+    diff = "--- a\n+++ b\n-MAX_KEYS = 8\n+MAX_KEYS = 16\n+prose with `SOME_NAME` only\n"
+    assert index.constant_changes(diff) == [{"name": "MAX_KEYS", "before": ["8"], "after": ["16"]}]

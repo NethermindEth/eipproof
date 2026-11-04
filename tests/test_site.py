@@ -208,11 +208,12 @@ def test_feed_marks_unproven_and_editorial_changes():
 
 
 def test_every_page_links_the_feed_and_carries_the_snapshot_age_hook(live_site, fallback_site):
+    hook = f'<div class="strip age" id="stale" role="status" hidden data-taken="{build.load_snapshot(SNAP)["taken_at"]}"></div>'
     for site in (live_site, fallback_site):
         for page in sorted(site.glob("*.html")):
             text = page.read_text()
             assert '<a href="changes.html"' in text, page.name
-            assert '<div class="strip age" id="stale" role="status" hidden data-taken="2026-11-03T21:21:33Z"></div>' in text, page.name
+            assert hook in text, page.name
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node")

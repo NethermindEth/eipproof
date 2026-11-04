@@ -219,8 +219,21 @@
  "fork": "bogota",
  "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
  "newest_release": "tests-bogota-devnet@v2.0.0",
- "snapshot": "2026-11-03T21:21:33Z",
+ "snapshot": "2026-11-03T23:25:54Z",
  "source": "live",
+ "spec": {
+  "constants": {},
+  "meta": {
+   "eip": "8081",
+   "name": "Hegot\u00e1",
+   "url": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-8081.md"
+  },
+  "stage": [
+   "Considered"
+  ],
+  "status": "Stagnant",
+  "title": "Deactivate SELFDESTRUCT"
+ },
  "todo": [
   {
    "action": "run v2.0.0",

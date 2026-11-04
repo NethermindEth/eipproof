@@ -63,6 +63,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
     tag_commit = sources.git(eels_repo, "rev-list", "-n1", tag).strip()
     tag_date = sources.git(eels_repo, "show", "-s", "--format=%cI", tag_commit).strip()
     dirs = eels_test_dirs(eels_repo, tag)
+    stages = index.meta_stages(sources.git(eips_repo, "show", f"{config.EIPS_BRANCH}:EIPS/eip-{config.META_EIP}.md"))
     eips = {}
     for eip in config.ROW_ORDER:
         test_dir = dirs.get(eip)
@@ -74,11 +75,12 @@ def collect_specs(eips_repo, eels_repo, tag, log):
         deltas = []
         for r in index.deltas_after(revs, pin["commit"]):
             diff = sources.git(eips_repo, "show", "--format=", r["commit"], "--", path)
-            d = {**r, "diff": diff, "tokens": index.delta_tokens(diff)}
+            d = {**r, "diff": diff, "tokens": index.delta_tokens(diff), "constants": index.constant_changes(diff)}
             window, cands = candidate_search(eels_repo, tag, test_dir, d)
             d["window"], d["candidates"] = window, cands
             deltas.append(d)
         head = revs[-1]
+        front = index.frontmatter(sources.git(eips_repo, "show", f"{head['commit']}:{path}"))
         eips[eip] = {
             "eip": eip, "path": path, "test_dir": test_dir,
             "head": head["commit"], "head_blob": head["blob"], "head_date": head["date"],
@@ -86,6 +88,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             "pin": {**pin, "release": tag, "spec_py": f"{config.GITHUB}/{config.EELS_REPO}/blob/{tag.replace('@', '%40')}/{test_dir}/spec.py"},
             "deltas": deltas,
             "pending": pending_prs(eip),
+            "title": front.get("title"), "status": front.get("status"), "stage": stages.get(eip, []),
         }
         log(f"spec  EIP-{eip}: pin {pin['blob'][:8]} -> {pin['commit'][:8] if pin['commit'] else '?'}  head {head['commit'][:8]}  deltas {len(deltas)}  pending {len(eips[eip]['pending'])}")
     return {"tag": tag, "tag_commit": tag_commit, "tag_date": tag_date, "eips": eips}
@@ -145,6 +148,7 @@ def snapshot(out_dir, log=print):
         "newest_release": tag, "release_commit": specs["tag_commit"], "release_date": specs["tag_date"],
         "release_url": f"{config.GITHUB}/{config.EELS_REPO}/releases/tag/{tag.replace('@', '%40')}",
         "listing_url": f"{config.HIVE}/listing.jsonl", "listing_rows": len(listing),
+        "meta": {"eip": config.META_EIP, "name": config.META_NAME, "url": f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/EIPS/eip-{config.META_EIP}.md"},
         "eips": specs["eips"], "runs": runs,
     }
 
