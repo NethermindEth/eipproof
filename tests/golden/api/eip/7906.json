@@ -608,6 +608,7 @@
    ],
    "eip": "7906",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 1,
    "release": "tests-bogota-devnet@v1.1.1"
   }

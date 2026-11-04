@@ -242,6 +242,7 @@
    ],
    "eip": "8151",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 3,
    "release": "tests-bogota-devnet@v1.1.1"
   }

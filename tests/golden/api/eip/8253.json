@@ -197,6 +197,7 @@
     "tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts/test_block_access_lists_invalid.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"
    ],
    "kind": "run-fail",
+   "owner": "reth",
    "rank": 7
   },
   {
@@ -206,6 +207,7 @@
    ],
    "eip": "8253",
    "kind": "stale-release",
+   "owner": "besu",
    "rank": 7,
    "release": "tests-bogota-devnet@v1.1.1"
   }

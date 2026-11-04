@@ -204,3 +204,20 @@ def test_rev_tests_credits_a_release_on_a_side_branch():
     assert (old["state"], old["release"], old["ran"]) == ("pinned", "tests-bogota-devnet@v1.1.1", ["besu"])
     side = index.rev_tests({"commit": "s", "blob": "side"}, {**info, "release_pins": {"tests-bogota-devnet@v1.1.0": "side"}}, runs)
     assert (side["state"], side["move"], side["release"]) == ("pinned", None, "tests-bogota-devnet@v1.1.0")
+
+
+def test_client_cells_get_fix_or_run_and_spec_work_goes_to_eels():
+    s = {"eips": {"7906": eip_info([delta()])}, "runs": {"nethermind": run(passed=183, failed=["t"]), "reth": run(), "besu": run(release="tests-bogota-devnet@v1.1.1")},
+         "newest_release": NEWEST}
+    cells = {c: chain.chain("7906", c, s, []) for c in ("nethermind", "reth", "besu", "ethrex")}
+    assert {c: chain.cell_action(v, NEWEST) for c, v in cells.items()} == {"nethermind": "fix client", "reth": None, "besu": "run v2.0.0", "ethrex": "run v2.0.0"}
+    assert chain.eels_action(list(cells.values())) == ("write test", 1)
+    items = chain.queue(list(cells.values()), ["7906"])
+    assert {(i["kind"], i["owner"]) for i in items} == {("run-fail", "nethermind"), ("open-delta", "eels"), ("stale-release", "besu")}
+
+
+def test_surviving_mutant_is_named_in_the_eels_action():
+    proof = [{"eip": "7906", "commit": "9099f412", "kind": "normative", "killed": []}]
+    cell = chain.chain("7906", "nethermind", snap(run(), eip_info([delta()])), proof)
+    assert chain.eels_action([cell]) == ("mutant uncovered", 1)
+    assert chain.eels_action([chain.chain("7906", "nethermind", snap(run(), eip_info()), [])]) == (None, 0)

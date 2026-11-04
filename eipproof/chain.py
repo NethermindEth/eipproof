@@ -1,6 +1,8 @@
 import re
 
 SEVERITY = ["fail", "no-run", "stale-release", "no-tests", "open", "pass"]
+EELS = "eels"
+OPEN_DELTA = ("open", "attested-not-run", "mutant-survived")
 
 _CASE = re.compile(r"^(?P<file>[^:]+)::(?P<func>[A-Za-z0-9_]+)(?:\[(?P<params>.*)\])?$")
 
@@ -160,6 +162,23 @@ def release_short(release):
     return release.split("@", 1)[-1] if release else "?"
 
 
+def cell_action(cell, newest_release):
+    h = cell["headline"]
+    if h == "fail":
+        return "fix client"
+    if h in ("stale-release", "no-run"):
+        return f"run {release_short(newest_release)}"
+    return None
+
+
+def eels_action(cells):
+    states = {d["commit"]: d["state"] for c in cells for d in c["links"]["test"]["deltas"] if d["state"] in OPEN_DELTA}
+    if not states:
+        return None, 0
+    verb = "mutant uncovered" if "mutant-survived" in states.values() else "write test"
+    return verb, len(states)
+
+
 def queue(cells, row_order):
     items = []
     seen_deltas = {}
@@ -167,17 +186,17 @@ def queue(cells, row_order):
         rank = row_order.index(cell["eip"]) if cell["eip"] in row_order else len(row_order)
         h = cell["headline"]
         if h == "fail":
-            items.append({"kind": "run-fail", "eip": cell["eip"], "clients": [cell["client"]], "rank": rank,
+            items.append({"kind": "run-fail", "eip": cell["eip"], "clients": [cell["client"]], "owner": cell["client"], "rank": rank,
                           "failed": cell["links"]["run"]["failed"], "action": "fix client or report test"})
         elif h == "stale-release":
-            items.append({"kind": "stale-release", "eip": cell["eip"], "clients": [cell["client"]], "rank": rank,
+            items.append({"kind": "stale-release", "eip": cell["eip"], "clients": [cell["client"]], "owner": cell["client"], "rank": rank,
                           "release": cell["links"]["run"]["release"], "action": f"run {release_short(cell['links']['run']['newest_release'])}"})
         for d in cell["links"]["test"]["deltas"]:
-            if d["state"] in ("open", "attested-not-run", "mutant-survived"):
+            if d["state"] in OPEN_DELTA:
                 key = (cell["eip"], d["commit"])
                 item = seen_deltas.get(key)
                 if item is None:
-                    item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "rank": rank,
+                    item = {"kind": "open-delta", "eip": cell["eip"], "commit": d["commit"], "clients": [], "owner": EELS, "rank": rank,
                             "candidates": {}, "action": "write a test that kills the mutant" if d["state"] == "mutant-survived" else "run eipproof prove"}
                     seen_deltas[key] = item
                     items.append(item)

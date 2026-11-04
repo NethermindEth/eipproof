@@ -317,3 +317,31 @@ def test_eip_page_links_each_spec_change_to_its_eels_pr_release_and_runs(tmp_pat
     assert (row["tests"]["eels_pr"], row["tests"]["release"], row["tests"]["state"]) == (3895, pin["release"], "pinned")
     assert "go-ethereum" in row["tests"]["ran"]
     assert "EELS #3895" in (tmp_path / "changes.html").read_text()
+
+
+def test_matrix_toggle_renders_one_action_per_cell_with_owner(wide_site):
+    root, cells = wide_site
+    page = (root / "index.html").read_text()
+    assert 'id="v-st" aria-pressed="true"' in page and 'id="v-ac" aria-pressed="false"' in page
+    assert page.count('data-mark="act"') == len(cells) + 2 + 10
+    besu = re.search(r'<td class="c [a-z]+" id="c-8141-besu".*?</td>', page).group(0)
+    assert '<div class="hl av">run v2.0.0</div><div class="sub">owner: Besu</div>' in besu
+    reth = re.search(r'<td class="c [a-z]+" id="c-8253-reth".*?</td>', page).group(0)
+    assert '<div class="hl av">fix client</div><div class="sub">owner: Reth</div>' in reth
+    untested = re.search(r'<td class="c eels none" id="c-7805-eels">.*?</td>', page).group(0)
+    assert "no tests" in untested and '<div class="hl av">write test</div><div class="sub">owner: EELS</div>' in untested
+    assert page.count('<td class="c eels') == 10 and page.count("<table") == 1
+
+
+def test_queue_filters_by_owner_and_links_each_row_to_its_matrix_cell(wide_site):
+    root, _ = wide_site
+    page = (root / "queue.html").read_text()
+    owners = re.findall(r'<div class="q" id="q\d+" data-owner="([a-z-]+)"><a class="act" href="index.html\?view=action#(\d+)-([a-z-]+)"', page)
+    assert owners and all(o == cell_owner for o, _, cell_owner in owners)
+    index_page = (root / "index.html").read_text()
+    assert all(f'id="c-{eip}-{o}"' in index_page for o, eip, _ in owners)
+    assert ("eels", "7805", "eels") in owners and ("reth", "8253", "reth") in owners
+    assert '<option value="besu">Besu (8)</option>' in page and '<option value="eels">EELS (2)</option>' in page
+    rows = [int(e) for _, e, _ in owners]
+    order = ["8141", "7805", "7906", "8250", "8151", "8272", "8298", "4758", "8253", "8077"]
+    assert [order.index(str(e)) for e in rows] == sorted(order.index(str(e)) for e in rows)
