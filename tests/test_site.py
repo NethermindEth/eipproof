@@ -369,3 +369,30 @@ def test_both_forks_render_with_a_fork_selector(live_site, tmp_path):
     assert '<a href="glamsterdam/index.html" class="">Glamsterdam</a>' in (tmp_path / "index.html").read_text()
     assert '<a href="../index.html" class="">Bogotá</a>' in (tmp_path / "glamsterdam" / "index.html").read_text()
     assert sitecheck.check_dir(str(tmp_path)) == []
+
+
+def test_proofs_apply_only_to_their_fork(tmp_path):
+    (tmp_path / "a.yaml").write_text("eip: 7928\ncommit: aaaaaaaa\nkind: editorial\nfork: glamsterdam\n")
+    (tmp_path / "b.yaml").write_text("eip: 7906\ncommit: bbbbbbbb\nkind: editorial\n")
+    try:
+        config.use("glamsterdam")
+        assert [p["eip"] for p in cli.load_proofs(str(tmp_path))] == ["7928"]
+    finally:
+        config.use(config.DEFAULT_FORK)
+    assert [p["eip"] for p in cli.load_proofs(str(tmp_path))] == ["7906"]
+
+
+def test_failed_live_fork_falls_back_alone(monkeypatch):
+    calls = []
+
+    def fake(args, offline, live_failed):
+        calls.append((config.FORK, offline, live_failed))
+        if config.FORK == "glamsterdam" and not offline:
+            raise RuntimeError("hive down")
+
+    monkeypatch.setattr(cli, "build_fork", fake)
+    cli.main(["build", "--fallback"])
+    assert calls == [("bogota", False, False), ("glamsterdam", False, False), ("glamsterdam", True, True)]
+    calls.clear()
+    with pytest.raises(RuntimeError):
+        cli.main(["build"])

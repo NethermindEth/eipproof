@@ -18,7 +18,8 @@ def load_proofs(path=os.path.join(ROOT, "proofs")):
     for f in sorted(glob.glob(os.path.join(path, "*.yaml"))):
         doc = yaml.safe_load(open(f))
         doc["eip"], doc["file"] = str(doc["eip"]), os.path.basename(f)
-        out.append(doc)
+        if doc.get("fork", config.DEFAULT_FORK) == config.FORK:
+            out.append(doc)
     return out
 
 
@@ -48,22 +49,28 @@ def write_site(snap, out_dir):
 def cmd_build(args):
     for fork in args.fork or list(config.FORKS):
         config.use(fork)
-        build_fork(args)
+        try:
+            build_fork(args, args.offline, args.live_failed)
+        except Exception as e:
+            if args.offline or not args.fallback:
+                raise
+            print(f"::error title=live build {fork}::{type(e).__name__}: {e}; falling back to snapshot")
+            build_fork(args, True, True)
     config.use(config.DEFAULT_FORK)
 
 
-def build_fork(args):
-    if args.offline:
+def build_fork(args, offline, live_failed):
+    if offline:
         path = latest_snapshot()
     else:
         path = build.write_snapshot(build.snapshot(snap_dir()), snap_dir())
     print(f"fork {config.FORK}  snapshot {path}")
     snap = build.load_snapshot(path)
-    snap["source"] = "snapshot" if args.offline else "live"
+    snap["source"] = "snapshot" if offline else "live"
     out_dir = os.path.join(ROOT, "site", config.SUBDIR)
     cells, items = write_site(snap, out_dir)
     prev = "/".join(p for p in (args.prev_site, config.SUBDIR, "api/status.json") if p) if args.prev_site else None
-    failures = health.live_failures(health.fetch_status(prev), args.live_failed)
+    failures = health.live_failures(health.fetch_status(prev), live_failed)
     doc = health.status_doc(snap, len(cells), failures, health.head_commit(ROOT))
     with open(os.path.join(out_dir, "api", "status.json"), "w") as f:
         json.dump(doc, f, indent=1, sort_keys=True)
@@ -89,11 +96,12 @@ def cmd_why(args):
 
 
 def cmd_prove(args):
+    config.use(args.fork)
     out_dir = os.path.join(ROOT, "proofs")
     os.makedirs(out_dir, exist_ok=True)
     stem = f"{args.eip}-{args.commit[:8]}"
     if args.editorial:
-        doc = prove.editorial_doc(args.eip, args.commit[:8], args.editorial)
+        doc = {**prove.editorial_doc(args.eip, args.commit[:8], args.editorial), "fork": config.FORK}
     else:
         if not (args.eels and args.tests and args.mutant):
             sys.exit("prove needs --eels, --tests and --mutant, or --editorial REASON")
@@ -122,6 +130,7 @@ def main(argv=None):
     b.add_argument("--fork", action="append", choices=list(config.FORKS), help="build only this fork; repeat for more")
     b.add_argument("--prev-site", metavar="URL", help="base URL of the deployed site, to count live failures in a row")
     b.add_argument("--live-failed", action="store_true", help="this build is a fallback after a failed live build")
+    b.add_argument("--fallback", action="store_true", help="if a fork's live build fails, build that fork from its snapshot")
     b.set_defaults(fn=cmd_build)
     w = sub.add_parser("why")
     w.add_argument("eip")
@@ -135,6 +144,7 @@ def main(argv=None):
     t.add_argument("--tests", help="test path inside execution-specs")
     t.add_argument("--mutant", help="patch to execution-specs that undoes the change")
     t.add_argument("-n", "--workers", type=int, default=1)
+    t.add_argument("--fork", choices=list(config.FORKS), default=config.DEFAULT_FORK)
     t.add_argument("--editorial", metavar="REASON", help="the change has no behaviour; record why instead of running")
     t.set_defaults(fn=cmd_prove)
     args = p.parse_args(argv)

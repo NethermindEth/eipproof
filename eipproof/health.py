@@ -30,6 +30,6 @@ def live_failures(prev, live_failed):
 
 
 def status_doc(snap, cells, failures, commit):
-    return {"source": snap.get("source", "live"), "snapshot": snap["taken_at"], "newest_release": snap["newest_release"],
+    return {"fork": config.FORK, "source": snap.get("source", "live"), "snapshot": snap["taken_at"], "newest_release": snap["newest_release"],
             "cells": cells, "live_failures": failures, "commit": commit,
             "built_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
