@@ -384,9 +384,9 @@ def tests_info(rev, info, snap):
         return None
     t = index.rev_tests(rev, info, snap.get("runs") or {})
     m = t["move"]
-    out = {"state": t["state"], "ran": t["ran"]}
+    out = {"state": t["state"], "ran": t["ran"], "release": t["release"], "eels_commit": None, "eels_pr": None, "eels_url": None, "files": []}
     if m:
-        out.update({"eels_commit": m["commit"], "eels_pr": m["pr"], "eels_date": m["date"], "release": m["release"], "files": m["files"],
+        out.update({"eels_commit": m["commit"], "eels_pr": m["pr"], "eels_date": m["date"], "files": m["files"],
                     "eels_url": gh(config.EELS_REPO, "pull", m["pr"]) if m["pr"] else gh(config.EELS_REPO, "commit", m["commit"])})
     return out
 
@@ -406,11 +406,14 @@ def tests_line(rev, info, snap):
         return (f'<div class="tl"><b>tests:</b> not updated yet. EELS {E(release_short(info["pin"]["release"]))} '
                 f'still tests the text from {E(since)}.</div>')
     if t["state"] == "never":
-        return '<div class="tl"><b>tests:</b> EELS never pinned this text.</div>'
-    who = f'EELS PR #{t["eels_pr"]}' if t["eels_pr"] else f'EELS commit {t["eels_commit"][:8]}'
-    files = files_text(t["files"])
-    parts = [f'<b>tests:</b> {a(t["eels_url"], who)} pinned this text on {E(t["eels_date"][:10])}'
-             + (f', test files {E(files)}' if files else "")]
+        return '<div class="tl"><b>tests:</b> no EELS release tests this text.</div>'
+    if t["eels_url"]:
+        who = f'EELS PR #{t["eels_pr"]}' if t["eels_pr"] else f'EELS commit {t["eels_commit"][:8]}'
+        files = files_text(t["files"])
+        parts = [f'<b>tests:</b> {a(t["eels_url"], who)} pinned this text on {E(t["eels_date"][:10])}'
+                 + (f', test files {E(files)}' if files else "")]
+    else:
+        parts = ["<b>tests:</b> an EELS release pins this text"]
     if t["state"] == "unreleased":
         parts.append("not in a release yet")
     elif t["state"] == "superseded":
@@ -534,8 +537,10 @@ def feed_tests(t):
         return ""
     if t["state"] == "waiting":
         return ' <span class="muted">&middot; tests not updated yet</span>'
-    who = f'EELS #{t["eels_pr"]}' if t["eels_pr"] else f'EELS {t["eels_commit"][:8]}'
     rel = f' in {E(release_short(t["release"]))}' if t["release"] else " replaced before release" if t["state"] == "superseded" else " unreleased"
+    if not t["eels_url"]:
+        return f' <span class="muted">&middot; tests: EELS{rel}</span>'
+    who = f'EELS #{t["eels_pr"]}' if t["eels_pr"] else f'EELS {t["eels_commit"][:8]}'
     return f' <span class="muted">&middot; tests: {a(t["eels_url"], who)}{rel}</span>'
 
 

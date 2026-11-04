@@ -199,13 +199,19 @@ def pin_at(history, release):
 
 def rev_tests(rev, info, runs):
     history = info.get("pin_history") or []
+    by_release = info.get("release_pins")
+    shipped = sorted((t for t, b in (by_release or {}).items() if b == rev["blob"]), key=release_key)
     move = next((h for h in pin_moves(history) if h["blob"] == rev["blob"]), None)
-    if not move:
+    if not move and not shipped:
         later = info.get("pin") and any(d["commit"] == rev["commit"] for d in info["deltas"])
-        return {"state": "waiting" if later else "never", "move": None, "ran": []}
-    ran = [c for c in config.CLIENTS if (runs.get(c) or {}).get("release") and pin_at(history, runs[c]["release"]) == rev["blob"]]
-    state = "pinned" if move.get("release") else "superseded" if move.get("superseded") else "unreleased"
-    return {"state": state, "move": move, "ran": ran}
+        return {"state": "waiting" if later else "never", "move": None, "ran": [], "release": None}
+
+    def pinned(release):
+        return by_release.get(release) if by_release is not None else pin_at(history, release)
+    ran = [c for c in config.CLIENTS if (runs.get(c) or {}).get("release") and pinned(runs[c]["release"]) == rev["blob"]]
+    release = shipped[0] if shipped else (move or {}).get("release")
+    state = "pinned" if release else "superseded" if (move or {}).get("superseded") else "unreleased"
+    return {"state": state, "move": move, "ran": ran, "release": release}
 
 
 def listed_eips(stages):

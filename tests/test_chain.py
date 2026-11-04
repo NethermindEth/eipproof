@@ -194,3 +194,13 @@ def test_rev_tests_names_the_pin_move_release_and_the_clients_that_ran_it():
     assert index.rev_tests({"commit": "o", "blob": "old"}, info, runs)["state"] == "superseded"
     assert index.rev_tests({"commit": "d", "blob": "head"}, info, runs)["state"] == "waiting"
     assert index.rev_tests({"commit": "x", "blob": "gone"}, info, runs)["state"] == "never"
+
+
+def test_rev_tests_credits_a_release_on_a_side_branch():
+    info = {"pin": {"commit": "p"}, "deltas": [], "release_pins": {"tests-bogota-devnet@v1.1.1": "old", NEWEST: "new"},
+            "pin_history": history(("1", 3730, "old", None), ("2", 3895, "new", NEWEST))}
+    runs = {"go-ethereum": {"release": NEWEST}, "besu": {"release": "tests-bogota-devnet@v1.1.1"}}
+    old = index.rev_tests({"commit": "o", "blob": "old"}, info, runs)
+    assert (old["state"], old["release"], old["ran"]) == ("pinned", "tests-bogota-devnet@v1.1.1", ["besu"])
+    side = index.rev_tests({"commit": "s", "blob": "side"}, {**info, "release_pins": {"tests-bogota-devnet@v1.1.0": "side"}}, runs)
+    assert (side["state"], side["move"], side["release"]) == ("pinned", None, "tests-bogota-devnet@v1.1.0")

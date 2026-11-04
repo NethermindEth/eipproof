@@ -54,20 +54,37 @@ def shipped_pin(eels_repo, tag, spec, eip):
         return None
 
 
-def pin_history(eels_repo, tag, test_dir, eip):
+def release_pins(eels_repo, eip):
+    out = {}
+    for t in sorted(sources.git(eels_repo, "tag", "--list", f"{config.RELEASE_PREFIX}*").split(), key=index.release_key):
+        try:
+            test_dir = eels_test_dirs(eels_repo, t).get(eip)
+        except Exception:
+            continue
+        blob = shipped_pin(eels_repo, t, f"{test_dir}/spec.py", eip) if test_dir else None
+        if blob:
+            out[t] = blob
+    return out
+
+
+def pin_history(eels_repo, tag, test_dir, eip, pins_by_release):
     spec = f"{test_dir}/spec.py"
-    log = sources.git(eels_repo, "log", "--format=%x00%H%x09%cI%x09%s", tag, "--", spec)
+    log = sources.git(eels_repo, "log", "--follow", "--name-only", "--format=%x00%H%x09%cI%x09%s", tag, "--", spec)
     out = []
     for chunk in log.split("\x00")[1:]:
-        commit, date, subject = chunk.strip().split("\t", 2)
-        pin = index.parse_pins(sources.git(eels_repo, "show", f"{commit}:{spec}")).get(eip)
+        lines = [l for l in chunk.strip().splitlines() if l]
+        commit, date, subject = lines[0].split("\t", 2)
+        path = lines[-1] if len(lines) > 1 else spec
+        try:
+            pin = index.parse_pins(sources.git(eels_repo, "show", f"{commit}:{path}")).get(eip)
+        except Exception:
+            continue
         if not pin:
             continue
-        files = [f.rsplit("/", 1)[-1] for f in sources.git(eels_repo, "show", "--name-only", "--format=", commit, "--", test_dir).split() if f != spec]
-        released = sorted(sources.git(eels_repo, "tag", "--contains", commit, "--list", f"{config.RELEASE_PREFIX}*").split(), key=index.release_key)
-        shipped = next((t for t in released if shipped_pin(eels_repo, t, spec, eip) == pin["blob"]), None)
+        files = [f.rsplit("/", 1)[-1] for f in sources.git(eels_repo, "show", "--name-only", "--format=", commit, "--", path.rsplit("/", 1)[0]).split() if f != path]
+        shipped = next((t for t, b in pins_by_release.items() if b == pin["blob"]), None)
         out.append({"commit": commit, "date": date, "subject": subject, "pr": index.pr_number(subject), "blob": pin["blob"], "files": files,
-                    "release": shipped, "superseded": bool(released) and not shipped})
+                    "release": shipped, "superseded": not shipped})
     return list(reversed(out))
 
 
@@ -125,7 +142,8 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             "revisions": [{k: r[k] for k in ("commit", "date", "subject", "blob")} for r in revs[-12:]],
             "pin": {**pin, "release": tag, "spec_py": f"{config.GITHUB}/{config.EELS_REPO}/blob/{tag.replace('@', '%40')}/{test_dir}/spec.py"},
             "deltas": deltas,
-            "pin_history": pin_history(eels_repo, tag, test_dir, eip),
+            "release_pins": (rp := release_pins(eels_repo, eip)),
+            "pin_history": pin_history(eels_repo, tag, test_dir, eip, rp),
             "pending": pending_prs(eip),
             "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
         }
