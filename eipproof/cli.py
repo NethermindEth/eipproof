@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-from . import build, config, health, prove, render
+from . import build, config, health, history, prove, render
 from .chain import headline_text
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,8 +34,13 @@ def latest_snapshot():
     return snaps[-1]
 
 
-def write_site(snap, out_dir):
-    cells, items = render.site(snap, load_proofs(), out_dir)
+def write_site(snap, out_dir, snap_path=None, data_dir=None):
+    proofs = load_proofs()
+    current, added = history.prepare(snap, snap_path, data_dir)
+    cells, items = render.site(snap, proofs, out_dir)
+    entries = history.write(snap, current, proofs, out_dir, data_dir)
+    if data_dir:
+        print(f"history {len(entries)} snapshot(s), {'archived ' + current if added else 'no new data'}")
     with open(os.path.join(out_dir, "receipts.jsonl"), "w") as f:
         for c in cells:
             f.write(json.dumps({"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c),
@@ -47,16 +52,18 @@ def write_site(snap, out_dir):
 
 
 def cmd_build(args):
-    for fork in args.fork or list(config.FORKS):
-        config.use(fork)
-        try:
-            build_fork(args, args.offline, args.live_failed)
-        except Exception as e:
-            if args.offline or not args.fallback:
-                raise
-            print(f"::error title=live build {fork}::{type(e).__name__}: {e}; falling back to snapshot")
-            build_fork(args, True, True)
-    config.use(config.DEFAULT_FORK)
+    try:
+        for fork in args.fork or list(config.FORKS):
+            config.use(fork)
+            try:
+                build_fork(args, args.offline, args.live_failed)
+            except Exception as e:
+                if args.offline or not args.fallback:
+                    raise
+                print(f"::error title=live build {fork}::{type(e).__name__}: {e}; falling back to snapshot")
+                build_fork(args, True, True)
+    finally:
+        config.use(config.DEFAULT_FORK)
 
 
 def build_fork(args, offline, live_failed):
@@ -68,7 +75,7 @@ def build_fork(args, offline, live_failed):
     snap = build.load_snapshot(path)
     snap["source"] = "snapshot" if offline else "live"
     out_dir = os.path.join(ROOT, "site", config.SUBDIR)
-    cells, items = write_site(snap, out_dir)
+    cells, items = write_site(snap, out_dir, path, args.data)
     prev = "/".join(p for p in (args.prev_site, config.SUBDIR, "api/status.json") if p) if args.prev_site else None
     failures = health.live_failures(health.fetch_status(prev), live_failed)
     doc = health.status_doc(snap, len(cells), failures, health.head_commit(ROOT))
@@ -131,6 +138,7 @@ def main(argv=None):
     b.add_argument("--prev-site", metavar="URL", help="base URL of the deployed site, to count live failures in a row")
     b.add_argument("--live-failed", action="store_true", help="this build is a fallback after a failed live build")
     b.add_argument("--fallback", action="store_true", help="if a fork's live build fails, build that fork from its snapshot")
+    b.add_argument("--data", metavar="DIR", help="checkout of the data branch: archive this snapshot there and render permalinks")
     b.set_defaults(fn=cmd_build)
     w = sub.add_parser("why")
     w.add_argument("eip")

@@ -1,0 +1,14 @@
+{
+ "asof": "s/20261103T232554Z/index.html",
+ "fork": "bogota",
+ "snapshot": "2026-11-03T23:25:54Z",
+ "snapshots": [
+  {
+   "href": "s/20261103T232554Z/index.html",
+   "json": null,
+   "newest_release": "tests-bogota-devnet@v2.0.0",
+   "runs": 5,
+   "taken_at": "2026-11-03T23:25:54Z"
+  }
+ ]
+}

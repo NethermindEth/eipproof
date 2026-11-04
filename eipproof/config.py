@@ -20,6 +20,8 @@ CLIENT_REPO = {
 GITHUB = "https://github.com"
 SELF_REPO = "NethermindEth/eipproof"
 SITE_ROOT = "https://nethermindeth.github.io/eipproof"
+DATA_BRANCH = "data"
+PERMALINKS = 48
 
 FORKS = {
     "bogota": {

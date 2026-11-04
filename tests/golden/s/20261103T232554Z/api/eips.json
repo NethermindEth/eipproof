@@ -1,0 +1,117 @@
+{
+ "eips": [
+  {
+   "behind": 1,
+   "category": null,
+   "checked": null,
+   "eip": "8141",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8141.html",
+   "stage": [
+    "Scheduled"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8141_frame_transactions",
+   "title": "Frame Transaction"
+  },
+  {
+   "behind": 1,
+   "category": null,
+   "checked": null,
+   "eip": "7906",
+   "page": "https://nethermindeth.github.io/eipproof/eip-7906.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip7906_transaction_assertions",
+   "title": "Transaction Assertions via State Diff Opcode"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "8250",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8250.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8250_keyed_nonces",
+   "title": "Keyed Nonces for Frame Transactions"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "8151",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8151.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8151_account_code_restricted_ecrecover",
+   "title": "Account Code Restricted ecRecover"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "8272",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8272.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8272_recent_roots",
+   "title": "Recent Roots for Frame Transactions"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "8298",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8298.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8298_setcodefrom",
+   "title": "SETCODEFROM Code Reuse Instruction"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "4758",
+   "page": "https://nethermindeth.github.io/eipproof/eip-4758.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Stagnant",
+   "test_dir": "tests/bogota/eip4758_sendall",
+   "title": "Deactivate SELFDESTRUCT"
+  },
+  {
+   "behind": 0,
+   "category": null,
+   "checked": null,
+   "eip": "8253",
+   "page": "https://nethermindeth.github.io/eipproof/eip-8253.html",
+   "stage": [
+    "Considered"
+   ],
+   "status": "Draft",
+   "test_dir": "tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts",
+   "title": "Bump nonce of zero-nonce storage accounts"
+  }
+ ],
+ "fork": "bogota",
+ "meta": {
+  "eip": "8081",
+  "name": "Hegot\u00e1",
+  "url": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-8081.md"
+ },
+ "newest_release": "tests-bogota-devnet@v2.0.0",
+ "snapshot": "2026-11-03T23:25:54Z",
+ "source": "archive"
+}

@@ -7,6 +7,7 @@ from . import config
 
 _PIN = re.compile(r"ref_spec_(\d+)\s*=\s*ReferenceSpec\(\s*(?:git_path=)?\"(EIPS/eip-\d+\.md)\",\s*(?:version=)?\"([0-9a-f]{40})\"", re.S)
 _RELEASE = re.compile(r"fixtures release: (\S+)")
+_RELEASE_URL = re.compile(r"releases/download/([^/\s]+@[^/\s]+)/")
 _TICK = re.compile(r"`([^`]+)`")
 _CONST = re.compile(r"\b([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\s*[:=]=?\s*([^\s|,;)\]}`]+)")
 _ROW = re.compile(r"^\s*\|\s*`?([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`?\s*\|\s*`?([^|`]*?)`?\s*\|")
@@ -122,7 +123,7 @@ def summarize_cases(test_cases):
 
 
 def release_from_simlog(text):
-    m = _RELEASE.search(text)
+    m = _RELEASE.search(text) or _RELEASE_URL.search(text)
     return m.group(1) if m else None
 
 
@@ -140,14 +141,18 @@ def commit_of(version):
     return m.group(1) if m else None
 
 
-def pick_runs(listing):
-    best = {}
+def tracked_runs(listing):
     for row in listing:
         if row["name"] != config.SIMULATOR or not row["clients"]:
             continue
         client = row["clients"][0].rsplit("_", 1)[0]
-        if client not in config.CLIENTS or row["ntests"] == 0:
-            continue
+        if client in config.CLIENTS and row["ntests"]:
+            yield client, row
+
+
+def pick_runs(listing):
+    best = {}
+    for client, row in tracked_runs(listing):
         if row["fails"] / row["ntests"] > config.INFRA_FAIL_RATIO:
             continue
         if client not in best or row["start"] > best[client]["start"]:
