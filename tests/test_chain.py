@@ -173,3 +173,34 @@ def test_rows_are_sfi_cfi_with_sfi_first_then_tested():
     assert sorted(index.listed_eips(stages), key=int) == ["3298", "7805", "7906", "8141"]
     eips = {e: {"stage": stages[e], "test_dir": None if e in ("7805", "3298") else "d"} for e in ("7805", "8141", "7906", "3298")}
     assert index.row_order(eips) == ["8141", "7805", "7906", "3298"]
+
+
+def history(*moves):
+    return [{"commit": c * 40, "date": "2026-10-27T18:11:18Z", "subject": f"s (#{pr})", "pr": pr, "blob": blob, "files": ["test_x.py"],
+             "release": rel, "superseded": rel is None} for c, pr, blob, rel in moves]
+
+
+def test_pr_number_comes_from_squash_subject():
+    assert index.pr_number("feat(tests): apply EIP-7906 changes (#3895)") == 3895
+    assert index.pr_number("chore: bump") is None
+
+
+def test_rev_tests_names_the_pin_move_release_and_the_clients_that_ran_it():
+    info = {"pin": {"commit": "p"}, "deltas": [{"commit": "d"}],
+            "pin_history": history(("1", 3730, "old", None), ("2", 3895, "new", NEWEST))}
+    runs = {"go-ethereum": {"release": NEWEST}, "besu": {"release": "tests-bogota-devnet@v1.1.1"}, "reth": None}
+    pinned = index.rev_tests({"commit": "p", "blob": "new"}, info, runs)
+    assert (pinned["state"], pinned["move"]["pr"], pinned["ran"]) == ("pinned", 3895, ["go-ethereum"])
+    assert index.rev_tests({"commit": "o", "blob": "old"}, info, runs)["state"] == "superseded"
+    assert index.rev_tests({"commit": "d", "blob": "head"}, info, runs)["state"] == "waiting"
+    assert index.rev_tests({"commit": "x", "blob": "gone"}, info, runs)["state"] == "never"
+
+
+def test_rev_tests_credits_a_release_on_a_side_branch():
+    info = {"pin": {"commit": "p"}, "deltas": [], "release_pins": {"tests-bogota-devnet@v1.1.1": "old", NEWEST: "new"},
+            "pin_history": history(("1", 3730, "old", None), ("2", 3895, "new", NEWEST))}
+    runs = {"go-ethereum": {"release": NEWEST}, "besu": {"release": "tests-bogota-devnet@v1.1.1"}}
+    old = index.rev_tests({"commit": "o", "blob": "old"}, info, runs)
+    assert (old["state"], old["release"], old["ran"]) == ("pinned", "tests-bogota-devnet@v1.1.1", ["besu"])
+    side = index.rev_tests({"commit": "s", "blob": "side"}, {**info, "release_pins": {"tests-bogota-devnet@v1.1.0": "side"}}, runs)
+    assert (side["state"], side["move"], side["release"]) == ("pinned", None, "tests-bogota-devnet@v1.1.0")

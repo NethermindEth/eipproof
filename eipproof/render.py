@@ -238,7 +238,7 @@ td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outlin
 td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px solid var(--warn);outline-offset:-3px}td.c.bad{outline:1px solid var(--bad);outline-offset:-3px}td.c.stale{outline:1px solid var(--stale);outline-offset:-3px}td.c.none{outline:1px solid var(--none);outline-offset:-3px}
 .sub{color:var(--mut);font-size:12px;margin-top:2px}.dots{float:right;margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px;background:var(--none)}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
-.stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
+.stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.tl{font-size:13px;color:var(--mut);margin:2px 0 0 76px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
 .legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend i{margin:0 4px 0 12px}
 #d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
@@ -379,6 +379,54 @@ def rev_state(eip, info, rev, attestations):
     return "n/a", "older"
 
 
+def tests_info(rev, info, snap):
+    if info.get("pin_history") is None:
+        return None
+    t = index.rev_tests(rev, info, snap.get("runs") or {})
+    m = t["move"]
+    out = {"state": t["state"], "ran": t["ran"], "release": t["release"], "eels_commit": None, "eels_pr": None, "eels_url": None, "files": []}
+    if m:
+        out.update({"eels_commit": m["commit"], "eels_pr": m["pr"], "eels_date": m["date"], "files": m["files"],
+                    "eels_url": gh(config.EELS_REPO, "pull", m["pr"]) if m["pr"] else gh(config.EELS_REPO, "commit", m["commit"])})
+    return out
+
+
+def files_text(files):
+    shown = [f for f in files if f.startswith("test_")][:3]
+    rest = len([f for f in files if f.startswith("test_")]) - len(shown)
+    return ", ".join(shown) + (f" and {rest} more" if rest > 0 else "")
+
+
+def tests_line(rev, info, snap):
+    t = tests_info(rev, info, snap)
+    if t is None:
+        return ""
+    if t["state"] == "waiting":
+        since = next((r["date"][:10] for r in info["revisions"] if r["commit"] == info["pin"]["commit"]), "?")
+        return (f'<div class="tl"><b>tests:</b> not updated yet. EELS {E(release_short(info["pin"]["release"]))} '
+                f'still tests the text from {E(since)}.</div>')
+    if t["state"] == "never":
+        return '<div class="tl"><b>tests:</b> no EELS release tests this text.</div>'
+    if t["eels_url"]:
+        who = f'EELS PR #{t["eels_pr"]}' if t["eels_pr"] else f'EELS commit {t["eels_commit"][:8]}'
+        files = files_text(t["files"])
+        parts = [f'<b>tests:</b> {a(t["eels_url"], who)} pinned this text on {E(t["eels_date"][:10])}'
+                 + (f', test files {E(files)}' if files else "")]
+    else:
+        parts = ["<b>tests:</b> an EELS release pins this text"]
+    if t["state"] == "unreleased":
+        parts.append("not in a release yet")
+    elif t["state"] == "superseded":
+        parts.append("a later EELS pin replaced it before any release, so no client ran it")
+    else:
+        rel = t["release"]
+        parts.append(f'first release {a(gh(config.EELS_REPO, "releases/tag", rel.replace("@", "%40")), release_short(rel))}')
+        runs = snap.get("runs") or {}
+        parts.append("run against it: " + ", ".join(a(runs[c]["url"], config.CLIENT_LABEL[c]) for c in t["ran"]) if t["ran"]
+                     else "no client run on a release with this text")
+    return '<div class="tl">' + " &middot; ".join(parts) + "</div>"
+
+
 def untested_page_html(eip, snap, attestations):
     info = snap["eips"][eip]
     timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
@@ -412,7 +460,8 @@ def eip_page_html(eip, snap, cells, attestations):
         st, word = rev_state(eip, info, rev, attestations)
         consts = constants_html(deltas[rev["commit"]]) if rev["commit"] in deltas else ""
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>{consts}</div>')
+                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
+                        f'{tests_line(rev, info, snap)}{consts}</div>')
     pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
                    f'<em>not merged, not counted</em></div>' for p in info["pending"])
     return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h2>{stage_html(info, snap)}'
@@ -421,7 +470,9 @@ def eip_page_html(eip, snap, cells, attestations):
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local(f"api/eip/{eip}.json", "JSON")}</p>'
             f'{copy_md(eip_markdown(eip, snap, cells, attestations))}'
             f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
-            f'<h3>Spec changes, newest first</h3><div class="card">{"".join(timeline)}</div>'
+            f'<h3>Spec changes and their tests, newest first</h3>'
+            f'<p class="muted">each EIP commit, then the EELS change that pinned that text, its first release and the client runs on it</p>'
+            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>'
             + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
 
 
@@ -477,8 +528,20 @@ def feed_rows(snap, attestations):
         for rev in info["revisions"]:
             st, word = rev_state(eip, info, rev, attestations)
             rows.append({"eip": eip, "commit": rev["commit"], "date": rev["date"], "subject": rev["subject"], "state": st, "word": word,
-                         "url": gh(config.EIPS_REPO, "commit", rev["commit"])})
+                         "url": gh(config.EIPS_REPO, "commit", rev["commit"]), "tests": tests_info(rev, info, snap) if info.get("pin") else None})
     return sorted(rows, key=lambda r: (datetime.fromisoformat(r["date"]), r["eip"], r["commit"]), reverse=True)
+
+
+def feed_tests(t):
+    if not t or t["state"] == "never":
+        return ""
+    if t["state"] == "waiting":
+        return ' <span class="muted">&middot; tests not updated yet</span>'
+    rel = f' in {E(release_short(t["release"]))}' if t["release"] else " replaced before release" if t["state"] == "superseded" else " unreleased"
+    if not t["eels_url"]:
+        return f' <span class="muted">&middot; tests: EELS{rel}</span>'
+    who = f'EELS #{t["eels_pr"]}' if t["eels_pr"] else f'EELS {t["eels_commit"][:8]}'
+    return f' <span class="muted">&middot; tests: {a(t["eels_url"], who)}{rel}</span>'
 
 
 def feed_html(snap, rows):
@@ -487,7 +550,7 @@ def feed_html(snap, rows):
         f'<option value="{e}">EIP-{e} ({sum(r["eip"] == e for r in rows)})</option>' for e in eips)
     items = "".join(f'<div class="rev" data-eip="{r["eip"]}">{a_local(eip_href(r["eip"]), "EIP-" + r["eip"])} '
                     f'<code>{a(r["url"], r["commit"][:8])}</code> <span class="muted">{E(r["date"][:10])}</span> {E(r["subject"])} '
-                    f'<span class="pill {STATE_CLASS[r["state"]]}">{E(r["word"])}</span></div>' for r in rows)
+                    f'<span class="pill {STATE_CLASS[r["state"]]}">{E(r["word"])}</span>{feed_tests(r["tests"])}</div>' for r in rows)
     return (f'<h2>Spec changes <span class="muted">every change to a tracked EIP text, newest first</span></h2>'
             f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
             f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text &middot; {a_local("api/changes.json", "JSON")}</p>'

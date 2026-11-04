@@ -293,3 +293,27 @@ def test_untested_eip_page_and_feed(wide_site):
     assert any(r["eip"] == "7805" and r["word"] == "no EELS tests" for r in feed)
     assert sitecheck.check_dir(str(root)) == []
     assert smoke.check(local_get(root)) == []
+
+
+def test_eip_page_links_each_spec_change_to_its_eels_pr_release_and_runs(tmp_path):
+    snap = build.load_snapshot(SNAP)
+    snap["source"] = "live"
+    info = snap["eips"]["7906"]
+    pin = info["pin"]
+    older = next(r for r in info["revisions"] if r["commit"] != pin["commit"] and r["blob"] != pin["blob"]
+                 and not any(d["commit"] == r["commit"] for d in info["deltas"]))
+    info["pin_history"] = [
+        {"commit": "e" * 40, "date": "2026-10-20T00:00:00Z", "subject": "s (#3730)", "pr": 3730, "blob": older["blob"], "files": ["test_a.py"],
+         "release": None, "superseded": True},
+        {"commit": "f" * 40, "date": "2026-10-27T00:00:00Z", "subject": "s (#3895)", "pr": 3895, "blob": pin["blob"], "files": ["test_txtrace.py"],
+         "release": pin["release"], "superseded": False}]
+    cli.write_site(snap, str(tmp_path))
+    page = (tmp_path / "eip-7906.html").read_text()
+    assert "execution-specs/pull/3895" in page and "releases/tag/tests-bogota-devnet%40v2.0.0" in page
+    assert html.escape(snap["runs"]["go-ethereum"]["url"]) in page and "test_txtrace.py" in page
+    assert "replaced it before any release" in page and "not updated yet" in page
+    feed = json.loads((tmp_path / "api" / "changes.json").read_text())["changes"]
+    row = next(r for r in feed if r["commit"] == pin["commit"])
+    assert (row["tests"]["eels_pr"], row["tests"]["release"], row["tests"]["state"]) == (3895, pin["release"], "pinned")
+    assert "go-ethereum" in row["tests"]["ran"]
+    assert "EELS #3895" in (tmp_path / "changes.html").read_text()
