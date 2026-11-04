@@ -1,12 +1,14 @@
 import json
 import os
+import re
 import sys
 import time
 import urllib.request
 
 from . import config
 
-PAGES = ["index.html", "queue.html", "changes.html", "client-nethermind.html"]
+PAGES = ["index.html", "queue.html", "changes.html", "releases.html", "history.html", "client-nethermind.html"]
+ASOF = re.compile(r'as of <a href="(s/[^"]+)"')
 HEADLINES = {"pass", "open", "fail", "stale-release", "no-run", "no-tests"}
 CELL_KEYS = {"eip", "client", "headline", "text", "why", "links"}
 DOC_KEYS = {"fork", "snapshot", "source", "newest_release", "listing_url", "cells", "todo"}
@@ -77,6 +79,13 @@ def check(get, commit=""):
         errs.append(f"api/changes.json: {e}")
     eip = config.PROBE_EIP
     try:
+        doc = json.loads(get("api/releases.json"))
+        if not any(r.get("tag") == status.get("newest_release") for r in doc.get("releases") or []):
+            errs.append(f"api/releases.json: newest release {status.get('newest_release')!r} not listed")
+    except Exception as e:
+        errs.append(f"api/releases.json: {e}")
+    errs += check_permalink(get)
+    try:
         doc = json.loads(get(f"api/eip/{eip}.json"))
         errs += check_doc(doc, f"api/eip/{eip}.json")
         if not any(c.get("client") == "nethermind" and c.get("eip") == eip for c in doc.get("cells") or []):
@@ -94,6 +103,18 @@ def check_forks(get, commit=""):
         errs += [f"{prefix}{e}" for e in check(lambda p: get(prefix + p), commit)]
     config.use(config.DEFAULT_FORK)
     return errs
+
+
+def check_permalink(get):
+    try:
+        m = ASOF.search(get("index.html"))
+        if not m:
+            return ["index.html: no snapshot permalink"]
+        if 'id="archived"' not in get(m.group(1)):
+            return [f"{m.group(1)}: not an archived snapshot page"]
+    except Exception as e:
+        return [f"permalink: {e}"]
+    return []
 
 
 def main(argv=None):

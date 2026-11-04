@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import config, index
+from . import build, config, index
 from .chain import EELS, cell_action, chain, delta_verbs, eels_action, headline_text, queue, release_short
 
 E = html.escape
@@ -571,6 +571,8 @@ def feed_html(snap, rows):
 
 
 def stale_banner(snap):
+    if snap.get("source") == "archive":
+        return ""
     return f'<div class="strip age" id="stale" role="status" hidden data-taken="{E(snap["taken_at"])}"></div>'
 
 
@@ -581,25 +583,40 @@ def fallback_banner(snap):
             f'the live rebuild did not run, so this page may be out of date</div>')
 
 
-def fork_href(fork):
-    up = "../" if config.SUBDIR else ""
+def fork_href(fork, root=""):
+    up = root + ("../" if config.SUBDIR else "")
     sub = config.FORKS[fork]["SUBDIR"]
     return up + (f"{sub}/" if sub else "") + "index.html"
 
 
-def forks_nav():
-    links = "".join(f'<a href="{fork_href(f)}" class="{"on" if f == config.FORK else ""}">{E(v["FORK_LABEL"])}</a>' for f, v in config.FORKS.items())
+def forks_nav(root=""):
+    links = "".join(f'<a href="{fork_href(f, root)}" class="{"on" if f == config.FORK else ""}">{E(v["FORK_LABEL"])}</a>' for f, v in config.FORKS.items())
     return f'<nav class="forks" aria-label="Fork">{links}</nav>'
 
 
+def archived_banner(snap):
+    if snap.get("source") != "archive":
+        return ""
+    return (f'<div class="strip age" id="archived" role="status">archived snapshot {E(snap["taken_at"])}, shown with the current code and proofs '
+            f'&middot; <a href="../../index.html">latest data</a> &middot; <a href="../../history.html">all snapshots</a></div>')
+
+
+def asof_href(snap):
+    if snap.get("source") == "archive":
+        return "index.html"
+    return snap.get("asof") or build.permalink(snap["taken_at"])
+
+
 def page(title, nav, body, snap):
+    root = "../../" if snap.get("source") == "archive" else ""
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
-                    [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes")])
+                    [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
+                     ("releases", "releases.html", "Test releases"), ("history", root + "history.html", "History")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
-            f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav()}<nav>{links}</nav>'
+            f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
-            f'snapshot {E(snap["taken_at"])} &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
-            f'<main>{fallback_banner(snap)}{stale_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'as of <a href="{E(asof_href(snap))}" title="permalink to this snapshot">{E(snap["taken_at"])}</a> &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
+            f'<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):
@@ -758,12 +775,73 @@ def site(snap, attestations, out_dir):
                    [it for it in items if it["eip"] == eip],
                    {"title": info.get("title"), "status": info.get("status"), "stage": info.get("stage"), "meta": snap.get("meta"),
                     "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}})
+    with open(os.path.join(out_dir, "releases.html"), "w") as f:
+        f.write(page(f"{config.NAME} · test releases", "releases", releases_html(snap), snap))
+    with open(os.path.join(out_dir, "api", "releases.json"), "w") as f:
+        json.dump(releases_doc(snap), f, indent=1, sort_keys=True)
     for client in config.CLIENTS:
         with open(os.path.join(out_dir, client_href(client)), "w") as f:
             f.write(page(f"{config.NAME} · {config.CLIENT_LABEL[client]}", "", client_page_html(client, snap, cells, items), snap))
         write_json(os.path.join(out_dir, "api", "client", f"{client}.json"), snap, [c for c in cells if c["client"] == client],
                    [it for it in items if client in it["clients"]])
     return cells, items
+
+
+def releases_doc(snap):
+    picked = {r["file"] for r in snap["runs"].values()}
+    runs = [{**r, "in_matrix": r["file"] in picked} for r in snap.get("hive_runs") or []]
+    known = {r["tag"] for r in snap.get("releases") or []}
+    rows = [{**rel, "newest": rel["tag"] == snap["newest_release"],
+             "runs": {c: [r for r in runs if r["release"] == rel["tag"] and r["client"] == c] for c in config.CLIENTS}}
+            for rel in snap.get("releases") or []]
+    return {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"],
+            "simulator": config.SIMULATOR, "hive": config.HIVE, "releases": rows, "other_runs": [r for r in runs if r["release"] not in known]}
+
+
+def release_cell(runs):
+    if not runs:
+        return '<td class="c none"><div class="hl">no run</div></td>'
+    last = runs[0]
+    passed = last["ntests"] - last["fails"]
+    state = "ok" if not last["fails"] else "bad" if last["fails"] / last["ntests"] > config.INFRA_FAIL_RATIO else "warn"
+    mark = ' <span class="pill ok">in matrix</span>' if any(r["in_matrix"] for r in runs) else ""
+    return (f'<td class="c {state}"><a class="hl" href="{E(last["url"])}" target="_blank" rel="noopener">pass {passed}/{last["ntests"]}</a>'
+            f'<div class="sub">{len(runs)} run(s) &middot; last {E(last["start"][:10])}{mark}</div></td>')
+
+
+def releases_html(snap):
+    doc = releases_doc(snap)
+    head = "<tr><th></th>" + "".join(f"<th>{a_local(client_href(c), config.CLIENT_LABEL[c])}</th>" for c in config.CLIENTS) + "</tr>"
+    rows = []
+    for rel in doc["releases"]:
+        pill = ' <span class="pill ok">newest</span>' if rel["newest"] else ""
+        rows.append(f'<tr id="{E(release_short(rel["tag"]))}"><th class="row">{a(rel["url"], release_short(rel["tag"]))}{pill}'
+                    f'<small>{E(rel["date"][:10])} &middot; <code>{a(gh(config.EELS_REPO, "commit", rel["commit"]), rel["commit"][:8])}</code></small></th>'
+                    + "".join(release_cell(rel["runs"][c]) for c in config.CLIENTS) + "</tr>")
+    other = ""
+    if doc["other_runs"]:
+        other = (f'<h3>{len(doc["other_runs"])} run(s) with an unknown or other release</h3><div class="card">'
+                 + "".join(f'<div class="rev">{E(config.CLIENT_LABEL[r["client"]])} {a(r["url"], r["start"][:16].replace("T", " "))} '
+                           f'<span class="muted">{E(r["release"] or "release not in sim log")} &middot; pass {r["ntests"] - r["fails"]}/{r["ntests"]}</span></div>'
+                           for r in doc["other_runs"]) + "</div>")
+    if not doc["releases"]:
+        return '<h2>Test releases</h2><p class="muted">this snapshot has no release list</p>'
+    return (f'<h2>Test releases <span class="muted">each {E(config.RELEASE_PREFIX)}* release and the {E(config.SIMULATOR)} runs that used it in hive</span></h2>'
+            f'<p class="muted">a cell shows the newest run of that client on that release; "in matrix" marks the run the matrix uses &middot; '
+            f'{a_local("api/releases.json", "JSON")}</p>'
+            f'<div class="wrap"><table class="m list">{head}{"".join(rows)}</table></div>{other}')
+
+
+def history_html(entries):
+    items = []
+    for e in entries:
+        link = a_local(e["href"], e["taken_at"]) if e.get("href") else a(e["json"], e["taken_at"])
+        items.append(f'<div class="rev">{link} <span class="muted">newest release {E(release_short(e["newest_release"]))} &middot; '
+                     f'{e["runs"]} client run(s)</span>{" " + a(e["json"], "JSON") if e.get("href") and e.get("json") else ""}</div>')
+    return (f'<h2>Snapshot history <span class="muted">one entry per change in the data, newest first</span></h2>'
+            f'<p class="muted">each link opens the site as it was for that snapshot, shown with the current code and proofs; '
+            f'older snapshots link to their JSON on the {a(gh(config.SELF_REPO, "tree", config.DATA_BRANCH), config.DATA_BRANCH)} branch</p>'
+            f'<div class="card">{"".join(items)}</div>')
 
 
 def eips_doc(snap):

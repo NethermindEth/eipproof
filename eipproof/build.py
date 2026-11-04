@@ -151,6 +151,36 @@ def collect_specs(eips_repo, eels_repo, tag, log):
     return {"tag": tag, "tag_commit": tag_commit, "tag_date": tag_date, "eips": eips}
 
 
+def release_url(tag):
+    return f"{config.GITHUB}/{config.EELS_REPO}/releases/tag/{tag.replace('@', '%40')}"
+
+
+def suite_url(row):
+    return f"{config.HIVE}/suite.html?" + urlencode({"suiteid": row["fileName"], "suitename": row["name"]})
+
+
+def release_list(eels_repo, tags):
+    out = []
+    for t in sorted(tags, key=index.release_key, reverse=True):
+        commit, date = sources.git(eels_repo, "log", "-1", "--format=%H%x09%cI", t).strip().split("\t")
+        out.append({"tag": t, "commit": commit, "date": date, "url": release_url(t)})
+    return out
+
+
+def run_release(sim_log):
+    try:
+        return index.release_from_simlog(sources.hive_simlog_head(sim_log))
+    except Exception:
+        return None
+
+
+def hive_runs(listing):
+    out = [{"client": client, "start": row["start"], "end": row.get("end", ""), "ntests": row["ntests"], "fails": row["fails"],
+            "version": next(iter((row.get("versions") or {}).values()), ""), "release": run_release(row["simLog"]),
+            "file": row["fileName"], "url": suite_url(row)} for client, row in index.tracked_runs(listing)]
+    return sorted(out, key=lambda r: (r["start"], r["client"]), reverse=True)
+
+
 def collect_runs(listing, out_dir, log):
     runs, cases_dir = {}, os.path.join(out_dir, "cases")
     os.makedirs(cases_dir, exist_ok=True)
@@ -179,7 +209,7 @@ def collect_runs(listing, out_dir, log):
             "image": index.image_of(doc["runMetadata"]), "release": release, "simulator": row["name"],
             "start": row["start"], "end": row["end"], "ntests": row["ntests"], "fails": row["fails"],
             "file": row["fileName"], "file_sha256": sha, "sim_log": f"{config.HIVE}/results/{row['simLog']}",
-            "url": f"{config.HIVE}/suite.html?" + urlencode({"suiteid": row["fileName"], "suitename": row["name"]}),
+            "url": suite_url(row),
             "raw_url": f"{config.HIVE}/results/{row['fileName']}",
             "cases_hash": ids_hash, "bitmap": base64.b64encode(bits).decode(),
             "eips": per_eip, "client_wide_failures": client_wide, "results": results,
@@ -199,11 +229,13 @@ def snapshot(out_dir, log=print):
     listing = sources.hive_listing()
     log(f"hive  listing.jsonl {len(listing)} rows")
     runs = collect_runs(listing, out_dir, log)
+    history = hive_runs(listing)
+    log(f"hive  {len(history)} {config.SIMULATOR} runs, {sum(1 for h in history if not h['release'])} without a known release")
     return {
         "name": config.NAME, "fork": config.FORK,
         "taken_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "newest_release": tag, "release_commit": specs["tag_commit"], "release_date": specs["tag_date"],
-        "release_url": f"{config.GITHUB}/{config.EELS_REPO}/releases/tag/{tag.replace('@', '%40')}",
+        "release_url": release_url(tag), "releases": release_list(eels_repo, tags), "hive_runs": history,
         "listing_url": f"{config.HIVE}/listing.jsonl", "listing_rows": len(listing),
         "meta": {"eip": config.META_EIP, "name": config.META_NAME, "url": f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/EIPS/eip-{config.META_EIP}.md"},
         "eips": specs["eips"], "runs": runs,
@@ -217,6 +249,18 @@ def write_snapshot(snap, out_dir):
     with open(path, "w") as f:
         json.dump(slim, f, indent=1, sort_keys=True)
     return path
+
+
+def stamp(taken_at):
+    return taken_at.replace("-", "").replace(":", "")
+
+
+def permalink(taken_at):
+    return f"s/{stamp(taken_at)}/index.html"
+
+
+def content_key(snap):
+    return {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof")}
 
 
 def load_snapshot(path):

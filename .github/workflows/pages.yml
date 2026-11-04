@@ -23,6 +23,7 @@ concurrency:
 
 env:
   SITE_URL: https://nethermindeth.github.io/eipproof
+  DATA_BRANCH: data
   FALLBACK_ISSUE: "pages: live build falls back to snapshot"
 
 jobs:
@@ -36,6 +37,7 @@ jobs:
     outputs:
       sha: ${{ steps.sha.outputs.sha }}
       source: ${{ steps.source.outputs.source }}
+      archived: ${{ steps.archived.outputs.archived }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -55,10 +57,16 @@ jobs:
           fi
           echo "sha=$head" >> "$GITHUB_OUTPUT"
       - run: make test
+      - run: |
+          mkdir data
+          git -C data init -q
+          if git -C data fetch -q --depth=1 "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "refs/heads/$DATA_BRANCH"; then
+            git -C data checkout -q FETCH_HEAD
+          fi
       - id: live
         if: ${{ !inputs.force_fallback }}
         continue-on-error: true
-        run: make build ARGS="--prev-site $SITE_URL --fallback"
+        run: make build ARGS="--prev-site $SITE_URL --fallback --data data"
         env:
           GH_TOKEN: ${{ github.token }}
       - if: steps.live.outcome != 'success'
@@ -67,10 +75,23 @@ jobs:
         run: |
           flag=""
           if [ "$OUTCOME" = failure ]; then flag="--live-failed"; fi
-          make offline ARGS="--prev-site $SITE_URL $flag"
+          git -C data clean -qfdx
+          make offline ARGS="--prev-site $SITE_URL --data data $flag"
           echo "::warning title=site built from snapshot::live build $OUTCOME; site shows data from snapshot $(jq -r .snapshot site/api/status.json)"
       - id: source
         run: echo "source=$(jq -rs 'map(.fork + ":" + .source) | join(",")' site/api/status.json site/*/api/status.json)" >> "$GITHUB_OUTPUT"
+      - id: archived
+        run: |
+          new=$(git -C data ls-files --others --exclude-standard)
+          echo "archived=$([ -n "$new" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          mkdir -p data-new
+          for f in $new; do install -D "data/$f" "data-new/$f"; done
+      - if: steps.archived.outputs.archived == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: data-new
+          path: data-new
+          retention-days: 1
       - run: make check
       - env:
           SHA: ${{ steps.sha.outputs.sha }}
@@ -128,3 +149,33 @@ jobs:
         run: |
           python -m eipproof.smoke "$PAGE_URL" "$SHA"
           echo "deployed $SHA source=$SOURCE" >> "$GITHUB_STEP_SUMMARY"
+  archive:
+    needs: [build, deploy]
+    if: needs.build.outputs.archived == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 1
+      - run: |
+          if git fetch -q --depth=1 origin "refs/heads/$DATA_BRANCH"; then
+            git checkout -q -B "$DATA_BRANCH" FETCH_HEAD
+          else
+            git checkout -q --orphan "$DATA_BRANCH"
+            git rm -rqf .
+          fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: data-new
+          path: .
+      - env:
+          SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          git add snapshots
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "snapshots from $SHA" -m "$(git diff --cached --name-only -- '*.json')"
+          git push -q origin "HEAD:refs/heads/$DATA_BRANCH"
+          echo "archived to $DATA_BRANCH: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"

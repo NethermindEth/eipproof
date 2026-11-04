@@ -10,7 +10,7 @@ from datetime import datetime
 
 import pytest
 
-from eipproof import build, chain, cli, config, health, render, sitecheck, smoke
+from eipproof import build, chain, cli, config, health, index, render, sitecheck, smoke
 
 SNAP = os.path.join(cli.ROOT, "snapshots", "2026-11-03.json")
 GOLDEN = os.path.join(os.path.dirname(__file__), "golden")
@@ -396,3 +396,76 @@ def test_failed_live_fork_falls_back_alone(monkeypatch):
     calls.clear()
     with pytest.raises(RuntimeError):
         cli.main(["build"])
+
+
+def test_releases_page_lists_each_release_with_the_runs_that_used_it(live_site):
+    snap = build.load_snapshot(SNAP)
+    doc = json.loads((live_site / "api" / "releases.json").read_text())
+    assert [r["tag"] for r in doc["releases"]] == ["tests-bogota-devnet@v2.0.0", "tests-bogota-devnet@v1.1.1", "tests-bogota-devnet@v1.1.0"]
+    assert [r["newest"] for r in doc["releases"]] == [True, False, False]
+    by = {r["tag"]: r for r in doc["releases"]}
+    for client, run in snap["runs"].items():
+        ran = by[run["release"]]["runs"][client]
+        assert [r["in_matrix"] for r in ran].count(True) == 1 and ran == sorted(ran, key=lambda r: r["start"], reverse=True)
+    assert sum(len(v) for r in doc["releases"] for v in r["runs"].values()) + len(doc["other_runs"]) == len(snap["hive_runs"])
+    page = (live_site / "releases.html").read_text()
+    for rel in doc["releases"]:
+        assert f'<tr id="{chain.release_short(rel["tag"])}">' in page and rel["url"] in page
+    assert page.count('<span class="pill ok">in matrix</span>') == len(snap["runs"])
+
+
+def test_release_comes_from_the_sim_log_line_or_the_fixtures_url():
+    assert index.release_from_simlog("fixtures release: tests-bogota-devnet@v2.0.0\n") == "tests-bogota-devnet@v2.0.0"
+    url = "https://github.com/ethereum/execution-specs/releases/download/tests-bogota-devnet@v1.1.1/fixtures_bogota.tar.gz"
+    assert index.release_from_simlog(f"downloading {url}\n") == "tests-bogota-devnet@v1.1.1"
+    assert index.release_from_simlog("no release here") is None
+
+
+def test_every_page_links_a_permalink_to_its_snapshot(live_site, fallback_site):
+    link = build.permalink(build.load_snapshot(SNAP)["taken_at"])
+    for site in (live_site, fallback_site):
+        for page in sorted(site.glob("*.html")):
+            assert f'as of <a href="{link}"' in page.read_text(), page.name
+        archived = (site / link).read_text()
+        assert 'id="archived"' in archived and 'id="fallback"' not in archived and 'id="stale"' not in archived
+        assert json.loads((site / "api" / "history.json").read_text())["snapshots"][0]["href"] == link
+
+
+def archive_build(root, snap, data):
+    out = root / snap["taken_at"].replace(":", "")
+    cells, _ = cli.write_site(snap, str(out), SNAP, str(data))
+    (out / "api" / "status.json").write_text(json.dumps(health.status_doc(snap, len(cells), 0, "c0ffee")))
+    return out
+
+
+def test_data_branch_keeps_one_snapshot_per_data_change(tmp_path):
+    data = tmp_path / "data"
+    first = build.load_snapshot(SNAP)
+    first["source"] = "live"
+    archive_build(tmp_path, first, data)
+    again = {**build.load_snapshot(SNAP), "source": "live", "taken_at": "2026-11-04T00:25:54Z", "listing_rows": 999}
+    site = archive_build(tmp_path, again, data)
+    assert sorted(p.name for p in (data / "snapshots").glob("*.json")) == ["20261103T232554Z.json"]
+    assert f'as of <a href="{build.permalink(first["taken_at"])}"' in (site / "index.html").read_text()
+    changed = {**build.load_snapshot(SNAP), "source": "live", "taken_at": "2026-11-04T01:25:54Z"}
+    changed["hive_runs"] = changed["hive_runs"][1:]
+    site = archive_build(tmp_path, changed, data)
+    assert sorted(p.name for p in (data / "snapshots").glob("*.json")) == ["20261103T232554Z.json", "20261104T012554Z.json"]
+    assert sorted(p.name for p in (data / "snapshots" / "cases").glob("*.txt.gz")) == sorted({f"{r['cases_hash']}.txt.gz" for r in first["runs"].values()})
+    hist = json.loads((site / "api" / "history.json").read_text())["snapshots"]
+    assert [h["taken_at"] for h in hist] == ["2026-11-04T01:25:54Z", "2026-11-03T23:25:54Z"]
+    assert all(h["json"].endswith(f"/data/snapshots/{build.stamp(h['taken_at'])}.json") and (site / h["href"]).exists() for h in hist)
+    assert sitecheck.check_dir(str(site)) == [] and smoke.check(local_get(site)) == []
+    fallback = {**build.load_snapshot(SNAP), "source": "snapshot", "taken_at": "2026-11-04T02:25:54Z", "hive_runs": []}
+    archive_build(tmp_path, fallback, data)
+    assert len(list((data / "snapshots").glob("*.json"))) == 2
+
+
+def test_smoke_rejects_missing_releases_and_permalink(tmp_path, live_site):
+    site = tmp_path / "s"
+    shutil.copytree(live_site, site)
+    (site / "api" / "releases.json").write_text(json.dumps({"releases": []}))
+    shutil.rmtree(site / "s")
+    errs = smoke.check(local_get(site))
+    assert "api/releases.json: newest release 'tests-bogota-devnet@v2.0.0' not listed" in errs
+    assert any(e.startswith("permalink: ") for e in errs)
