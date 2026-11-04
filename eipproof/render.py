@@ -2,6 +2,7 @@ import html
 import json
 import os
 import re
+from datetime import datetime
 
 from . import config
 from .chain import chain, headline_text, queue, release_short
@@ -68,6 +69,53 @@ def dots(cell):
         st = cell["links"][key]["state"]
         out.append(f'<i class="dot {STATE_CLASS.get(st, "none")}" title="{DOT[key]}: {E(LABEL.get(st, st))}"></i>')
     return '<span class="dots">' + "".join(out) + "</span>"
+
+
+def md(url, text):
+    return f"[{text}]({url})"
+
+
+def copy_md(text):
+    return (f'<div class="copy"><button type="button" onclick="copyMd(this)">Copy as Markdown</button>'
+            f'<textarea class="md" readonly hidden aria-label="Markdown">{E(text)}</textarea></div>')
+
+
+def cell_markdown(cell, snap):
+    info = snap["eips"][cell["eip"]]
+    s, t, r = cell["links"]["spec"], cell["links"]["test"], cell["links"]["run"]
+    subjects = {d["commit"]: d["subject"] for d in info["deltas"]}
+    pin = md(gh(config.EIPS_REPO, "commit", s["pin_commit"]), s["pin_commit"][:8]) if s["pin_commit"] else "?"
+    lines = [f'**EIP-{cell["eip"]} x {config.CLIENT_LABEL[cell["client"]]}: {headline_text(cell)}**', "", why(cell, snap), "",
+             f'- Spec: EIP now {md(gh(config.EIPS_REPO, "commit", info["head"]), info["head"][:8])}; EELS '
+             f'{release_short(info["pin"]["release"])} implements {pin}' + (f', {s["behind"]} change(s) behind' if s["behind"] else ", current")]
+    if t["state"] != "n/a":
+        for d in t.get("deltas", []):
+            at = d.get("attestation") or {}
+            proof = f' ({md(f"{config.GITHUB}/{config.SELF_REPO}/blob/main/proofs/{at["mutant"]}", "mutant")})' if at.get("mutant") else ""
+            lines.append(f'- Spec change {md(gh(config.EIPS_REPO, "commit", d["commit"]), d["commit"][:8])} '
+                         f'{subjects.get(d["commit"], "")}: {LABEL.get(d["state"], d["state"])}{proof}')
+    if r["state"] == "no-run":
+        lines.append(f"- Run: no {config.SIMULATOR} run")
+    else:
+        lines.append(f'- Run: {r["passed"]}/{r["total"]} on `{r["release"]}`, {md(r["url"], "hive run")}')
+    lines.append(f'- Source: {md(f"{config.SITE_URL}/index.html#{cell["eip"]}-{cell["client"]}", config.NAME)}, snapshot {snap["taken_at"]}')
+    return "\n".join(lines) + "\n"
+
+
+def eip_markdown(eip, snap, cells, attestations):
+    info = snap["eips"][eip]
+    lines = [f'**EIP-{eip} {eip_name(info)}** ({config.NAME}, fork {config.FORK}, snapshot {snap["taken_at"]})', ""]
+    for c in cells:
+        if c["eip"] == eip:
+            lines.append(f'- {config.CLIENT_LABEL[c["client"]]}: {headline_text(c)}. {why(c, snap)} '
+                         f'{md(f"{config.SITE_URL}/index.html#{eip}-{c["client"]}", "evidence")}')
+    lines += ["", "Spec changes, newest first:"]
+    for rev in reversed(info["revisions"]):
+        lines.append(f'- {md(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])} {rev["date"][:10]} '
+                     f'{rev["subject"]}: {rev_state(eip, info, rev, attestations)[1]}')
+    lines += ["", f'{md(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} · '
+                  f'{md(f"{config.SITE_URL}/{eip_href(eip)}", "eipproof page")}']
+    return "\n".join(lines) + "\n"
 
 
 def link_block(n, title, state, body):
@@ -167,7 +215,7 @@ def drawer(cell, snap):
     h = cell["headline"]
     return (f'<div class="dhead"><div><div class="muted">EIP-{cell["eip"]} &times; {E(config.CLIENT_LABEL[cell["client"]])}</div>'
             f'<div class="headline {STATE_CLASS[h]}" data-mark="headline">{E(headline_text(cell))}</div></div><button class="x" onclick="closeD()" aria-label="Close">&times;</button></div>'
-            f'<p class="why" data-mark="why">{E(why(cell, snap))}</p>'
+            f'<p class="why" data-mark="why">{E(why(cell, snap))}</p>{copy_md(cell_markdown(cell, snap))}'
             + spec_html(cell, eip_info) + test_html(cell, eip_info) + run_html(cell, run_full))
 
 
@@ -208,7 +256,12 @@ section.link header{display:flex;gap:8px;align-items:center;font-weight:700;marg
 .q .act{float:right;font-size:13px;color:#0b0f17;background:var(--fg);padding:2px 10px;border-radius:99px;margin:0 0 6px 8px}
 h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:22px 0 8px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 .rev{margin:4px 0;font-size:14px}table.list td.c{cursor:default;width:190px}table.list td.c:hover{transform:none}a.hl{display:block}
-td.why-cell{color:#cbd5e1;font-size:13.5px;vertical-align:top;padding:8px 10px}tr.counts th{font-weight:400;padding-top:0}tr.counts small .hl{font-size:12px}.hl.bad{color:var(--bad)}.hl.stale{color:var(--stale)}.hl.none{color:var(--mut)}
+td.why-cell{color:#cbd5e1;font-size:13.5px;vertical-align:top;padding:8px 10px}.why-cell p{margin:0;max-width:62ch;text-wrap:pretty}tr.counts th{font-weight:400;padding-top:0}tr.counts small .hl{font-size:12px}.hl.bad{color:var(--bad)}.hl.stale{color:var(--stale)}.hl.none{color:var(--mut)}
+[hidden]{display:none!important}.strip.age{background:#2a2112;border-color:#4a3a14;color:var(--warn)}
+.copy{margin:8px 0}.copy button{font:inherit;font-size:13px;color:var(--fg);background:#1f2937;border:1px solid var(--line);border-radius:99px;padding:3px 12px;cursor:pointer}
+.copy button:hover{border-color:#475569}.copy textarea{display:block;width:100%;height:180px;margin-top:6px;background:#0b1220;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:12.5px "DejaVu Sans Mono",monospace}
+select{font:inherit;font-size:14px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:4px 8px}label{color:var(--mut);font-size:13px}
+.copy button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
 @media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}}
 """
 
@@ -217,7 +270,13 @@ function openD(id,el){document.querySelectorAll('td.c.sel').forEach(x=>x.classLi
 document.getElementById('dc').innerHTML=document.getElementById('t-'+id).innerHTML;document.getElementById('d').classList.add('on');history.replaceState(null,'','#'+id)}
 function closeD(){document.getElementById('d').classList.remove('on');document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));history.replaceState(null,'',location.pathname)}
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
-addEventListener('load',()=>{const h=location.hash.slice(1);if(h&&document.getElementById('t-'+h))openD(h,document.getElementById('c-'+h))});
+addEventListener('load',()=>{const h=location.hash.slice(1);if(h&&document.getElementById('t-'+h))openD(h,document.getElementById('c-'+h));
+const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
+const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
+function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
+function filt(v){document.querySelectorAll('#feed .rev').forEach(r=>r.hidden=!!v&&r.dataset.eip!==v);history.replaceState(null,'',v?'#eip-'+v:location.pathname)}
+function copyMd(b){const t=b.nextElementSibling,show=()=>{t.hidden=false;t.select()};if(!navigator.clipboard)return show();
+navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy as Markdown'},1500)},show)}
 """
 
 
@@ -260,35 +319,37 @@ def delta_word(eip, commit, attestations):
     return "covered" if at["killed"] else "mutant-survived"
 
 
+def rev_state(eip, info, rev, attestations):
+    if any(d["commit"] == rev["commit"] for d in info["deltas"]):
+        st = delta_word(eip, rev["commit"], attestations)
+        return st, LABEL[st]
+    if rev["commit"] == info["pin"]["commit"]:
+        return "pass", f'EELS {release_short(info["pin"]["release"])} implements this text'
+    return "n/a", "older"
+
+
 def eip_page_html(eip, snap, cells, attestations):
     info = snap["eips"][eip]
     mine = [c for c in cells if c["eip"] == eip]
-    deltas = {d["commit"]: d for d in info["deltas"]}
     rows = []
     for c in mine:
         r = c["links"]["run"]
         tests = E(release_short(r.get("release"))) if r["state"] != "no-run" else "-"
         rows.append(f'<tr><th class="row">{a_local(client_href(c["client"]), config.CLIENT_LABEL[c["client"]])}</th>'
                     f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{eip}-{c["client"]}">{E(headline_text(c))}</a>'
-                    f'<div class="sub">tests {tests}</div></td><td class="why-cell">{E(why(c, snap))}</td></tr>')
+                    f'<div class="sub">tests {tests}</div></td><td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>')
     timeline = []
-    pin = info["pin"]["commit"]
     for rev in reversed(info["revisions"]):
-        if rev["commit"] in deltas:
-            st = delta_word(eip, rev["commit"], attestations)
-            tag = f'<span class="pill {STATE_CLASS[st]}">{E(LABEL[st])}</span>'
-        elif rev["commit"] == pin:
-            tag = f'<span class="pill ok">EELS {E(release_short(info["pin"]["release"]))} implements this text</span>'
-        else:
-            tag = '<span class="pill none">older</span>'
+        st, word = rev_state(eip, info, rev, attestations)
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} {tag}</div>')
+                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} <span class="pill {STATE_CLASS[st]}">{E(word)}</span></div>')
     pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
                    f'<em>not merged, not counted</em></div>' for p in info["pending"])
     return (f'<h2>EIP-{eip} <span class="muted">{E(eip_name(info))}</span></h2>'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
-            f'{a_local(f"api/eip/{eip}.json", "JSON")}</p>'
+            f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local(f"api/eip/{eip}.json", "JSON")}</p>'
+            f'{copy_md(eip_markdown(eip, snap, cells, attestations))}'
             f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
             f'<h3>Spec changes, newest first</h3><div class="card">{"".join(timeline)}</div>'
             + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
@@ -314,7 +375,7 @@ def client_page_html(client, snap, cells, items):
                         f'{E(queue_detail(it, snap))}</div>' for it in todo) or '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
     rows = "".join(f'<tr><th class="row">{a_local(eip_href(c["eip"]), "EIP-" + c["eip"])}<small>{E(eip_name(snap["eips"][c["eip"]]))}</small></th>'
                    f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{c["eip"]}-{client}">{E(headline_text(c))}</a></td>'
-                   f'<td class="why-cell">{E(why(c, snap))}</td></tr>' for c in mine)
+                   f'<td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>' for c in mine)
     return (f'<h2>{E(label)} <span class="muted">{counts_html(mine)}</span></h2>'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.CLIENT_REPO[client]}", config.CLIENT_REPO[client])} &middot; {a_local(f"api/client/{client}.json", "JSON")}</p>'
             f'<h3>To do, most important first</h3>{todo_html}'
@@ -339,6 +400,37 @@ def a_local(href, text):
     return f'<a href="{E(href)}">{E(text)}</a>'
 
 
+def feed_rows(snap, attestations):
+    rows = []
+    for eip in config.ROW_ORDER:
+        info = snap["eips"].get(eip)
+        if not info:
+            continue
+        for rev in info["revisions"]:
+            st, word = rev_state(eip, info, rev, attestations)
+            rows.append({"eip": eip, "commit": rev["commit"], "date": rev["date"], "subject": rev["subject"], "state": st, "word": word,
+                         "url": gh(config.EIPS_REPO, "commit", rev["commit"])})
+    return sorted(rows, key=lambda r: (datetime.fromisoformat(r["date"]), r["eip"], r["commit"]), reverse=True)
+
+
+def feed_html(snap, rows):
+    eips = [e for e in config.ROW_ORDER if e in snap["eips"]]
+    opts = '<option value="">all EIPs</option>' + "".join(
+        f'<option value="{e}">EIP-{e} ({sum(r["eip"] == e for r in rows)})</option>' for e in eips)
+    items = "".join(f'<div class="rev" data-eip="{r["eip"]}">{a_local(eip_href(r["eip"]), "EIP-" + r["eip"])} '
+                    f'<code>{a(r["url"], r["commit"][:8])}</code> <span class="muted">{E(r["date"][:10])}</span> {E(r["subject"])} '
+                    f'<span class="pill {STATE_CLASS[r["state"]]}">{E(r["word"])}</span></div>' for r in rows)
+    return (f'<h2>Spec changes <span class="muted">every change to a tracked EIP text, newest first</span></h2>'
+            f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
+            f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text &middot; {a_local("api/changes.json", "JSON")}</p>'
+            f'<p><label for="f">Show</label> <select id="f" onchange="filt(this.value)">{opts}</select></p>'
+            f'<div class="card" id="feed">{items}</div>')
+
+
+def stale_banner(snap):
+    return f'<div class="strip age" id="stale" role="status" hidden data-taken="{E(snap["taken_at"])}"></div>'
+
+
 def fallback_banner(snap):
     if snap.get("source") != "snapshot":
         return ""
@@ -348,12 +440,12 @@ def fallback_banner(snap):
 
 def page(title, nav, body, snap):
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
-                    [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue")])
+                    [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div><nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
             f'snapshot {E(snap["taken_at"])} &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
-            f'<main>{fallback_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'<main>{fallback_banner(snap)}{stale_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):
@@ -439,6 +531,11 @@ def site(snap, attestations, out_dir):
         f.write(page(f"{config.NAME} · queue", "queue", qbody, snap))
     for sub in ("eip", "client"):
         os.makedirs(os.path.join(out_dir, "api", sub), exist_ok=True)
+    rows = feed_rows(snap, attestations)
+    with open(os.path.join(out_dir, "changes.html"), "w") as f:
+        f.write(page(f"{config.NAME} · spec changes", "changes", feed_html(snap, rows), snap))
+    with open(os.path.join(out_dir, "api", "changes.json"), "w") as f:
+        json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "changes": rows}, f, indent=1, sort_keys=True)
     for eip in config.ROW_ORDER:
         if eip not in snap["eips"]:
             continue

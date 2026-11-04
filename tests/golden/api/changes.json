@@ -1,0 +1,637 @@
+{
+ "changes": [
+  {
+   "commit": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+   "date": "2026-11-01T04:20:25-07:00",
+   "eip": "8141",
+   "state": "covered",
+   "subject": "Update EIP-8141: Transaction nonce check boundary",
+   "url": "https://github.com/ethereum/EIPs/commit/dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+   "word": "proven"
+  },
+  {
+   "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+   "date": "2026-10-27T11:42:30Z",
+   "eip": "7906",
+   "state": "covered",
+   "subject": "Update EIP-7906: say where storage-kept nonce changes appear",
+   "url": "https://github.com/ethereum/EIPs/commit/9099f412d228ec80ec27b713df6da61993bf4702",
+   "word": "proven"
+  },
+  {
+   "commit": "7372d10a457b29eceb02cd052345af165de1fb60",
+   "date": "2026-10-25T11:56:57Z",
+   "eip": "8141",
+   "state": "pass",
+   "subject": "Update EIP-8141: charge the EIP-8037 legacy share as extra execution gas\"",
+   "url": "https://github.com/ethereum/EIPs/commit/7372d10a457b29eceb02cd052345af165de1fb60",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "67d3e90ce49cb0e7031fe3d65ba31bd00858f0ea",
+   "date": "2026-10-25T04:51:24-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: charge the EIP-8037 legacy share as extra execution gas",
+   "url": "https://github.com/ethereum/EIPs/commit/67d3e90ce49cb0e7031fe3d65ba31bd00858f0ea",
+   "word": "older"
+  },
+  {
+   "commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+   "date": "2026-10-23T14:11:51Z",
+   "eip": "7906",
+   "state": "pass",
+   "subject": "Update EIP-7906: remove reference to txparam 0x06",
+   "url": "https://github.com/ethereum/EIPs/commit/25ac2920ea3a958911e380498bb7c8fbca201542",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "f1bcca1b56ee91fe115d2a8d8fd731fd6ca38bb3",
+   "date": "2026-10-22T16:15:35-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: specify GASPRICE under the max_fee budget",
+   "url": "https://github.com/ethereum/EIPs/commit/f1bcca1b56ee91fe115d2a8d8fd731fd6ca38bb3",
+   "word": "older"
+  },
+  {
+   "commit": "d02998e877c6589597f887df324d550a8e07389a",
+   "date": "2026-10-22T19:45:46Z",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: Move mode section under Frame definition",
+   "url": "https://github.com/ethereum/EIPs/commit/d02998e877c6589597f887df324d550a8e07389a",
+   "word": "older"
+  },
+  {
+   "commit": "e19c2a871c0762eaee5429c2e264b66433d2e8be",
+   "date": "2026-10-22T13:16:31-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: use max_fee to bound cost (#12414)",
+   "url": "https://github.com/ethereum/EIPs/commit/e19c2a871c0762eaee5429c2e264b66433d2e8be",
+   "word": "older"
+  },
+  {
+   "commit": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+   "date": "2026-10-22T12:43:13-06:00",
+   "eip": "8298",
+   "state": "pass",
+   "subject": "Update EIP-8298: Add adoption guidance to Security Considerations",
+   "url": "https://github.com/ethereum/EIPs/commit/f4a9f9655ee88ed923ceac6cb6271820477e11c5",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "46005d745a5d921702f12d64a1b85e712e2b6051",
+   "date": "2026-10-21T18:27:07-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: commit to elided signature lengths (#12502)",
+   "url": "https://github.com/ethereum/EIPs/commit/46005d745a5d921702f12d64a1b85e712e2b6051",
+   "word": "older"
+  },
+  {
+   "commit": "614ed450d05207e2f8d41273ecc82af9d0bf1df5",
+   "date": "2026-10-20T15:21:16Z",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: Update authors in EIP-7906",
+   "url": "https://github.com/ethereum/EIPs/commit/614ed450d05207e2f8d41273ecc82af9d0bf1df5",
+   "word": "older"
+  },
+  {
+   "commit": "845c9c8cfb41157d5c6bbd866cdcf9b509709dc8",
+   "date": "2026-10-20T15:14:06Z",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: include tx.sender in nonces_changed only when its account nonce changes",
+   "url": "https://github.com/ethereum/EIPs/commit/845c9c8cfb41157d5c6bbd866cdcf9b509709dc8",
+   "word": "older"
+  },
+  {
+   "commit": "899bef0ae0f9358f246e6fe833fe580b0564fbb2",
+   "date": "2026-10-20T14:47:50Z",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: 7906 remove txdiff",
+   "url": "https://github.com/ethereum/EIPs/commit/899bef0ae0f9358f246e6fe833fe580b0564fbb2",
+   "word": "older"
+  },
+  {
+   "commit": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+   "date": "2026-10-19T16:09:06Z",
+   "eip": "8250",
+   "state": "pass",
+   "subject": "Update EIP-8250: exempt single-use sequence from data pricing",
+   "url": "https://github.com/ethereum/EIPs/commit/1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+   "date": "2026-10-18T12:07:10-06:00",
+   "eip": "8151",
+   "state": "pass",
+   "subject": "Update EIP-8151: empty failure output and EIP-8038 access gas",
+   "url": "https://github.com/ethereum/EIPs/commit/e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "5930e94b0cdb7b88f8c96c75555cf4fc2b3cb3b0",
+   "date": "2026-10-16T14:17:34-06:00",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: rename POST_TX to ASSERT",
+   "url": "https://github.com/ethereum/EIPs/commit/5930e94b0cdb7b88f8c96c75555cf4fc2b3cb3b0",
+   "word": "older"
+  },
+  {
+   "commit": "56b645be8a4c7830ee3ea94aa7eda1e3b5ed7fe7",
+   "date": "2026-10-16T09:02:26Z",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: mark single-use keys with MAX_NONCE_SEQ",
+   "url": "https://github.com/ethereum/EIPs/commit/56b645be8a4c7830ee3ea94aa7eda1e3b5ed7fe7",
+   "word": "older"
+  },
+  {
+   "commit": "7ef3b6bf3e75153b01ad2fd85dbe9cb4c6bf8841",
+   "date": "2026-10-15T13:54:18Z",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: state the POST_TX rollback point via the EIP-8141 validation prefix",
+   "url": "https://github.com/ethereum/EIPs/commit/7ef3b6bf3e75153b01ad2fd85dbe9cb4c6bf8841",
+   "word": "older"
+  },
+  {
+   "commit": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+   "date": "2026-10-12T21:30:20Z",
+   "eip": "8253",
+   "state": "pass",
+   "subject": "Update EIP-8253: Add Mainnet prestate values + genesis/devnet alloc",
+   "url": "https://github.com/ethereum/EIPs/commit/0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "2b3e257fcb4e6c89fbe6d62bf0fabfb7649c2c3f",
+   "date": "2026-10-12T12:37:12-06:00",
+   "eip": "8253",
+   "state": "n/a",
+   "subject": "Update EIP-8253: explicitly define Mainnet/testnet chain configs",
+   "url": "https://github.com/ethereum/EIPs/commit/2b3e257fcb4e6c89fbe6d62bf0fabfb7649c2c3f",
+   "word": "older"
+  },
+  {
+   "commit": "fa3915674078b4e79252df34ac9599d4195f11b1",
+   "date": "2026-10-12T15:10:13Z",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Update EIP-8298: close spec gaps found writing tests; assign opcode 0xA7",
+   "url": "https://github.com/ethereum/EIPs/commit/fa3915674078b4e79252df34ac9599d4195f11b1",
+   "word": "older"
+  },
+  {
+   "commit": "af3a7802c8ea516f717c6013e27d0f529046f007",
+   "date": "2026-10-09T16:58:06Z",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: define the validation prefix and execution body under Behavior",
+   "url": "https://github.com/ethereum/EIPs/commit/af3a7802c8ea516f717c6013e27d0f529046f007",
+   "word": "older"
+  },
+  {
+   "commit": "7752622050d9d77c46b578351eba9cfb5125f087",
+   "date": "2026-10-09T08:59:40-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: name the TXPARAM, FRAMEPARAM and SIGPARAM params",
+   "url": "https://github.com/ethereum/EIPs/commit/7752622050d9d77c46b578351eba9cfb5125f087",
+   "word": "older"
+  },
+  {
+   "commit": "4be9e59ff8f1ea0613386eb1756f755a18cb7b51",
+   "date": "2026-10-09T08:23:47-06:00",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: specify block-level access list recording for TXDIFF and POST_TX rollback",
+   "url": "https://github.com/ethereum/EIPs/commit/4be9e59ff8f1ea0613386eb1756f755a18cb7b51",
+   "word": "older"
+  },
+  {
+   "commit": "7d3570401baf6d9eac25c4f8fccf26d05de37032",
+   "date": "2026-10-09T07:07:07-06:00",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: name the TXTRACE and TXDIFF params",
+   "url": "https://github.com/ethereum/EIPs/commit/7d3570401baf6d9eac25c4f8fccf26d05de37032",
+   "word": "older"
+  },
+  {
+   "commit": "fedcaf7ffbbcaa3e98326d3f9a3b2264e39e85f3",
+   "date": "2026-10-09T02:25:59-06:00",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: say that a failed assertion reverts the execution body",
+   "url": "https://github.com/ethereum/EIPs/commit/fedcaf7ffbbcaa3e98326d3f9a3b2264e39e85f3",
+   "word": "older"
+  },
+  {
+   "commit": "f5151dcfbad07a7ba677cb59038ac2985c63356e",
+   "date": "2026-10-09T06:02:25Z",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: limits of a single-transaction diff",
+   "url": "https://github.com/ethereum/EIPs/commit/f5151dcfbad07a7ba677cb59038ac2985c63356e",
+   "word": "older"
+  },
+  {
+   "commit": "af80fc1c4122c4990b8c84bfd10be60c6e343bb2",
+   "date": "2026-10-08T11:50:27-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: roll back the approval context when a call reverts",
+   "url": "https://github.com/ethereum/EIPs/commit/af80fc1c4122c4990b8c84bfd10be60c6e343bb2",
+   "word": "older"
+  },
+  {
+   "commit": "8dbdab2b25dec0c3645169ce50c6d43a502a17c6",
+   "date": "2026-10-08T11:49:20-06:00",
+   "eip": "7906",
+   "state": "n/a",
+   "subject": "Update EIP-7906: clarify diff opcode semantics and gas accounting",
+   "url": "https://github.com/ethereum/EIPs/commit/8dbdab2b25dec0c3645169ce50c6d43a502a17c6",
+   "word": "older"
+  },
+  {
+   "commit": "e32850647e72d6287b7778c6899007abd1a78b1d",
+   "date": "2026-10-08T13:13:37Z",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: record keyed nonces in the block access list and pri\u2026",
+   "url": "https://github.com/ethereum/EIPs/commit/e32850647e72d6287b7778c6899007abd1a78b1d",
+   "word": "older"
+  },
+  {
+   "commit": "17669e96e5ad3fb2b132af1c116a649edbb2b7c9",
+   "date": "2026-10-08T04:35:59-06:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: small clarifications for alignment",
+   "url": "https://github.com/ethereum/EIPs/commit/17669e96e5ad3fb2b132af1c116a649edbb2b7c9",
+   "word": "older"
+  },
+  {
+   "commit": "5e32ce9abb16d8a8d1a55b65fc2aa55b606b882c",
+   "date": "2026-10-08T03:57:47-06:00",
+   "eip": "8272",
+   "state": "pass",
+   "subject": "Update EIP-8272: deploy recent root contract as standard contract",
+   "url": "https://github.com/ethereum/EIPs/commit/5e32ce9abb16d8a8d1a55b65fc2aa55b606b882c",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "6bc5841052ad161b29e21d11dbfb58bc98dac507",
+   "date": "2026-10-07T17:29:00Z",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: check frame modes against a set of valid values",
+   "url": "https://github.com/ethereum/EIPs/commit/6bc5841052ad161b29e21d11dbfb58bc98dac507",
+   "word": "older"
+  },
+  {
+   "commit": "88fa3e4d24efb0dffdbe1fda2765060b870de784",
+   "date": "2026-10-06T10:08:49-06:00",
+   "eip": "8141",
+   "state": "n/a",
+   "subject": "Update EIP-8141: deploy frames expiry verifier as standard contract (#12387)",
+   "url": "https://github.com/ethereum/EIPs/commit/88fa3e4d24efb0dffdbe1fda2765060b870de784",
+   "word": "older"
+  },
+  {
+   "commit": "c2471607ae30f665f2cfd878b7284ba39afeba75",
+   "date": "2026-10-06T03:41:37-06:00",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Update EIP-8298: Add public mempool rules",
+   "url": "https://github.com/ethereum/EIPs/commit/c2471607ae30f665f2cfd878b7284ba39afeba75",
+   "word": "older"
+  },
+  {
+   "commit": "9bff5ef1068353888431ca3d0208d85d9e14b99a",
+   "date": "2026-10-02T08:35:59Z",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Update EIP-8298: record adopted code as a hash in the BAL; reject same-tx-created sources",
+   "url": "https://github.com/ethereum/EIPs/commit/9bff5ef1068353888431ca3d0208d85d9e14b99a",
+   "word": "older"
+  },
+  {
+   "commit": "210a28dac6931dba40da7fd48334220e59f0ae73",
+   "date": "2026-09-24T10:43:32-06:00",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Update EIP-8298: allow SETCODEFROM in initcode and require an existing source",
+   "url": "https://github.com/ethereum/EIPs/commit/210a28dac6931dba40da7fd48334220e59f0ae73",
+   "word": "older"
+  },
+  {
+   "commit": "9e4d5878ac4935877cc346b1067632428a0e596b",
+   "date": "2026-09-21T12:23:39+01:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: forbid reverting approval effects on validation-prefix restore",
+   "url": "https://github.com/ethereum/EIPs/commit/9e4d5878ac4935877cc346b1067632428a0e596b",
+   "word": "older"
+  },
+  {
+   "commit": "f3079a09e8c606afcb0e5e1a309ff228b88dc067",
+   "date": "2026-09-11T03:45:33-06:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: Preserve nested fees in transaction payload",
+   "url": "https://github.com/ethereum/EIPs/commit/f3079a09e8c606afcb0e5e1a309ff228b88dc067",
+   "word": "older"
+  },
+  {
+   "commit": "824cbc0b0e459ea6b105d8b96420a5d46abf0806",
+   "date": "2026-09-07T07:43:39-06:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: count recent root verification gas",
+   "url": "https://github.com/ethereum/EIPs/commit/824cbc0b0e459ea6b105d8b96420a5d46abf0806",
+   "word": "older"
+  },
+  {
+   "commit": "fe87e741f2ebf1d73a808fe5f245481740a77736",
+   "date": "2026-09-04T11:40:52Z",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: Add lightclient as a co-author",
+   "url": "https://github.com/ethereum/EIPs/commit/fe87e741f2ebf1d73a808fe5f245481740a77736",
+   "word": "older"
+  },
+  {
+   "commit": "20fb52b9b2c370b6964c59e4f998f63a14803122",
+   "date": "2026-09-04T01:24:10-06:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: verify recent roots with a canonical frame",
+   "url": "https://github.com/ethereum/EIPs/commit/20fb52b9b2c370b6964c59e4f998f63a14803122",
+   "word": "older"
+  },
+  {
+   "commit": "94f5a3e3c146c28625d9ab2f8a7c0a848530a13a",
+   "date": "2026-09-02T05:38:14-06:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: charge keyed nonce first use as state gas",
+   "url": "https://github.com/ethereum/EIPs/commit/94f5a3e3c146c28625d9ab2f8a7c0a848530a13a",
+   "word": "older"
+  },
+  {
+   "commit": "e5cf246ff18d0f82df8e7175d05ff9cb9f9aedd7",
+   "date": "2026-08-31T02:14:46-06:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: move TXPARAM_LEGACY_NONCE off 0x0C",
+   "url": "https://github.com/ethereum/EIPs/commit/e5cf246ff18d0f82df8e7175d05ff9cb9f9aedd7",
+   "word": "older"
+  },
+  {
+   "commit": "0231fb05f52c94ad9f104927567e6e67c7e53ea7",
+   "date": "2026-08-31T02:11:38-06:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: move RECENTROOTREFLOAD off 0xB5",
+   "url": "https://github.com/ethereum/EIPs/commit/0231fb05f52c94ad9f104927567e6e67c7e53ea7",
+   "word": "older"
+  },
+  {
+   "commit": "1dd4443b7ba56300b58e7850a4b551d8e15a379d",
+   "date": "2026-08-28T16:09:16Z",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Update EIP-8151: clarify code lifecycle and gas pricing",
+   "url": "https://github.com/ethereum/EIPs/commit/1dd4443b7ba56300b58e7850a4b551d8e15a379d",
+   "word": "older"
+  },
+  {
+   "commit": "1dd4443b7ba56300b58e7850a4b551d8e15a379d",
+   "date": "2026-08-28T16:09:16Z",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Update EIP-8151: clarify code lifecycle and gas pricing",
+   "url": "https://github.com/ethereum/EIPs/commit/1dd4443b7ba56300b58e7850a4b551d8e15a379d",
+   "word": "older"
+  },
+  {
+   "commit": "c9d962f194b9b167e045b3b68a7a292cdc4cec7f",
+   "date": "2026-08-08T15:58:20+08:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: Highlight privacy benefit upfront",
+   "url": "https://github.com/ethereum/EIPs/commit/c9d962f194b9b167e045b3b68a7a292cdc4cec7f",
+   "word": "older"
+  },
+  {
+   "commit": "a96bfaebd23ab7b9d00c63108bc65a2129c42952",
+   "date": "2026-08-08T15:57:35+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: Highlight privacy benefit upfront",
+   "url": "https://github.com/ethereum/EIPs/commit/a96bfaebd23ab7b9d00c63108bc65a2129c42952",
+   "word": "older"
+  },
+  {
+   "commit": "d8636a330deb59a8a8f88d39dcbccb2c7d77db28",
+   "date": "2026-08-03T19:53:27+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: pin RECENT_ROOT_ADDRESS to 0x...8272",
+   "url": "https://github.com/ethereum/EIPs/commit/d8636a330deb59a8a8f88d39dcbccb2c7d77db28",
+   "word": "older"
+  },
+  {
+   "commit": "81b976ac01591fed2eecb73fa574f27cd18db2e8",
+   "date": "2026-08-03T14:30:36+08:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: pin NONCE_MANAGER to 0x...8250",
+   "url": "https://github.com/ethereum/EIPs/commit/81b976ac01591fed2eecb73fa574f27cd18db2e8",
+   "word": "older"
+  },
+  {
+   "commit": "37a542d24e51ba3751572dfe5c0ab65824aae39a",
+   "date": "2026-07-29T12:31:56Z",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: make recent root changes additive",
+   "url": "https://github.com/ethereum/EIPs/commit/37a542d24e51ba3751572dfe5c0ab65824aae39a",
+   "word": "older"
+  },
+  {
+   "commit": "8ff5c1359f94ad413c06b0ba1b2a025df8ebaed7",
+   "date": "2026-07-29T09:05:54Z",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: make keyed nonce changes additive",
+   "url": "https://github.com/ethereum/EIPs/commit/8ff5c1359f94ad413c06b0ba1b2a025df8ebaed7",
+   "word": "older"
+  },
+  {
+   "commit": "bf7a4067f263bf7ce01c1511de48473e281d885d",
+   "date": "2026-07-27T17:58:26+08:00",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Update EIP-8151: restrict `ecRecover` by account code",
+   "url": "https://github.com/ethereum/EIPs/commit/bf7a4067f263bf7ce01c1511de48473e281d885d",
+   "word": "older"
+  },
+  {
+   "commit": "2c140450b07beb6076e4fb825579ecb14cc9acc0",
+   "date": "2026-07-20T18:09:17+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: resolve RECENTROOTREFLOAD opcode collision",
+   "url": "https://github.com/ethereum/EIPs/commit/2c140450b07beb6076e4fb825579ecb14cc9acc0",
+   "word": "older"
+  },
+  {
+   "commit": "66e475b052c038adc59397d119cc1c65b87f12fc",
+   "date": "2026-07-19T22:11:06+08:00",
+   "eip": "8250",
+   "state": "n/a",
+   "subject": "Update EIP-8250: align transaction introspection assignments",
+   "url": "https://github.com/ethereum/EIPs/commit/66e475b052c038adc59397d119cc1c65b87f12fc",
+   "word": "older"
+  },
+  {
+   "commit": "7f502d371b03e7981ac6f7a8e9d06cc22625798f",
+   "date": "2026-07-18T16:50:31+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: strengthen public-mempool handling of recent root references",
+   "url": "https://github.com/ethereum/EIPs/commit/7f502d371b03e7981ac6f7a8e9d06cc22625798f",
+   "word": "older"
+  },
+  {
+   "commit": "ae80ed96698c325ee2716cab99ec8034f17fc46f",
+   "date": "2026-07-18T16:50:07+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: restore signatures field in payload and elide signature bytes in compute_sig_hash",
+   "url": "https://github.com/ethereum/EIPs/commit/ae80ed96698c325ee2716cab99ec8034f17fc46f",
+   "word": "older"
+  },
+  {
+   "commit": "91777ef8d25c0238b6b75c5d3b05e727ead20450",
+   "date": "2026-07-18T14:13:14+08:00",
+   "eip": "8272",
+   "state": "n/a",
+   "subject": "Update EIP-8272: restore EIP-8141 signature costs in tx_gas_limit",
+   "url": "https://github.com/ethereum/EIPs/commit/91777ef8d25c0238b6b75c5d3b05e727ead20450",
+   "word": "older"
+  },
+  {
+   "commit": "f5878ee9969aa4b9f7c1ad83e18bfb859ee99919",
+   "date": "2026-07-01T20:56:04+08:00",
+   "eip": "8298",
+   "state": "n/a",
+   "subject": "Add EIP: SETCODEFROM Code Reuse Instruction",
+   "url": "https://github.com/ethereum/EIPs/commit/f5878ee9969aa4b9f7c1ad83e18bfb859ee99919",
+   "word": "older"
+  },
+  {
+   "commit": "e799068319906463adb97f383585970d30f637ef",
+   "date": "2026-05-21T22:45:19+08:00",
+   "eip": "8253",
+   "state": "n/a",
+   "subject": "Update EIP-8253: edit title",
+   "url": "https://github.com/ethereum/EIPs/commit/e799068319906463adb97f383585970d30f637ef",
+   "word": "older"
+  },
+  {
+   "commit": "60ecb84f2414387464d708e615392c45b819e5e7",
+   "date": "2026-05-21T09:35:21+08:00",
+   "eip": "8253",
+   "state": "n/a",
+   "subject": "Add EIP: Upgrade pre-Spurious-Dragon accounts",
+   "url": "https://github.com/ethereum/EIPs/commit/60ecb84f2414387464d708e615392c45b819e5e7",
+   "word": "older"
+  },
+  {
+   "commit": "43953c6d76475b9815e2c2103fc1119ef2c8c1a9",
+   "date": "2026-05-14T09:51:04Z",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Update EIP-7851: use code-controlled delegation",
+   "url": "https://github.com/ethereum/EIPs/commit/43953c6d76475b9815e2c2103fc1119ef2c8c1a9",
+   "word": "older"
+  },
+  {
+   "commit": "3010b58ba1d15abb754a499aa87a52e580765031",
+   "date": "2026-05-13T15:27:27Z",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Update EIP-7851: Few tweaks to 7851 and 8151",
+   "url": "https://github.com/ethereum/EIPs/commit/3010b58ba1d15abb754a499aa87a52e580765031",
+   "word": "older"
+  },
+  {
+   "commit": "3f561dfb7e27299479ff8aac3359819547965b72",
+   "date": "2026-05-12T20:39:56Z",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Update EIP-8151: align ecRecover with EIP-7851",
+   "url": "https://github.com/ethereum/EIPs/commit/3f561dfb7e27299479ff8aac3359819547965b72",
+   "word": "older"
+  },
+  {
+   "commit": "d84e3da0749d5f2e7548e194577a90ce3b10b830",
+   "date": "2026-02-28T17:37:47+08:00",
+   "eip": "8151",
+   "state": "n/a",
+   "subject": "Add EIP: Private Key Deactivation Aware ecRecover",
+   "url": "https://github.com/ethereum/EIPs/commit/d84e3da0749d5f2e7548e194577a90ce3b10b830",
+   "word": "older"
+  },
+  {
+   "commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+   "date": "2023-09-12T17:50:46-04:00",
+   "eip": "4758",
+   "state": "pass",
+   "subject": "EIP-4758 stagnant (2023-Sep-1st@15.40.6) (#7566)",
+   "url": "https://github.com/ethereum/EIPs/commit/1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+   "word": "EELS v2.0.0 implements this text"
+  },
+  {
+   "commit": "b9529eb0fb4d88fa4f9fb7cce7e787a1979ca8ce",
+   "date": "2022-11-28T06:16:42-07:00",
+   "eip": "4758",
+   "state": "n/a",
+   "subject": "Update 4758: Move to Review (#6041)",
+   "url": "https://github.com/ethereum/EIPs/commit/b9529eb0fb4d88fa4f9fb7cce7e787a1979ca8ce",
+   "word": "older"
+  },
+  {
+   "commit": "9e393a79d9937f579acbdcb234a67869259d5a96",
+   "date": "2022-05-06T00:29:09-07:00",
+   "eip": "4758",
+   "state": "n/a",
+   "subject": "Force usage of included LICENSE file (#5055)",
+   "url": "https://github.com/ethereum/EIPs/commit/9e393a79d9937f579acbdcb234a67869259d5a96",
+   "word": "older"
+  },
+  {
+   "commit": "7591860285068070ddf97ea310369bf99b21acfc",
+   "date": "2022-03-28T01:34:42Z",
+   "eip": "4758",
+   "state": "n/a",
+   "subject": "EIP-4758: Deactivate selfdestruct (#4758)",
+   "url": "https://github.com/ethereum/EIPs/commit/7591860285068070ddf97ea310369bf99b21acfc",
+   "word": "older"
+  }
+ ],
+ "fork": "bogota",
+ "snapshot": "2026-11-03T21:21:33Z",
+ "source": "live"
+}

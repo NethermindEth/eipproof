@@ -6,7 +6,7 @@ import urllib.request
 
 from . import config
 
-PAGES = ["index.html", "queue.html", "eip-7906.html", "client-nethermind.html"]
+PAGES = ["index.html", "queue.html", "changes.html", "eip-7906.html", "client-nethermind.html"]
 HEADLINES = {"pass", "open", "fail", "stale-release", "no-run", "no-tests"}
 CELL_KEYS = {"eip", "client", "headline", "text", "why", "links"}
 DOC_KEYS = {"fork", "snapshot", "source", "newest_release", "listing_url", "cells", "todo"}
@@ -70,6 +70,11 @@ def check(get, commit=""):
         errs.append(f"cells: {len(cells)} not in [{lo}, {hi}]")
     if status.get("cells") != len(cells):
         errs.append(f"cells: status says {status.get('cells')}, client JSON has {len(cells)}")
+    try:
+        if not json.loads(get("api/changes.json")).get("changes"):
+            errs.append("api/changes.json: no changes")
+    except Exception as e:
+        errs.append(f"api/changes.json: {e}")
     try:
         doc = json.loads(get("api/eip/7906.json"))
         errs += check_doc(doc, "api/eip/7906.json")

@@ -21,3 +21,4 @@ CLIENT_REPO = {
 }
 GITHUB = "https://github.com"
 SELF_REPO = "NethermindEth/eipproof"
+SITE_URL = "https://nethermindeth.github.io/eipproof"
