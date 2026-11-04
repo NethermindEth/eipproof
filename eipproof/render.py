@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 
 from . import build, config, index
-from .chain import EELS, cell_action, chain, delta_verbs, eels_action, headline_text, queue, release_short
+from .chain import EELS, cell_action, chain, delta_verbs, eels_action, eels_todo, headline_text, queue, release_short
 
 E = html.escape
 STATE_CLASS = {"pass": "ok", "covered": "ok", "open": "warn", "attested-not-run": "warn", "stale-release": "stale",
@@ -109,6 +109,9 @@ def eip_markdown(eip, snap, cells, attestations):
         if c["eip"] == eip:
             lines.append(f'- {config.CLIENT_LABEL[c["client"]]}: {headline_text(c)}. {why(c, snap)} '
                          f'{md(f"{config.SITE_URL}/index.html#{eip}-{c["client"]}", "evidence")}')
+    todo = eels_item(eip, snap)
+    if todo:
+        lines.append(f'- EELS: {todo["action"]}. {eels_detail(todo, snap)} ' + (md(todo["diff_url"], "EIP diff") if todo.get("diff_url") else ""))
     lines += ["", "Spec changes, newest first:"]
     for rev in reversed(info["revisions"]):
         lines.append(f'- {md(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])} {rev["date"][:10]} '
@@ -406,14 +409,56 @@ def files_text(files):
     return ", ".join(shown) + (f" and {rest} more" if rest > 0 else "")
 
 
+def pinned_text(info):
+    pin = info["pin"]
+    if not pin["commit"]:
+        return f'a text that is not in the EIP history (pin {E(pin.get("version", pin["blob"])[:8])})'
+    date = next((r["date"][:10] for r in info["revisions"] if r["commit"] == pin["commit"]), None)
+    link = f'<code>{a(gh(config.EIPS_REPO, "commit", pin["commit"]), pin["commit"][:8])}</code>'
+    return f'the text from {E(date)} ({link})' if date else f'the text of EIP commit {link}'
+
+
+def eels_item(eip, snap):
+    return eels_todo(eip, snap["eips"][eip], snap["newest_release"], config.GITHUB, config.EIPS_REPO)
+
+
+def eels_detail(todo, snap):
+    if todo["kind"] == "no-tests":
+        return no_tests_text(snap["eips"][todo["eip"]], snap) + "."
+    consts = "; ".join(f'{c["name"]} {", ".join(c["before"]) or "none"} -> {", ".join(c["after"]) or "removed"}' for c in todo["constants"])
+    since = f'EIP commit {todo["pin_commit"][:8]}' if todo["pin_commit"] else "a text not in the EIP history"
+    return (f'EELS {release_short(todo["pin_release"])} tests {since}; the EIP changed {todo["behind"]} time(s) since, '
+            f'newest {todo["head"][:8]} on {todo["head_date"][:10]}.' + (f" Named constants: {consts}." if consts else ""))
+
+
+def eels_todo_html(todo, snap):
+    if not todo:
+        return ""
+    link = f' {a(todo["diff_url"], "EIP diff")}' if todo.get("diff_url") else ""
+    consts = "".join(f'<div class="const"><code>{E(c["name"])}</code> {E(", ".join(c["before"]) or "none")} &rarr; <b>{E(", ".join(c["after"]) or "removed")}</b></div>'
+                     for c in todo.get("constants", []))
+    return (f'<div class="card" data-mark="eels-todo"><span class="pill warn">EELS to do</span> <b>{E(todo["action"])}</b>{link}'
+            f'<div class="muted">{E(eels_detail(todo, snap))}</div>' + (f'<div class="consts">{consts}</div>' if consts else "") + '</div>')
+
+
+def rev_note(eip, rev, info):
+    out = ""
+    named = index.subject_eips(rev["subject"])
+    if named and eip not in named:
+        out += f' <span class="muted" data-mark="other-eip">(commit for {E(", ".join("EIP-" + n for n in sorted(named, key=int)))}; it also edits this EIP)</span>'
+    delta = next((d for d in info.get("deltas") or [] if d["commit"] == rev["commit"]), None)
+    if delta and index.header_only(delta.get("diff", "")):
+        out += ' <span class="pill none" data-mark="header-only">header only</span>'
+    return out
+
+
 def tests_line(rev, info, snap):
     t = tests_info(rev, info, snap)
     if t is None:
         return ""
     if t["state"] == "waiting":
-        since = next((r["date"][:10] for r in info["revisions"] if r["commit"] == info["pin"]["commit"]), "?")
-        return (f'<div class="tl"><b>tests:</b> not updated yet. EELS {E(release_short(info["pin"]["release"]))} '
-                f'still tests the text from {E(since)}.</div>')
+        return (f'<div class="tl" data-mark="not-updated"><b>tests:</b> not updated to this text. EELS {E(release_short(info["pin"]["release"]))} '
+                f'still tests {pinned_text(info)}.</div>')
     if t["state"] == "never":
         return '<div class="tl"><b>tests:</b> no EELS release tests this text.</div>'
     if t["eels_url"]:
@@ -439,14 +484,14 @@ def tests_line(rev, info, snap):
 def untested_page_html(eip, snap, attestations):
     info = snap["eips"][eip]
     timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                       f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}</div>' for rev in reversed(info["revisions"]))
+                       f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)}</div>' for rev in reversed(info["revisions"]))
     pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
                    f'<em>not merged, not counted</em></div>' for p in info["pending"])
     return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h2>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
             f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
-            f'No client cell is shown: there is nothing to run.</span></div>'
+            f'No client cell is shown: there is nothing to run.</span></div>{eels_todo_html(eels_item(eip, snap), snap)}'
             f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>'
             + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
 
@@ -469,7 +514,7 @@ def eip_page_html(eip, snap, cells, attestations):
         st, word = rev_state(eip, info, rev, attestations)
         consts = constants_html(deltas[rev["commit"]]) if rev["commit"] in deltas else ""
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
+                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
                         f'{tests_line(rev, info, snap)}{consts}</div>')
     pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
                    f'<em>not merged, not counted</em></div>' for p in info["pending"])
@@ -478,6 +523,7 @@ def eip_page_html(eip, snap, cells, attestations):
             f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local(f"api/eip/{eip}.json", "JSON")}</p>'
             f'{copy_md(eip_markdown(eip, snap, cells, attestations))}'
+            f'{eels_todo_html(eels_item(eip, snap), snap)}'
             f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
             f'<h3>Spec changes and their tests, newest first</h3>'
             f'<p class="muted">each EIP commit, then the EELS change that pinned that text, its first release and the client runs on it</p>'
@@ -686,13 +732,13 @@ def action_html(verb, owner):
 
 def eels_cell(eip, info, cells, snap):
     link = a_local(eip_href(eip), "EIP page")
+    todo = eels_item(eip, snap)
     if not info.get("test_dir"):
-        state, text, sub, verb, n = "none", "no tests", f"no test dir at {E(release_short(snap['newest_release']))}", "write test", 0
+        state, text, sub = "none", "no tests", f"no test dir at {E(release_short(snap['newest_release']))}"
     else:
-        verb, n = eels_action(cells)
         behind = len(info["deltas"])
         untested_n = len(delta_verbs(cells))
-        if verb:
+        if untested_n:
             state, text, sub = "warn", f"{untested_n} spec change{'s' if untested_n > 1 else ''} untested", f"{behind} since the EELS pin"
         elif behind and not any(c["links"]["test"]["deltas"] for c in cells):
             state, text, sub = "none", "spec changes not checked", f"{behind} since the EELS pin, no run on the newest tests"
@@ -700,9 +746,12 @@ def eels_cell(eip, info, cells, snap):
             state, text, sub = "ok", "spec changes proven", f"{behind} since the EELS pin"
         else:
             state, text, sub = "ok", "implements current text", f"pin {E(info['pin']['blob'][:8])}"
-    count = f" &times;{n}" if n > 1 else ""
-    act = (f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}{count}</div><div class="sub">owner: EELS</div></div>' if verb
-           else action_html(None, ""))
+    verb, n = eels_action(cells) if info.get("test_dir") else (None, 0)
+    if verb:
+        count = f" &times;{n}" if n > 1 else ""
+        act = f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}{count}</div><div class="sub">owner: EELS</div></div>'
+    else:
+        act = action_html(todo["action"], "EELS") if todo else action_html(None, "")
     return (f'<td class="c eels {state}" id="c-{eip}-{EELS}"><div class="st"><div class="hl">{text}</div><div class="sub">{sub} &middot; {link}</div></div>{act}</td>')
 
 
@@ -718,8 +767,8 @@ def owner_filter(shown):
 def queue_html(snap, cells):
     items = queue(cells, tested(snap), snap["newest_release"])
     order = index.row_order(snap["eips"])
-    kind_rank = {"run-fail": 0, "open-delta": 1, "stale-release": 2, "run-missing": 3, "no-tests": 4}
-    shown = sorted(items + [{"kind": "no-tests", "eip": e, "clients": [], "owner": EELS, "action": "write test", "verb": "write test"} for e in untested(snap)],
+    kind_rank = {"run-fail": 0, "eels-update": 1, "open-delta": 2, "stale-release": 3, "run-missing": 4, "no-tests": 5}
+    shown = sorted(items + eels_items(snap),
                    key=lambda it: (order.index(it["eip"]), kind_rank[it["kind"]]))
     out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action, highest-ranked EIP first</span></h2>',
            owner_filter(shown), '<div id="queue">']
@@ -731,6 +780,10 @@ def queue_html(snap, cells):
             cands = "".join(f'<div class="cand"><code>{E(t)}</code> <em>passes on: {", ".join(f"{config.CLIENT_LABEL[c]} {p}/{n}" for c, (p, n) in v.items())}</em></div>' for t, v in it["candidates"].items())
             body = (f'<span class="k warn">EIP-{it["eip"]} &middot; spec change untested</span> {a(gh(config.EIPS_REPO, "commit", it["commit"]), it["commit"][:8])} {E(delta["subject"])}'
                     f'<div class="muted">affects {E(clients)}</div>{constants_html(delta)}{cands}')
+        elif it["kind"] == "eels-update":
+            body = (f'<span class="k warn">EIP-{it["eip"]} &middot; tests behind the EIP text</span> {E(eels_detail(it, snap))} {a(it["diff_url"], "EIP diff")}'
+                    + "".join(f'<div class="const"><code>{E(c["name"])}</code> {E(", ".join(c["before"]) or "none")} &rarr; <b>{E(", ".join(c["after"]) or "removed")}</b></div>'
+                              for c in it["constants"]))
         elif it["kind"] == "no-tests":
             body = f'<span class="k none">EIP-{it["eip"]} &middot; no tests yet</span> {E(no_tests_text(snap["eips"][it["eip"]], snap))}'
         elif it["kind"] == "run-fail":
@@ -746,6 +799,10 @@ def queue_html(snap, cells):
                    + (f'<div class="muted">next: {E(it["action"])}</div>' if it["action"] != it["verb"] else "") + '</div>')
     out.append("</div>")
     return "".join(out), items
+
+
+def eels_items(snap):
+    return [t for t in (eels_item(e, snap) for e in index.row_order(snap["eips"])) if t]
 
 
 def site(snap, attestations, out_dir):
@@ -774,7 +831,7 @@ def site(snap, attestations, out_dir):
         write_json(os.path.join(out_dir, "api", "eip", f"{eip}.json"), snap, [c for c in cells if c["eip"] == eip],
                    [it for it in items if it["eip"] == eip],
                    {"title": info.get("title"), "status": info.get("status"), "stage": info.get("stage"), "meta": snap.get("meta"),
-                    "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}})
+                    "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}}, eels_item(eip, snap))
     with open(os.path.join(out_dir, "releases.html"), "w") as f:
         f.write(page(f"{config.NAME} · test releases", "releases", releases_html(snap), snap))
     with open(os.path.join(out_dir, "api", "releases.json"), "w") as f:
@@ -850,17 +907,18 @@ def eips_doc(snap):
         info = snap["eips"][eip]
         rows.append({"eip": eip, "title": info.get("title"), "status": info.get("status"), "category": info.get("category"),
                      "stage": info.get("stage") or [], "test_dir": info.get("test_dir"), "checked": info.get("checked"),
-                     "behind": len(info["deltas"]) if info.get("pin") else None, "page": f'{config.SITE_URL}/{eip_href(eip)}'})
+                     "behind": len(info["deltas"]) if info.get("pin") else None, "eels_todo": eels_item(eip, snap), "page": f'{config.SITE_URL}/{eip_href(eip)}'})
     return {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"],
             "meta": snap.get("meta"), "eips": rows}
 
 
-def write_json(path, snap, cells, items, spec=None):
+def write_json(path, snap, cells, items, spec=None, eels=None):
     doc = {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"], "listing_url": snap["listing_url"],
            "cells": [{"eip": c["eip"], "client": c["client"], "headline": c["headline"], "text": headline_text(c), "why": why(c, snap),
                       "links": {k: v for k, v in c["links"].items() if not k.startswith("_")}} for c in cells],
            "todo": items}
     if spec is not None:
         doc["spec"] = spec
+        doc["eels_todo"] = eels
     with open(path, "w") as f:
         json.dump(doc, f, indent=1, sort_keys=True, default=str)

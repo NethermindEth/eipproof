@@ -168,6 +168,7 @@
    "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 0/0 is shown but does not count. Next: run v2.0.0."
   }
  ],
+ "eels_todo": null,
  "fork": "bogota",
  "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
  "newest_release": "tests-bogota-devnet@v2.0.0",

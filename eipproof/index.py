@@ -35,6 +35,19 @@ def parse_pins(spec_py):
     return {num: {"path": path, "blob": blob} for num, path, blob in _PIN.findall(spec_py)}
 
 
+def pin_blob(revisions, version):
+    return next((r["blob"] for r in revisions if r["commit"] == version), version)
+
+
+def header_only(diff):
+    changed = [l[1:] for l in diff.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+    return bool(changed) and all(re.match(r"^[a-z][a-z-]*:\s", l) or not l.strip() for l in changed)
+
+
+def subject_eips(subject):
+    return set(re.findall(r"EIP-(\d+)", subject))
+
+
 def resolve_pin(revisions, blob, cutoff):
     hits = [r for r in revisions if r["blob"] == blob]
     eligible = [r for r in hits if iso(r["date"]) <= iso(cutoff)]

@@ -580,6 +580,24 @@
    "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 299/305 is shown but does not count. Next: run v2.0.0."
   }
  ],
+ "eels_todo": {
+  "action": "update tests to EIP version 9099f412",
+  "behind": 1,
+  "changes": [
+   "9099f412d228ec80ec27b713df6da61993bf4702"
+  ],
+  "clients": [],
+  "constants": [],
+  "diff_url": "https://github.com/ethereum/EIPs/compare/25ac2920ea3a958911e380498bb7c8fbca201542...9099f412d228ec80ec27b713df6da61993bf4702",
+  "eip": "7906",
+  "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+  "head_date": "2026-10-27T11:42:30Z",
+  "kind": "eels-update",
+  "owner": "eels",
+  "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+  "pin_release": "tests-bogota-devnet@v2.0.0",
+  "verb": "update tests"
+ },
  "fork": "bogota",
  "listing_url": "https://hive.ethpandaops.io/bogota/listing.jsonl",
  "newest_release": "tests-bogota-devnet@v2.0.0",

@@ -189,6 +189,29 @@ def eels_action(cells):
     return verb, verbs.count(verb)
 
 
+def merged_constants(deltas):
+    out = {}
+    for d in deltas:
+        for c in d.get("constants", []):
+            prev = out.get(c["name"])
+            out[c["name"]] = {"name": c["name"], "before": prev["before"] if prev else c["before"], "after": c["after"]}
+    return [c for c in out.values() if c["before"] != c["after"]]
+
+
+def eels_todo(eip, info, newest_release, github, eips_repo):
+    if not info.get("test_dir"):
+        return {"kind": "no-tests", "eip": eip, "clients": [], "owner": EELS, "verb": "write tests",
+                "action": f"write tests for EIP-{eip} in {release_short(newest_release)} or later"}
+    if not info["deltas"]:
+        return None
+    head, pin = info["head"], info["pin"]["commit"]
+    diff = f"{github}/{eips_repo}/compare/{pin}...{head}" if pin else f"{github}/{eips_repo}/commits/{head}/{info['path']}"
+    return {"kind": "eels-update", "eip": eip, "clients": [], "owner": EELS, "verb": "update tests",
+            "action": f"update tests to EIP version {head[:8]}", "head": head, "head_date": info["head_date"],
+            "pin_commit": pin, "pin_release": info["pin"]["release"], "behind": len(info["deltas"]),
+            "changes": [d["commit"] for d in info["deltas"]], "diff_url": diff, "constants": merged_constants(info["deltas"])}
+
+
 def queue(cells, row_order, newest_release=None):
     items = []
     seen_deltas = {}

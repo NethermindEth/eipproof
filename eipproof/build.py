@@ -54,7 +54,7 @@ def shipped_pin(eels_repo, tag, spec, eip):
         return None
 
 
-def release_pins(eels_repo, eip):
+def release_pins(eels_repo, eip, revs):
     out = {}
     for t in sorted(sources.git(eels_repo, "tag", "--list", f"{config.RELEASE_PREFIX}*").split(), key=index.release_key):
         try:
@@ -63,11 +63,11 @@ def release_pins(eels_repo, eip):
             continue
         blob = shipped_pin(eels_repo, t, f"{test_dir}/spec.py", eip) if test_dir else None
         if blob:
-            out[t] = blob
+            out[t] = index.pin_blob(revs, blob)
     return out
 
 
-def pin_history(eels_repo, tag, test_dir, eip, pins_by_release):
+def pin_history(eels_repo, tag, test_dir, eip, pins_by_release, revs):
     spec = f"{test_dir}/spec.py"
     log = sources.git(eels_repo, "log", "--follow", "--name-only", "--format=%x00%H%x09%cI%x09%s", tag, "--", spec)
     out = []
@@ -81,6 +81,7 @@ def pin_history(eels_repo, tag, test_dir, eip, pins_by_release):
             continue
         if not pin:
             continue
+        pin = {**pin, "blob": index.pin_blob(revs, pin["blob"])}
         files = [f.rsplit("/", 1)[-1] for f in sources.git(eels_repo, "show", "--name-only", "--format=", commit, "--", path.rsplit("/", 1)[0]).split() if f != path]
         shipped = next((t for t, b in pins_by_release.items() if b == pin["blob"]), None)
         out.append({"commit": commit, "date": date, "subject": subject, "pr": index.pr_number(subject), "blob": pin["blob"], "files": files,
@@ -128,7 +129,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             log(f"spec  EIP-{eip}: no tests under {config.TEST_ROOT} at {tag}")
             continue
         pins = index.parse_pins(sources.git(eels_repo, "show", f"{tag}:{test_dir}/spec.py"))
-        pin = index.resolve_pin(revs, pins[eip]["blob"], tag_date)
+        pin = {**index.resolve_pin(revs, index.pin_blob(revs, pins[eip]["blob"]), tag_date), "version": pins[eip]["blob"]}
         deltas = []
         for r in index.deltas_after(revs, pin["commit"]):
             diff = sources.git(eips_repo, "show", "--format=", r["commit"], "--", path)
@@ -144,8 +145,8 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             "revisions": [{k: r[k] for k in ("commit", "date", "subject", "blob")} for r in revs[-12:]],
             "pin": {**pin, "release": tag, "spec_py": f"{config.GITHUB}/{config.EELS_REPO}/blob/{tag.replace('@', '%40')}/{test_dir}/spec.py"},
             "deltas": deltas,
-            "release_pins": (rp := release_pins(eels_repo, eip)),
-            "pin_history": pin_history(eels_repo, tag, test_dir, eip, rp),
+            "release_pins": (rp := release_pins(eels_repo, eip, revs)),
+            "pin_history": pin_history(eels_repo, tag, test_dir, eip, rp, revs),
             "pending": pending_prs(eip),
             "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
         }
