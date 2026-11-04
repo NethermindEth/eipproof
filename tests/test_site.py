@@ -125,7 +125,7 @@ def test_smoke_rejects_cell_count_out_of_range(tmp_path, live_site):
         doc = json.loads(path.read_text())
         path.write_text(json.dumps({**doc, "cells": doc["cells"][:3]}))
     errs = smoke.check(local_get(site))
-    assert "cells: 15 not in [20, 40]" in errs
+    assert "cells: 15 not in [20, 200]" in errs
     assert "cells: status says 40, client JSON has 15" in errs
 
 
@@ -235,3 +235,61 @@ def test_smoke_rejects_missing_feed(tmp_path, live_site):
     errs = smoke.check(local_get(site))
     assert any(e.startswith("changes.html: ") for e in errs)
     assert "api/changes.json: no changes" in errs
+
+
+
+def untested_info(eip, stage, category, title):
+    rev = {"commit": eip.ljust(40, "a"), "date": "2026-10-20T10:00:00+00:00", "subject": f"Update EIP-{eip}", "blob": "c" * 40}
+    return {"eip": eip, "path": f"EIPS/eip-{eip}.md", "test_dir": None, "checked": f"tests/bogota/eip{eip}_*",
+            "head": rev["commit"], "head_blob": rev["blob"], "head_date": rev["date"], "revisions": [rev], "pin": None,
+            "deltas": [], "pending": [], "title": title, "status": "Draft", "category": category, "stage": [stage]}
+
+
+@pytest.fixture(scope="module")
+def wide_site(tmp_path_factory):
+    snap = build.load_snapshot(SNAP)
+    snap["source"] = "live"
+    snap["eips"]["7805"] = untested_info("7805", "Scheduled", "Core", "Fork-choice enforced Inclusion Lists")
+    snap["eips"]["8077"] = untested_info("8077", "Considered", "Networking", "Announce nonce")
+    root = tmp_path_factory.mktemp("wide")
+    cells, _ = cli.write_site(snap, str(root))
+    (root / "api" / "status.json").write_text(json.dumps(health.status_doc(snap, len(cells), 0, "c0ffee")))
+    return root, cells
+
+
+def test_untested_sfi_cfi_eips_get_rows_but_no_cells(wide_site):
+    root, cells = wide_site
+    assert {c["eip"] for c in cells} == {"8141", "7906", "8250", "8151", "8272", "8298", "4758", "8253"}
+    page = (root / "index.html").read_text()
+    order = [m for m in re.findall(r'<th class="row"><a href="eip-(\d+)\.html"', page)]
+    assert order == ["8141", "7805", "7906", "8250", "8151", "8272", "8298", "4758", "8253", "8077"]
+    row = re.search(r'<tr class="nt" id="r-7805">.*?</tr>', page).group(0)
+    assert "no tests yet" in row and "checked tests/bogota/eip7805_*" in row and "v2.0.0" in row
+    assert 'class="c none"' in row and " ok" not in row
+    assert '<span class="pill sb">SFI</span>' in row
+
+
+def test_coverage_line_counts_sfi_cfi_and_names_networking(wide_site):
+    root, _ = wide_site
+    page = (root / "index.html").read_text()
+    assert "SFI+CFI in Hegotá: 10 EIPs, 8 with EELS tests, 2 without" in page
+    assert "Networking EIPs (EIP-8077) are out of EELS scope" in page
+
+
+def test_eips_json_lists_every_row(wide_site):
+    root, _ = wide_site
+    doc = json.loads((root / "api" / "eips.json").read_text())
+    by = {r["eip"]: r for r in doc["eips"]}
+    assert len(by) == 10
+    assert by["7805"]["test_dir"] is None and by["7805"]["checked"] == "tests/bogota/eip7805_*" and by["7805"]["behind"] is None
+    assert by["7906"]["test_dir"].endswith("eip7906_transaction_assertions") and by["8077"]["category"] == "Networking"
+
+
+def test_untested_eip_page_and_feed(wide_site):
+    root, _ = wide_site
+    page = (root / "eip-7805.html").read_text()
+    assert "no tests yet" in page and "No client cell is shown" in page
+    feed = json.loads((root / "api" / "changes.json").read_text())["changes"]
+    assert any(r["eip"] == "7805" and r["word"] == "no EELS tests" for r in feed)
+    assert sitecheck.check_dir(str(root)) == []
+    assert smoke.check(local_get(root)) == []

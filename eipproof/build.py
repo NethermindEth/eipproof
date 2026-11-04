@@ -65,12 +65,26 @@ def collect_specs(eips_repo, eels_repo, tag, log):
     dirs = eels_test_dirs(eels_repo, tag)
     stages = index.meta_stages(sources.git(eips_repo, "show", f"{config.EIPS_BRANCH}:EIPS/eip-{config.META_EIP}.md"))
     eips = {}
-    for eip in config.ROW_ORDER:
+    wanted = sorted(set(index.listed_eips(stages)) | set(dirs), key=int)
+    for eip in wanted:
         test_dir = dirs.get(eip)
+        path, revs = spec_revisions(eips_repo, eip)
+        if not revs:
+            log(f"spec  EIP-{eip}: not in {config.EIPS_REPO}, skipped")
+            continue
         if not test_dir:
+            head = revs[-1]
+            front = index.frontmatter(sources.git(eips_repo, "show", f"{head['commit']}:{path}"))
+            eips[eip] = {
+                "eip": eip, "path": path, "test_dir": None, "checked": f"{config.TEST_ROOT}/eip{eip}_*",
+                "head": head["commit"], "head_blob": head["blob"], "head_date": head["date"],
+                "revisions": [{k: r[k] for k in ("commit", "date", "subject", "blob")} for r in revs[-12:]],
+                "pin": None, "deltas": [], "pending": pending_prs(eip),
+                "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
+            }
+            log(f"spec  EIP-{eip}: no tests under {config.TEST_ROOT} at {tag}")
             continue
         pins = index.parse_pins(sources.git(eels_repo, "show", f"{tag}:{test_dir}/spec.py"))
-        path, revs = spec_revisions(eips_repo, eip)
         pin = index.resolve_pin(revs, pins[eip]["blob"], tag_date)
         deltas = []
         for r in index.deltas_after(revs, pin["commit"]):
@@ -88,7 +102,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             "pin": {**pin, "release": tag, "spec_py": f"{config.GITHUB}/{config.EELS_REPO}/blob/{tag.replace('@', '%40')}/{test_dir}/spec.py"},
             "deltas": deltas,
             "pending": pending_prs(eip),
-            "title": front.get("title"), "status": front.get("status"), "stage": stages.get(eip, []),
+            "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
         }
         log(f"spec  EIP-{eip}: pin {pin['blob'][:8]} -> {pin['commit'][:8] if pin['commit'] else '?'}  head {head['commit'][:8]}  deltas {len(deltas)}  pending {len(eips[eip]['pending'])}")
     return {"tag": tag, "tag_commit": tag_commit, "tag_date": tag_date, "eips": eips}

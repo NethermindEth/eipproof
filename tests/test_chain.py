@@ -166,3 +166,10 @@ def test_constant_changes_from_table_rows():
 def test_constant_changes_from_python_assignments():
     diff = "--- a\n+++ b\n-MAX_KEYS = 8\n+MAX_KEYS = 16\n+prose with `SOME_NAME` only\n"
     assert index.constant_changes(diff) == [{"name": "MAX_KEYS", "before": ["8"], "after": ["16"]}]
+
+
+def test_rows_are_sfi_cfi_with_sfi_first_then_tested():
+    stages = {"7805": ["Scheduled"], "8141": ["Scheduled"], "7906": ["Considered"], "3298": ["Considered"], "9999": ["Proposed"], "1111": ["Declined"]}
+    assert sorted(index.listed_eips(stages), key=int) == ["3298", "7805", "7906", "8141"]
+    eips = {e: {"stage": stages[e], "test_dir": None if e in ("7805", "3298") else "d"} for e in ("7805", "8141", "7906", "3298")}
+    assert index.row_order(eips) == ["8141", "7805", "7906", "3298"]
