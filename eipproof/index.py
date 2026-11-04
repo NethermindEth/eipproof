@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 from . import config
 
-_EIP_DIR = re.compile(r"^" + re.escape(config.TEST_ROOT) + r"/eip(\d+)_[^/]+/")
 _PIN = re.compile(r"ref_spec_(\d+)\s*=\s*ReferenceSpec\(\s*(?:git_path=)?\"(EIPS/eip-\d+\.md)\",\s*(?:version=)?\"([0-9a-f]{40})\"", re.S)
 _RELEASE = re.compile(r"fixtures release: (\S+)")
 _TICK = re.compile(r"`([^`]+)`")
@@ -98,7 +97,7 @@ def case_id(name):
 
 
 def eip_of(test_id):
-    m = _EIP_DIR.match(test_id)
+    m = re.match(r"^" + re.escape(config.TEST_ROOT) + r"/eip(\d+)_[^/]+/", test_id)
     return m.group(1) if m else None
 
 

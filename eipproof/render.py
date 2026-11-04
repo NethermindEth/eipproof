@@ -226,6 +226,7 @@ a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}code{font
 header.top{display:flex;align-items:center;gap:18px;padding:16px 28px;border-bottom:1px solid var(--line)}
 .brand{font-weight:800;font-size:20px;letter-spacing:.2px}.brand span{color:var(--ok)}
 nav a{margin-right:14px;color:var(--mut)}nav a.on{color:var(--fg);font-weight:600}
+nav.forks{border:1px solid var(--line);border-radius:8px;padding:3px 4px}nav.forks a{margin:0;padding:2px 8px;border-radius:6px}nav.forks a.on{background:var(--line)}
 .meta{margin-left:auto;color:var(--mut);font-size:13px;text-align:right}
 main{padding:20px 28px}.strip{background:#1a1320;border:1px solid #3b1d2a;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;color:#fca5a5}
 table.m{border-collapse:separate;border-spacing:6px;width:100%}th{color:var(--mut);font-weight:600;font-size:13px;text-align:left;padding:0 8px}
@@ -580,11 +581,22 @@ def fallback_banner(snap):
             f'the live rebuild did not run, so this page may be out of date</div>')
 
 
+def fork_href(fork):
+    up = "../" if config.SUBDIR else ""
+    sub = config.FORKS[fork]["SUBDIR"]
+    return up + (f"{sub}/" if sub else "") + "index.html"
+
+
+def forks_nav():
+    links = "".join(f'<a href="{fork_href(f)}" class="{"on" if f == config.FORK else ""}">{E(v["FORK_LABEL"])}</a>' for f, v in config.FORKS.items())
+    return f'<nav class="forks" aria-label="Fork">{links}</nav>'
+
+
 def page(title, nav, body, snap):
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
                     [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
-            f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div><nav>{links}</nav>'
+            f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav()}<nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
             f'snapshot {E(snap["taken_at"])} &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
             f'<main>{fallback_banner(snap)}{stale_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')

@@ -67,7 +67,7 @@ jobs:
         run: |
           flag=""
           if [ "$OUTCOME" = failure ]; then flag="--live-failed"; fi
-          make offline ARGS="--prev-status $SITE_URL/api/status.json $flag"
+          make offline ARGS="--prev-site $SITE_URL $flag"
           echo "::warning title=site built from snapshot::live build $OUTCOME; site shows data from snapshot $(jq -r .snapshot site/api/status.json)"
       - id: source
         run: echo "source=$(jq -r .source site/api/status.json)" >> "$GITHUB_OUTPUT"

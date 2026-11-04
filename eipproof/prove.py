@@ -28,7 +28,7 @@ def case_ids(junit_path):
 def fill(eels, tests, workers):
     tmp = tempfile.mkdtemp(prefix="eipproof-fill-")
     junit = os.path.join(tmp, "junit.xml")
-    cmd = ["uv", "run", "fill", tests, "--fork", config.FORK.capitalize(), "--output", os.path.join(tmp, "out"),
+    cmd = ["uv", "run", "fill", tests, "--fork", config.FILL_FORK, "--output", os.path.join(tmp, "out"),
            "--clean", "-q", f"--junitxml={junit}"]
     if workers > 1:
         cmd += ["-n", str(workers)]

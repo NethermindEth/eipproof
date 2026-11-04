@@ -22,8 +22,12 @@ def load_proofs(path=os.path.join(ROOT, "proofs")):
     return out
 
 
+def snap_dir():
+    return os.path.join(ROOT, "snapshots", config.SUBDIR)
+
+
 def latest_snapshot():
-    snaps = sorted(glob.glob(os.path.join(ROOT, "snapshots", "*.json")))
+    snaps = sorted(glob.glob(os.path.join(snap_dir(), "*.json")))
     if not snaps:
         sys.exit("no snapshot: run `eipproof build` first")
     return snaps[-1]
@@ -42,17 +46,24 @@ def write_site(snap, out_dir):
 
 
 def cmd_build(args):
-    snap_dir = os.path.join(ROOT, "snapshots")
+    for fork in args.fork or list(config.FORKS):
+        config.use(fork)
+        build_fork(args)
+    config.use(config.DEFAULT_FORK)
+
+
+def build_fork(args):
     if args.offline:
         path = latest_snapshot()
     else:
-        path = build.write_snapshot(build.snapshot(snap_dir), snap_dir)
-    print(f"snapshot {path}")
+        path = build.write_snapshot(build.snapshot(snap_dir()), snap_dir())
+    print(f"fork {config.FORK}  snapshot {path}")
     snap = build.load_snapshot(path)
     snap["source"] = "snapshot" if args.offline else "live"
-    out_dir = os.path.join(ROOT, "site")
+    out_dir = os.path.join(ROOT, "site", config.SUBDIR)
     cells, items = write_site(snap, out_dir)
-    failures = health.live_failures(health.fetch_status(args.prev_status), args.live_failed)
+    prev = "/".join(p for p in (args.prev_site, config.SUBDIR, "api/status.json") if p) if args.prev_site else None
+    failures = health.live_failures(health.fetch_status(prev), args.live_failed)
     doc = health.status_doc(snap, len(cells), failures, health.head_commit(ROOT))
     with open(os.path.join(out_dir, "api", "status.json"), "w") as f:
         json.dump(doc, f, indent=1, sort_keys=True)
@@ -64,10 +75,11 @@ def cmd_build(args):
         print(f"{eip:<8}" + "  ".join(f"{headline_text(by[(eip, c)]):<22}" for c in config.CLIENTS))
     for eip in render.untested(snap):
         print(f"{eip:<8}" + render.no_tests_text(snap["eips"][eip], snap))
-    print(f"site {os.path.join(ROOT, 'site')}/index.html  ({len(cells)} cells, {len(items)} queue items)")
+    print(f"site {out_dir}/index.html  ({len(cells)} cells, {len(items)} queue items)")
 
 
 def cmd_why(args):
+    config.use(args.fork)
     snap = build.load_snapshot(latest_snapshot())
     cell = next(c for c in render.cells_for(snap, load_proofs()) if c["eip"] == args.eip and c["client"] == args.client)
     print(f"EIP-{args.eip} x {config.CLIENT_LABEL[args.client]}: {headline_text(cell)}")
@@ -107,12 +119,14 @@ def main(argv=None):
     sub = p.add_subparsers(required=True)
     b = sub.add_parser("build")
     b.add_argument("--offline", action="store_true")
-    b.add_argument("--prev-status", metavar="URL", help="status.json of the deployed site, to count live failures in a row")
+    b.add_argument("--fork", action="append", choices=list(config.FORKS), help="build only this fork; repeat for more")
+    b.add_argument("--prev-site", metavar="URL", help="base URL of the deployed site, to count live failures in a row")
     b.add_argument("--live-failed", action="store_true", help="this build is a fallback after a failed live build")
     b.set_defaults(fn=cmd_build)
     w = sub.add_parser("why")
     w.add_argument("eip")
     w.add_argument("client", choices=config.CLIENTS)
+    w.add_argument("--fork", choices=list(config.FORKS), default=config.DEFAULT_FORK)
     w.set_defaults(fn=cmd_why)
     t = sub.add_parser("prove", help="run EELS tests with and without a mutant that undoes one spec change")
     t.add_argument("eip")
