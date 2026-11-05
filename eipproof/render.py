@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import build, config, index
+from . import build, config, diverge, index
 from .chain import EELS, cell_action, chain, delta_verbs, eels_action, eels_todo, headline_text, queue, release_short
 
 E = html.escape
@@ -657,7 +657,7 @@ def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
                     [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
-                     ("releases", "releases.html", "Test releases"), ("history", root + "history.html", "History")])
+                     ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("history", root + "history.html", "History")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
@@ -834,6 +834,11 @@ def site(snap, attestations, out_dir):
                     "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}}, eels_item(eip, snap))
     with open(os.path.join(out_dir, "releases.html"), "w") as f:
         f.write(page(f"{config.NAME} · test releases", "releases", releases_html(snap), snap))
+    ddoc = diverge.doc(snap)
+    with open(os.path.join(out_dir, "divergences.html"), "w") as f:
+        f.write(page(f"{config.NAME} · divergences", "divergences", divergences_html(ddoc), snap))
+    with open(os.path.join(out_dir, "api", "divergences.json"), "w") as f:
+        json.dump(ddoc, f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "api", "releases.json"), "w") as f:
         json.dump(releases_doc(snap), f, indent=1, sort_keys=True)
     for client in config.CLIENTS:
@@ -842,6 +847,43 @@ def site(snap, attestations, out_dir):
         write_json(os.path.join(out_dir, "api", "client", f"{client}.json"), snap, [c for c in cells if c["client"] == client],
                    [it for it in items if client in it["clients"]])
     return cells, items
+
+
+DIVERGE_CLASS = {"match": "ok", "differs": "warn", "not-located": "none", "unparsed": "none", "spec-tbd": "none", "unreachable": "none"}
+
+
+def divergence_cell(cell):
+    word = cell["raw"] if cell["state"] in ("match", "differs") else cell["state"]
+    text = a(cell["url"], word) if cell.get("url") else E(word)
+    return f'<td class="c {DIVERGE_CLASS[cell["state"]]}" title="{E(cell.get("reason") or cell["state"])}">{text}</td>'
+
+
+def divergences_html(doc):
+    head = (f'<h2>Divergences <span class="muted">client constants that differ from the EIP text</span></h2>'
+            f'<p class="muted">each value is read from the client source at the shown commit and compared with the constants table of the EIP on '
+            f'{E(config.EIPS_BRANCH)}; a divergence is <b>suspect</b> until a hive run of that client fails tests of that EIP, then <b>confirmed</b>; '
+            f'a suspect may be an old branch or a later spec change &middot; {a_local("api/divergences.json", "JSON")}</p>')
+    if not doc["eips"]:
+        return head + '<p class="muted">no cross-client comparison in this snapshot</p>'
+    rows = "".join(f'<div class="q"><span class="k {"bad" if r["status"] == "confirmed" else "warn"}">EIP-{E(r["eip"])} &middot; {E(r["status"])}</span> '
+                   f'<code>{E(r["name"])}</code> spec <b>{r["spec"]}</b>, {E(config.CLIENT_LABEL[r["client"]])} <code>{E(r["ref"])}</code> has '
+                   f'{a(r["url"], str(r["value"]))}'
+                   + (f'<div class="muted">the branch commit is older than the spec change of {E(r["spec_since"]["date"][:10])}</div>' if r["predates_spec"] else "")
+                   + '</div>' for r in doc["divergences"])
+    out = [head, f'<h3>{len(doc["divergences"])} divergence(s)</h3>', f'<div class="card">{rows}</div>' if rows else '<p class="muted">every located value matches the EIP text</p>']
+    for e in doc["eips"]:
+        names = [c["name"] for c in e["constants"]]
+        thead = "<tr><th></th><th>EIP text</th>" + "".join(
+            f'<th>{E(config.CLIENT_LABEL[r["client"]])}<small><code>{E(r["ref"])}</code>'
+            + (f' {a(f"{config.GITHUB}/{r["repo"]}/pull/{r["pr"]}", "#" + str(r["pr"]))}' if r.get("pr") else "")
+            + (f' &middot; {a(f"{config.GITHUB}/{r["repo"]}/commit/{r["sha"]}", r["sha"][:8])} {E((r["date"] or "")[:10])}' if r.get("sha") else f' &middot; {E(r["state"])}')
+            + '</small></th>' for r in e["refs"]) + "</tr>"
+        body = "".join(f'<tr><th class="row"><code>{E(c["name"])}</code></th><td class="c">{E(c["raw"] or "absent")}</td>'
+                       + "".join(divergence_cell(r["cells"][c["name"]]) for r in e["refs"]) + "</tr>" for c in e["constants"])
+        out.append(f'<h3 id="eip-{E(e["eip"])}">EIP-{E(e["eip"])} <span class="muted">{len(names)} constant(s), EIP text at '
+                   f'{a(e["spec"]["url"], e["spec"]["commit"][:8])} {E(e["spec"]["date"][:10])}</span></h3>'
+                   f'<div class="wrap"><table class="m list">{thead}{body}</table></div>')
+    return "".join(out)
 
 
 def releases_doc(snap):

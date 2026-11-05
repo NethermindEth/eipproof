@@ -5,9 +5,9 @@ import sys
 import time
 import urllib.request
 
-from . import config
+from . import config, diverge
 
-PAGES = ["index.html", "queue.html", "changes.html", "releases.html", "history.html", "client-nethermind.html"]
+PAGES = ["index.html", "queue.html", "changes.html", "releases.html", "history.html", "client-nethermind.html", "divergences.html"]
 ASOF = re.compile(r'as of <a href="(s/[^"]+)"')
 HEADLINES = {"pass", "open", "fail", "stale-release", "no-run", "no-tests"}
 CELL_KEYS = {"eip", "client", "headline", "text", "why", "links"}
@@ -85,6 +85,7 @@ def check(get, commit=""):
     except Exception as e:
         errs.append(f"api/releases.json: {e}")
     errs += check_permalink(get)
+    errs += check_divergences(get)
     try:
         doc = json.loads(get(f"api/eip/{eip}.json"))
         errs += check_doc(doc, f"api/eip/{eip}.json")
@@ -103,6 +104,13 @@ def check_forks(get, commit=""):
         errs += [f"{prefix}{e}" for e in check(lambda p: get(prefix + p), commit)]
     config.use(config.DEFAULT_FORK)
     return errs
+
+
+def check_divergences(get):
+    try:
+        return diverge.check_doc(json.loads(get("api/divergences.json")))
+    except Exception as e:
+        return [f"api/divergences.json: {e}"]
 
 
 def check_permalink(get):
