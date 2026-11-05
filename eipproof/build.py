@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 
-from . import config, index, sources
+from . import config, diverge, index, sources
 
 
 def spec_revisions(eips_repo, eip):
@@ -234,6 +234,11 @@ def snapshot(out_dir, log=print):
     runs = collect_runs(listing, out_dir, log)
     history = hive_runs(listing)
     log(f"hive  {len(history)} {config.SIMULATOR} runs, {sum(1 for h in history if not h['release'])} without a known release")
+    try:
+        divergence = diverge.collect(eips_repo, log)
+    except Exception as e:
+        log(f"::warning title=divergence::{type(e).__name__}: {e}")
+        divergence = {"eips": []}
     return {
         "name": config.NAME, "fork": config.FORK,
         "taken_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -241,7 +246,7 @@ def snapshot(out_dir, log=print):
         "release_url": release_url(tag), "releases": release_list(eels_repo, tags), "hive_runs": history,
         "listing_url": f"{config.HIVE}/listing.jsonl", "listing_rows": len(listing),
         "meta": {"eip": config.META_EIP, "name": config.META_NAME, "url": f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/EIPS/eip-{config.META_EIP}.md"},
-        "eips": specs["eips"], "runs": runs,
+        "eips": specs["eips"], "runs": runs, "divergence": divergence,
     }
 
 
@@ -263,7 +268,10 @@ def permalink(taken_at):
 
 
 def content_key(snap):
-    return {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof")}
+    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence")}
+    if snap.get("divergence"):
+        out["divergence"] = diverge.content(snap["divergence"])
+    return out
 
 
 def load_snapshot(path):

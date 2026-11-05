@@ -56,3 +56,7 @@ def hive_simlog_head(sim_log):
 def gh_api(path):
     out = subprocess.run(["gh", "api", path], check=True, capture_output=True, text=True).stdout
     return json.loads(out)
+
+
+def gh_raw(path):
+    return subprocess.run(["gh", "api", "-H", "Accept: application/vnd.github.raw", path], check=True, capture_output=True, text=True).stdout

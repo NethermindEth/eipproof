@@ -1,0 +1,38 @@
+- eip: "8288"
+  clients:
+    nethermind:
+      refs:
+        - ref: feature/eip8288-lean
+          pr: 14202
+      files:
+        src/Nethermind/Nethermind.Core/Eip8288Constants.cs:
+          DEP_VERIFY_FRAME_MODE: DepVerifyFrameMode
+          MAX_DEPENDENCIES_PER_FRAME: MaxDependenciesPerFrame
+          LEANSPHINCS_SCHEME: LeanSphincsScheme
+          LEANSTARK_SCHEME: LeanStarkScheme
+          LEANSPHINCS_VERIFICATION_GAS: LeanSphincsVerificationGas
+          LEANSTARK_VERIFICATION_GAS: LeanStarkVerificationGas
+          AGGREGATION_INTERVAL: AggregationInterval
+          MAX_SIGS_PER_TX: MaxSigsPerTx
+          MAX_STARKS_PER_TX: MaxStarksPerTx
+          MAX_LEANSIG_DEPS_PER_WRAPPER: MaxLeanSigDepsPerWrapper
+          MAX_LEANSTARK_DEPS_PER_WRAPPER: MaxLeanStarkDepsPerWrapper
+    ethrex:
+      refs:
+        - ref: eip-8288-daisugi
+        - ref: eip-8288-frames-devnet-0
+        - ref: eip-8288
+      files:
+        crates/common/types/transaction.rs:
+          DEP_VERIFY_FRAME_MODE: DepVerify
+          MAX_DEPENDENCIES_PER_FRAME: FRAME_TX_MAX_DEPENDENCIES_PER_FRAME
+          LEANSPHINCS_SCHEME: DEPENDENCY_SCHEME_LEANSPHINCS
+          LEANSTARK_SCHEME: DEPENDENCY_SCHEME_LEANSTARK
+          LEANSPHINCS_VERIFICATION_GAS: LEANSPHINCS_VERIFICATION_GAS
+          LEANSTARK_VERIFICATION_GAS: LEANSTARK_VERIFICATION_GAS
+          MAX_SIGS_PER_TX: FRAME_TX_MAX_SIGS_PER_TX
+          MAX_STARKS_PER_TX: FRAME_TX_MAX_STARKS_PER_TX
+        crates/common/dep-aggregation/src/wrapper.rs:
+          AGGREGATION_INTERVAL: AGGREGATION_INTERVAL_MS
+          MAX_LEANSIG_DEPS_PER_WRAPPER: MAX_LEANSIG_DEPS_PER_WRAPPER
+          MAX_LEANSTARK_DEPS_PER_WRAPPER: MAX_LEANSTARK_DEPS_PER_WRAPPER

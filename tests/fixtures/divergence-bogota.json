@@ -1,0 +1,511 @@
+{
+ "eips": [
+  {
+   "constants": [
+    {
+     "name": "AGGREGATION_INTERVAL",
+     "raw": "1000",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 1000
+    },
+    {
+     "name": "DEP_VERIFY_FRAME_MODE",
+     "raw": "4",
+     "since": {
+      "commit": "00afdc8077b24f9c287313e1da0984646da64bd9",
+      "date": "2026-10-07T17:52:45Z"
+     },
+     "value": 4
+    },
+    {
+     "name": "LEANSPHINCS_SCHEME",
+     "raw": "0x10",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 16
+    },
+    {
+     "name": "LEANSPHINCS_VERIFICATION_GAS",
+     "raw": "3000",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 3000
+    },
+    {
+     "name": "LEANSTARK_SCHEME",
+     "raw": "0x11",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 17
+    },
+    {
+     "name": "LEANSTARK_VERIFICATION_GAS",
+     "raw": "30000",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 30000
+    },
+    {
+     "name": "MAX_DEPENDENCIES_PER_FRAME",
+     "raw": "256",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 256
+    },
+    {
+     "name": "MAX_LEANSIG_DEPS_PER_WRAPPER",
+     "raw": "16",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 16
+    },
+    {
+     "name": "MAX_LEANSTARK_DEPS_PER_WRAPPER",
+     "raw": "1",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 1
+    },
+    {
+     "name": "MAX_SIGS_PER_TX",
+     "raw": "16",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 16
+    },
+    {
+     "name": "MAX_STARKS_PER_TX",
+     "raw": "1",
+     "since": {
+      "commit": "1f373dabb23ca0602fc78b3a08a767263b76e228",
+      "date": "2026-09-09T07:29:48-06:00"
+     },
+     "value": 1
+    }
+   ],
+   "eip": "8288",
+   "refs": [
+    {
+     "client": "nethermind",
+     "date": "2026-11-03T08:54:12Z",
+     "obs": {
+      "AGGREGATION_INTERVAL": {
+       "ident": "AggregationInterval",
+       "line": 89,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "1_000",
+       "state": "found",
+       "value": 1000
+      },
+      "DEP_VERIFY_FRAME_MODE": {
+       "ident": "DepVerifyFrameMode",
+       "line": 16,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "4",
+       "state": "found",
+       "value": 4
+      },
+      "LEANSPHINCS_SCHEME": {
+       "ident": "LeanSphincsScheme",
+       "line": 75,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "0x10",
+       "state": "found",
+       "value": 16
+      },
+      "LEANSPHINCS_VERIFICATION_GAS": {
+       "ident": "LeanSphincsVerificationGas",
+       "line": 82,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "3_000",
+       "state": "found",
+       "value": 3000
+      },
+      "LEANSTARK_SCHEME": {
+       "ident": "LeanStarkScheme",
+       "line": 80,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "0x11",
+       "state": "found",
+       "value": 17
+      },
+      "LEANSTARK_VERIFICATION_GAS": {
+       "ident": "LeanStarkVerificationGas",
+       "line": 83,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "30_000",
+       "state": "found",
+       "value": 30000
+      },
+      "MAX_DEPENDENCIES_PER_FRAME": {
+       "ident": "MaxDependenciesPerFrame",
+       "line": 21,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "256",
+       "state": "found",
+       "value": 256
+      },
+      "MAX_LEANSIG_DEPS_PER_WRAPPER": {
+       "ident": "MaxLeanSigDepsPerWrapper",
+       "line": 93,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_LEANSTARK_DEPS_PER_WRAPPER": {
+       "ident": "MaxLeanStarkDepsPerWrapper",
+       "line": 96,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      },
+      "MAX_SIGS_PER_TX": {
+       "ident": "MaxSigsPerTx",
+       "line": 85,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_STARKS_PER_TX": {
+       "ident": "MaxStarksPerTx",
+       "line": 86,
+       "path": "src/Nethermind/Nethermind.Core/Eip8288Constants.cs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      }
+     },
+     "pr": 14202,
+     "ref": "feature/eip8288-lean",
+     "repo": "NethermindEth/nethermind",
+     "sha": "0260e692fcf8e6b8bcb41289d877e0d5e380b5cd",
+     "state": "ok"
+    },
+    {
+     "client": "ethrex",
+     "date": "2026-10-13T16:42:52Z",
+     "obs": {
+      "AGGREGATION_INTERVAL": {
+       "ident": "AGGREGATION_INTERVAL_MS",
+       "line": 38,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1_000",
+       "state": "found",
+       "value": 1000
+      },
+      "DEP_VERIFY_FRAME_MODE": {
+       "ident": "DepVerify",
+       "line": 1825,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "4",
+       "state": "found",
+       "value": 4
+      },
+      "LEANSPHINCS_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSPHINCS",
+       "line": 2194,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x10",
+       "state": "found",
+       "value": 16
+      },
+      "LEANSPHINCS_VERIFICATION_GAS": {
+       "ident": "LEANSPHINCS_VERIFICATION_GAS",
+       "line": 2198,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "3_000",
+       "state": "found",
+       "value": 3000
+      },
+      "LEANSTARK_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSTARK",
+       "line": 2196,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x11",
+       "state": "found",
+       "value": 17
+      },
+      "LEANSTARK_VERIFICATION_GAS": {
+       "ident": "LEANSTARK_VERIFICATION_GAS",
+       "line": 2200,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "30_000",
+       "state": "found",
+       "value": 30000
+      },
+      "MAX_DEPENDENCIES_PER_FRAME": {
+       "ident": "FRAME_TX_MAX_DEPENDENCIES_PER_FRAME",
+       "line": 2190,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "256",
+       "state": "found",
+       "value": 256
+      },
+      "MAX_LEANSIG_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSIG_DEPS_PER_WRAPPER",
+       "line": 34,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_LEANSTARK_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSTARK_DEPS_PER_WRAPPER",
+       "line": 36,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      },
+      "MAX_SIGS_PER_TX": {
+       "ident": "FRAME_TX_MAX_SIGS_PER_TX",
+       "line": 2203,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_STARKS_PER_TX": {
+       "ident": "FRAME_TX_MAX_STARKS_PER_TX",
+       "line": 2205,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      }
+     },
+     "pr": null,
+     "ref": "eip-8288-daisugi",
+     "repo": "lambdaclass/ethrex",
+     "sha": "1e3270c624da9a08ae82e5ad95aeb05449ce2e58",
+     "state": "ok"
+    },
+    {
+     "client": "ethrex",
+     "date": "2026-10-03T11:36:48Z",
+     "obs": {
+      "AGGREGATION_INTERVAL": {
+       "ident": "AGGREGATION_INTERVAL_MS",
+       "line": 38,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1_000",
+       "state": "found",
+       "value": 1000
+      },
+      "DEP_VERIFY_FRAME_MODE": {
+       "ident": "DepVerify",
+       "line": 1809,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "3",
+       "state": "found",
+       "value": 3
+      },
+      "LEANSPHINCS_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSPHINCS",
+       "line": 2122,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x10",
+       "state": "found",
+       "value": 16
+      },
+      "LEANSPHINCS_VERIFICATION_GAS": {
+       "ident": "LEANSPHINCS_VERIFICATION_GAS",
+       "line": 2126,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "3_000",
+       "state": "found",
+       "value": 3000
+      },
+      "LEANSTARK_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSTARK",
+       "line": 2124,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x11",
+       "state": "found",
+       "value": 17
+      },
+      "LEANSTARK_VERIFICATION_GAS": {
+       "ident": "LEANSTARK_VERIFICATION_GAS",
+       "line": 2128,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "30_000",
+       "state": "found",
+       "value": 30000
+      },
+      "MAX_DEPENDENCIES_PER_FRAME": {
+       "ident": "FRAME_TX_MAX_DEPENDENCIES_PER_FRAME",
+       "line": 2118,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "256",
+       "state": "found",
+       "value": 256
+      },
+      "MAX_LEANSIG_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSIG_DEPS_PER_WRAPPER",
+       "line": 34,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_LEANSTARK_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSTARK_DEPS_PER_WRAPPER",
+       "line": 36,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      },
+      "MAX_SIGS_PER_TX": {
+       "ident": "FRAME_TX_MAX_SIGS_PER_TX",
+       "line": 2131,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_STARKS_PER_TX": {
+       "ident": "FRAME_TX_MAX_STARKS_PER_TX",
+       "line": 2133,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      }
+     },
+     "pr": null,
+     "ref": "eip-8288-frames-devnet-0",
+     "repo": "lambdaclass/ethrex",
+     "sha": "a1ff6f053d3f1972975e773f9dd7635af8423359",
+     "state": "ok"
+    },
+    {
+     "client": "ethrex",
+     "date": "2026-09-12T17:37:09Z",
+     "obs": {
+      "AGGREGATION_INTERVAL": {
+       "ident": "AGGREGATION_INTERVAL_MS",
+       "line": 38,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1_000",
+       "state": "found",
+       "value": 1000
+      },
+      "DEP_VERIFY_FRAME_MODE": {
+       "ident": "DepVerify",
+       "line": 1917,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "3",
+       "state": "found",
+       "value": 3
+      },
+      "LEANSPHINCS_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSPHINCS",
+       "line": 2316,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x10",
+       "state": "found",
+       "value": 16
+      },
+      "LEANSPHINCS_VERIFICATION_GAS": {
+       "ident": "LEANSPHINCS_VERIFICATION_GAS",
+       "line": 2320,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "3_000",
+       "state": "found",
+       "value": 3000
+      },
+      "LEANSTARK_SCHEME": {
+       "ident": "DEPENDENCY_SCHEME_LEANSTARK",
+       "line": 2318,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "0x11",
+       "state": "found",
+       "value": 17
+      },
+      "LEANSTARK_VERIFICATION_GAS": {
+       "ident": "LEANSTARK_VERIFICATION_GAS",
+       "line": 2322,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "30_000",
+       "state": "found",
+       "value": 30000
+      },
+      "MAX_DEPENDENCIES_PER_FRAME": {
+       "ident": "FRAME_TX_MAX_DEPENDENCIES_PER_FRAME",
+       "line": 2312,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "256",
+       "state": "found",
+       "value": 256
+      },
+      "MAX_LEANSIG_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSIG_DEPS_PER_WRAPPER",
+       "line": 34,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_LEANSTARK_DEPS_PER_WRAPPER": {
+       "ident": "MAX_LEANSTARK_DEPS_PER_WRAPPER",
+       "line": 36,
+       "path": "crates/common/dep-aggregation/src/wrapper.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      },
+      "MAX_SIGS_PER_TX": {
+       "ident": "FRAME_TX_MAX_SIGS_PER_TX",
+       "line": 2325,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "16",
+       "state": "found",
+       "value": 16
+      },
+      "MAX_STARKS_PER_TX": {
+       "ident": "FRAME_TX_MAX_STARKS_PER_TX",
+       "line": 2327,
+       "path": "crates/common/types/transaction.rs",
+       "raw": "1",
+       "state": "found",
+       "value": 1
+      }
+     },
+     "pr": null,
+     "ref": "eip-8288",
+     "repo": "lambdaclass/ethrex",
+     "sha": "b5c3a098ce8041c8e38b7ebe22eed83c400ef35c",
+     "state": "ok"
+    }
+   ],
+   "spec": {
+    "commit": "72ca2dd7919259a408eaf46aa127adf98cfd4ae3",
+    "date": "2026-10-14T20:43:12-06:00",
+    "path": "EIPS/eip-8288.md"
+   }
+  }
+ ]
+}
