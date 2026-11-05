@@ -63,6 +63,7 @@ jobs:
           if git -C data fetch -q --depth=1 "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "refs/heads/$DATA_BRANCH"; then
             git -C data checkout -q FETCH_HEAD
           fi
+          python3 -m eipproof.traffic check data
       - id: live
         if: ${{ !inputs.force_fallback }}
         continue-on-error: true
@@ -177,5 +178,12 @@ jobs:
           git add snapshots
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -qm "snapshots from $SHA" -m "$(git diff --cached --name-only -- '*.json')"
-          git push -q origin "HEAD:refs/heads/$DATA_BRANCH"
+          c=$(git rev-parse HEAD)
+          for i in 1 2 3; do
+            if git push -q origin "HEAD:refs/heads/$DATA_BRANCH"; then break; fi
+            if [ "$i" = 3 ]; then exit 1; fi
+            git fetch -q --depth=1 origin "refs/heads/$DATA_BRANCH"
+            git reset -q --hard FETCH_HEAD
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" cherry-pick "$c"
+          done
           echo "archived to $DATA_BRANCH: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"

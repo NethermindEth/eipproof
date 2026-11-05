@@ -9,7 +9,10 @@ No status comes from PR titles or from a grep for the EIP number.
 
 Scope today: execution layer, fork `bogota`, simulator `eels/consume-engine`, 8 EIPs x 5 clients.
 
-Live site: https://nethermindeth.github.io/eipproof/
+Live site: https://nethermindeth.github.io/eipproof/ (new here? open [Start here](https://nethermindeth.github.io/eipproof/start.html))
+
+[![GitHub repo traffic, 14 days](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FNethermindEth%2Feipproof%2Fdata%2Ftraffic%2Fbadge.json)](https://github.com/NethermindEth/eipproof/blob/data/traffic/daily.json)
+GitHub repo traffic, includes maintainers; not site visits. Recorded once a day by `python -m eipproof.traffic`, history in [`traffic/daily.json`](https://github.com/NethermindEth/eipproof/blob/data/traffic/daily.json) on the `data` branch.
 
 ## How a cell is decided
 
