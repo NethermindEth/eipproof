@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import build, config, diverge, handoff, impact, index
+from . import build, codepr, config, diverge, handoff, impact, index
 from .chain import EELS, cell_action, chain, delta_verbs, eels_action, eels_todo, headline_text, queue, release_short
 
 E = html.escape
@@ -489,8 +489,8 @@ def pending_html(rows):
 PR_STATE = {"open": "warn", "merged": "ok"}
 
 
-def merged_since(snap):
-    return next((b["merged_since"] for b in (snap.get("linked_prs") or {}).values() if b.get("merged_since")), f"the last {handoff.MERGED_DAYS} days")
+def merged_since(snap, key="linked_prs"):
+    return next((b["merged_since"] for b in (snap.get(key) or {}).values() if b.get("merged_since")), f"the last {handoff.MERGED_DAYS} days")
 
 
 def client_prs_html(snap, eip):
@@ -510,10 +510,33 @@ def client_prs_html(snap, eip):
     return "".join(rows)
 
 
-def linked_html(eip, snap):
+def code_pr_line(p):
+    word = "not on default branch" if p["state"] == "merged-elsewhere" else p["state"]
+    return f'{a(p["url"], "#" + str(p["number"]))} <span class="pill {PR_STATE.get(p["state"], "none")}" title="{E(p["title"])}">{E(word)}</span>'
+
+
+def code_html(snap, eip, attestations):
+    rows = []
+    for c in codepr.cells(snap, eip, attestations):
+        pill = (f'<span class="pill {codepr.PILL[c["status"]]}" data-mark="code-{c["status"]}">{E(codepr.WORD[c["status"]])}</span>' if c["state"] == "ok"
+                else '<span class="pill none">-</span>')
+        files = f' title="{E(", ".join(c["paths"]))}"' if c.get("paths") else ""
+        prs = " ".join(code_pr_line(p) for p in c.get("prs", [])[:3]) + (f' <em>+{len(c["prs"]) - 3} more</em>' if len(c.get("prs", [])) > 3 else "")
+        rows.append(f'<tr><th class="row">{a(f"{config.GITHUB}/{c["repo"]}", c["label"])} <small>{E(config.CODE_CLIENTS[c["client"]]["layer"].upper())}</small></th>'
+                    f'<td class="prs">{pill} <span class="muted"{files}>{E(codepr.evidence_text(c))}</span> {prs}</td></tr>')
+    return ''.join(rows)
+
+
+def linked_html(eip, snap, attestations=()):
     pend = pending_html(handoff.pending_spec(snap, eip))
-    return ((f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
-             f'<div class="card">{pend}</div>' if pend else "")
+    spec = (f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
+            f'<div class="card">{pend}</div>' if pend else "")
+    if snap.get("code_status") is not None:
+        return (spec + f'<h3>Code and PRs</h3><p class="muted">code merged: at least {codepr.MIN_CODE_FILES} files named for EIP-{eip} on the default branch, '
+                f'or a merged PR whose title names it; spec changed since: a spec change after the last merged PR; '
+                f'PRs merged since {E(merged_since(snap, "code_status"))}; a hint from names, it never changes a test verdict</p>'
+                f'<div class="wrap"><table class="m list" data-mark="code-status">{code_html(snap, eip, attestations)}</table></div>')
+    return (spec
             + f'<h3>Client PRs</h3><p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}; matched by title, not a verdict</p>'
             f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div>')
 
@@ -527,7 +550,7 @@ def untested_page_html(eip, snap, attestations):
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
             f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
             f'No client cell is shown: there is nothing to run.</span></div>{eels_todo_html(eels_item(eip, snap), snap)}'
-            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>{linked_html(eip, snap)}')
+            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>{linked_html(eip, snap, attestations)}')
 
 
 def eip_page_html(eip, snap, cells, attestations):
@@ -559,7 +582,7 @@ def eip_page_html(eip, snap, cells, attestations):
             f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
             f'<h3>Spec changes and their tests, newest first</h3>'
             f'<p class="muted">each EIP commit, then the EELS change that pinned that text, its first release and the client runs on it</p>'
-            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>{linked_html(eip, snap)}')
+            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>{linked_html(eip, snap, attestations)}')
 
 
 def client_page_html(client, snap, cells, items):
@@ -921,6 +944,10 @@ def site(snap, attestations, out_dir):
                    [it for it in items if it["eip"] == eip],
                    {"title": info.get("title"), "status": info.get("status"), "stage": info.get("stage"), "meta": snap.get("meta"),
                     "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}}, eels_item(eip, snap))
+    if snap.get("code_status") is not None:
+        with open(os.path.join(out_dir, "api", "code.json"), "w") as f:
+            json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "rule": "hint from file and PR-title names; never changes a test verdict",
+                       "eips": {eip: codepr.cells(snap, eip, attestations) for eip in index.row_order(snap["eips"])}}, f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "releases.html"), "w") as f:
         f.write(page(f"{config.NAME} · test releases", "releases", releases_html(snap), snap))
     ddoc = diverge.doc(snap)
