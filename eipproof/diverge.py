@@ -93,8 +93,10 @@ def fetch_ref(repo, ref):
 def fetch_file(repo, sha, path):
     try:
         return sources.gh_raw(f"repos/{repo}/contents/{quote(path)}?ref={sha}")
-    except subprocess.CalledProcessError:
-        return None
+    except subprocess.CalledProcessError as e:
+        if "HTTP 404" in (e.stderr or ""):
+            return None
+        raise
 
 
 def collect(eips_repo, log=print, fetch_ref=fetch_ref, fetch_file=fetch_file):
@@ -120,7 +122,11 @@ def collect(eips_repo, log=print, fetch_ref=fetch_ref, fetch_file=fetch_file):
                     continue
                 obs = {}
                 for fpath, idents in spec["files"].items():
-                    text = fetch_file(repo, row["sha"], fpath)
+                    try:
+                        text = fetch_file(repo, row["sha"], fpath)
+                    except Exception as e:
+                        obs.update({name: {"state": "unreachable", "path": fpath, "reason": f"{type(e).__name__} reading the file"} for name in idents})
+                        continue
                     for name, ident in idents.items():
                         obs[name] = observe(text, ident, fpath)
                 refs.append({**row, "state": "ok", "obs": obs})
@@ -133,9 +139,10 @@ def blob_url(ref, ob):
     return f'{config.GITHUB}/{ref["repo"]}/blob/{ref["sha"]}/{ob["path"]}' + (f'#L{ob["line"]}' if ob.get("line") else "")
 
 
-def failing(snap, eip, client):
+def failing(snap, eip, client, sha):
     run = (snap.get("runs") or {}).get(client) or {}
-    return bool(((run.get("eips") or {}).get(eip) or {}).get("failed"))
+    built = run.get("commit") or ""
+    return len(built) >= 7 and sha.startswith(built) and bool(((run.get("eips") or {}).get(eip) or {}).get("failed"))
 
 
 def doc(snap):
@@ -155,13 +162,17 @@ def doc(snap):
                     predates = bool(c["since"]) and index.iso(ref["date"]) < index.iso(c["since"]["date"])
                     rows.append({"eip": e["eip"], "name": c["name"], "client": ref["client"], "ref": ref["ref"], "sha": ref["sha"],
                                  "spec": c["value"], "value": ob["value"], "path": ob["path"], "line": ob["line"], "url": blob_url(ref, ob),
-                                 "status": "confirmed" if failing(snap, e["eip"], ref["client"]) else "suspect",
+                                 "status": "confirmed" if failing(snap, e["eip"], ref["client"], ref["sha"]) else "suspect",
                                  "predates_spec": predates, "spec_since": c["since"], "ref_date": ref["date"]})
             refs.append({k: ref.get(k) for k in ("client", "repo", "ref", "pr", "sha", "date", "state")} | {"counts": counts, "cells": cells})
         eips.append({"eip": e["eip"], "spec": {**e["spec"], "url": f'{config.GITHUB}/{config.EIPS_REPO}/blob/{e["spec"]["commit"]}/{e["spec"]["path"]}'},
                      "constants": e["constants"], "refs": refs})
     return {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"),
             "eips": eips, "divergences": rows}
+
+
+def content(block):
+    return [{**e, "refs": [{k: v for k, v in r.items() if k not in ("sha", "date", "error")} for r in e["refs"]]} for e in (block or {}).get("eips") or []]
 
 
 def check_doc(d):

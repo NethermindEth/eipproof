@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 
 from eipproof import build, cli, config, diverge, render, smoke
 
@@ -67,16 +68,44 @@ def test_compare_marks_only_located_values_that_differ_from_the_spec():
     assert diverge.judge(4, {"state": "unparsed", "raw": "A * B"}) == "unparsed"
 
 
-def test_divergence_stays_suspect_until_a_run_on_that_eip_fails(tmp_path):
+def test_divergence_is_confirmed_only_by_a_failing_run_of_that_same_commit(tmp_path):
     block = json.load(open(FIXTURE))
     snap = build.load_snapshot(SNAP)
     snap["divergence"] = block
     rows = diverge.doc(snap)["divergences"]
     assert rows and all(r["status"] == "suspect" for r in rows)
-    eip, client = rows[0]["eip"], rows[0]["client"]
-    snap["runs"].setdefault(client, {"eips": {}})["eips"][eip] = {"failed": ["t"], "passed": 0, "total": 1}
-    hit = [r for r in diverge.doc(snap)["divergences"] if r["eip"] == eip and r["client"] == client]
-    assert hit and all(r["status"] == "confirmed" for r in hit)
+    eip, client, sha = rows[0]["eip"], rows[0]["client"], rows[0]["sha"]
+    run = snap["runs"].setdefault(client, {"eips": {}})
+    run["eips"][eip] = {"failed": ["t"], "passed": 0, "total": 1}
+    run["commit"] = "0" * 8
+    assert all(r["status"] == "suspect" for r in diverge.doc(snap)["divergences"])
+    run["commit"] = sha[:8]
+    status = {r["sha"]: r["status"] for r in diverge.doc(snap)["divergences"]}
+    assert status[sha] == "confirmed" and list(status.values()).count("confirmed") == 1
+
+
+def test_a_failed_file_read_is_unreachable_and_only_a_404_is_missing(monkeypatch):
+    def gh(stderr):
+        def raw(path):
+            raise subprocess.CalledProcessError(1, "gh", stderr=stderr)
+        return raw
+    monkeypatch.setattr(diverge.sources, "gh_raw", gh("gh: Not Found (HTTP 404)"))
+    assert diverge.fetch_file("o/r", "a" * 40, "x.rs") is None
+    monkeypatch.setattr(diverge.sources, "gh_raw", gh("gh: Bad Gateway (HTTP 502)"))
+    monkeypatch.setattr(diverge, "spec_history", lambda repo, eip: ("EIPS/eip-8288.md", [("c" * 40, "2026-10-14T00:00:00Z", diverge.spec_table(SPEC))]))
+    block = diverge.collect(None, log=lambda *_: None, fetch_ref=lambda repo, ref: ("a" * 40, "2026-11-01T00:00:00Z"))
+    states = {o["state"] for r in block["eips"][0]["refs"] for o in r["obs"].values()}
+    assert states == {"unreachable"}
+
+
+def test_moving_branch_heads_alone_do_not_make_new_history():
+    block = json.load(open(FIXTURE))
+    moved = json.loads(json.dumps(block))
+    for r in moved["eips"][0]["refs"]:
+        r["sha"], r["date"] = "f" * 40, "2026-12-01T00:00:00Z"
+    assert diverge.content(block) == diverge.content(moved)
+    moved["eips"][0]["refs"][0]["obs"]["DEP_VERIFY_FRAME_MODE"]["value"] = 5
+    assert diverge.content(block) != diverge.content(moved)
 
 
 def test_pilot_8288_compares_nethermind_and_ethrex_and_finds_the_stale_branch():

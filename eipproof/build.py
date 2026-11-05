@@ -234,7 +234,11 @@ def snapshot(out_dir, log=print):
     runs = collect_runs(listing, out_dir, log)
     history = hive_runs(listing)
     log(f"hive  {len(history)} {config.SIMULATOR} runs, {sum(1 for h in history if not h['release'])} without a known release")
-    divergence = diverge.collect(eips_repo, log)
+    try:
+        divergence = diverge.collect(eips_repo, log)
+    except Exception as e:
+        log(f"::warning title=divergence::{type(e).__name__}: {e}")
+        divergence = {"eips": []}
     return {
         "name": config.NAME, "fork": config.FORK,
         "taken_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -264,7 +268,10 @@ def permalink(taken_at):
 
 
 def content_key(snap):
-    return {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof")}
+    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence")}
+    if snap.get("divergence"):
+        out["divergence"] = diverge.content(snap["divergence"])
+    return out
 
 
 def load_snapshot(path):
