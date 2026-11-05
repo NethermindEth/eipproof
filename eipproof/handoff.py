@@ -1,31 +1,32 @@
 import re
 import time
+from datetime import datetime, timedelta, timezone
 
 from . import config, diverge, sources
 from .chain import headline_text, release_short
 
-BATCH = 3
-GAP = 2.5
 TRIES = 3
 BACKOFF = 15
+MAX_PAGES = 40
+MERGED_DAYS = 60
+LISTED = {}
 
 
 def title_mentions(title, eip):
     return re.search(rf"(?<![a-z0-9])eip[-_ ]?{eip}(?!\d)", title, re.I) is not None
 
 
-def pr_row(item):
-    merged = (item.get("pull_request") or {}).get("merged_at")
-    return {"number": item["number"], "title": item["title"], "url": item["html_url"], "draft": bool(item.get("draft")),
-            "created": item["created_at"][:10], "merged": merged, "state": "open" if item["state"] == "open" else "merged" if merged else "closed"}
+def pr_row(pull):
+    merged = pull.get("merged_at")
+    return {"number": pull["number"], "title": pull["title"], "url": pull["html_url"], "draft": bool(pull.get("draft")),
+            "created": pull["created_at"][:10], "merged": merged, "state": "open" if pull["state"] == "open" else "merged" if merged else "closed"}
 
 
-def search(repo, batch, only_open):
-    q = f"repo:{repo}+is:pr" + ("+is:open" if only_open else "") + "+in:title+" + "+OR+".join(t for eip in batch for t in (eip, f"eip{eip}"))
+def fetch(path):
     err = None
     for i in range(TRIES):
         try:
-            return sources.gh_api(f"search/issues?q={q}&per_page=100&sort=created&order=desc")
+            return sources.gh_api(path)
         except Exception as e:
             err = e
             if i + 1 < TRIES:
@@ -33,37 +34,47 @@ def search(repo, batch, only_open):
     raise err
 
 
-def collect_repo(repo, eips, only_open, gap):
-    found, truncated = {}, False
-    for start in range(0, len(eips), BATCH):
-        batch = eips[start:start + BATCH]
-        if start:
-            time.sleep(gap)
-        hits = search(repo, batch, only_open)
-        items = [i for i in hits.get("items", []) if "pull_request" in i]
-        truncated = truncated or hits.get("total_count", 0) > len(hits.get("items", []))
-        for item in items:
-            row = pr_row(item)
-            if row["state"] == "closed":
-                continue
-            for eip in batch:
-                if title_mentions(item["title"], eip) and all(p["number"] != row["number"] for p in found.get(eip, [])):
-                    found.setdefault(eip, []).append(row)
+def list_prs(repo, state, since=None):
+    if (repo, state, since) not in LISTED:
+        LISTED[(repo, state, since)] = list_pages(repo, state, since)
+    return LISTED[(repo, state, since)]
+
+
+def list_pages(repo, state, since):
+    out = []
+    for page in range(1, MAX_PAGES + 1):
+        rows = fetch(f"repos/{repo}/pulls?state={state}&sort=updated&direction=desc&per_page=100&page={page}")
+        out += [r for r in rows if since is None or r["updated_at"] >= since]
+        if len(rows) < 100 or (since and rows[-1]["updated_at"] < since):
+            return out, False
+    return out, True
+
+
+def collect_repo(repo, eips, only_open, since):
+    pulls, truncated = list_prs(repo, "open")
+    if not only_open:
+        closed, cut = list_prs(repo, "closed", since)
+        pulls, truncated = pulls + [p for p in closed if p.get("merged_at")], truncated or cut
+    found = {}
+    for pull in pulls:
+        row = pr_row(pull)
+        for eip in eips:
+            if title_mentions(pull["title"], eip) and all(p["number"] != row["number"] for p in found.get(eip, [])):
+                found.setdefault(eip, []).append(row)
     for rows in found.values():
         rows.sort(key=lambda p: (p["state"] != "open", -p["number"]))
-    return {"repo": repo, "state": "ok", "truncated": truncated, "eips": found}
+    return {"repo": repo, "state": "ok", "truncated": truncated, "merged_since": since[:10], "eips": found}
 
 
-def collect(eips, log=print, gap=GAP):
+def collect(eips, log=print, now=None):
     eips = sorted(eips)
+    since = ((now or datetime.now(timezone.utc)) - timedelta(days=MERGED_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
     repos = [("eels", config.EELS_REPO, True)] + [(c, config.CLIENT_REPO[c], False) for c in config.CLIENTS]
     out = {}
-    for n, (key, repo, only_open) in enumerate(repos):
-        if n:
-            time.sleep(gap)
+    for key, repo, only_open in repos:
         try:
-            out[key] = collect_repo(repo, eips, only_open, gap)
-            log(f"prs   {repo}: {sum(len(v) for v in out[key]['eips'].values())} PR link(s)" + (" (search truncated)" if out[key]["truncated"] else ""))
+            out[key] = collect_repo(repo, eips, only_open, since)
+            log(f"prs   {repo}: {sum(len(v) for v in out[key]['eips'].values())} PR link(s)" + (" (page cap hit)" if out[key]["truncated"] else ""))
         except Exception as e:
             out[key] = {"repo": repo, "state": "unreachable", "reason": type(e).__name__, "eips": {}}
             log(f"::warning title=client PRs::{repo}: {type(e).__name__}")

@@ -89,17 +89,15 @@ def pin_history(eels_repo, tag, test_dir, eip, pins_by_release, revs):
     return list(reversed(out))
 
 
-def pending_prs(eip):
-    hits = sources.gh_api(f"search/issues?q=repo:{config.EIPS_REPO}+is:pr+is:open+in:title+EIP-{eip}&per_page=20")
+def pending_prs(eip, open_prs):
     out = []
-    for item in hits.get("items", []):
-        if "pull_request" not in item:
+    for pr in open_prs:
+        if not handoff.title_mentions(pr["title"], eip):
             continue
-        files = sources.gh_api(f"repos/{config.EIPS_REPO}/pulls/{item['number']}/files?per_page=100")
+        files = sources.gh_api(f"repos/{config.EIPS_REPO}/pulls/{pr['number']}/files?per_page=100")
         if any(f["filename"] == f"EIPS/eip-{eip}.md" for f in files):
-            pr = sources.gh_api(f"repos/{config.EIPS_REPO}/pulls/{item['number']}")
             out.append({"number": pr["number"], "title": pr["title"], "url": pr["html_url"], "state": pr["state"],
-                        "merged": pr["merged"], "head": pr["head"]["sha"], "api": f"https://api.github.com/repos/{config.EIPS_REPO}/pulls/{pr['number']}"})
+                        "merged": False, "head": pr["head"]["sha"], "api": f"https://api.github.com/repos/{config.EIPS_REPO}/pulls/{pr['number']}"})
     return out
 
 
@@ -108,6 +106,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
     tag_date = sources.git(eels_repo, "show", "-s", "--format=%cI", tag_commit).strip()
     dirs = eels_test_dirs(eels_repo, tag)
     stages = index.meta_stages(sources.git(eips_repo, "show", f"{config.EIPS_BRANCH}:EIPS/eip-{config.META_EIP}.md"))
+    open_prs, _ = handoff.list_prs(config.EIPS_REPO, "open")
     eips = {}
     wanted = sorted(set(index.listed_eips(stages)) | set(dirs), key=int)
     for eip in wanted:
@@ -123,7 +122,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
                 "eip": eip, "path": path, "test_dir": None, "checked": f"{config.TEST_ROOT}/eip{eip}_*",
                 "head": head["commit"], "head_blob": head["blob"], "head_date": head["date"],
                 "revisions": [{k: r[k] for k in ("commit", "date", "subject", "blob")} for r in revs[-12:]],
-                "pin": None, "deltas": [], "pending": pending_prs(eip),
+                "pin": None, "deltas": [], "pending": pending_prs(eip, open_prs),
                 "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
             }
             log(f"spec  EIP-{eip}: no tests under {config.TEST_ROOT} at {tag}")
@@ -147,7 +146,7 @@ def collect_specs(eips_repo, eels_repo, tag, log):
             "deltas": deltas,
             "release_pins": (rp := release_pins(eels_repo, eip, revs)),
             "pin_history": pin_history(eels_repo, tag, test_dir, eip, rp, revs),
-            "pending": pending_prs(eip),
+            "pending": pending_prs(eip, open_prs),
             "title": front.get("title"), "status": front.get("status"), "category": front.get("category"), "stage": stages.get(eip, []),
         }
         log(f"spec  EIP-{eip}: pin {pin['blob'][:8]} -> {pin['commit'][:8] if pin['commit'] else '?'}  head {head['commit'][:8]}  deltas {len(deltas)}  pending {len(eips[eip]['pending'])}")

@@ -488,6 +488,10 @@ def pending_html(rows):
 PR_STATE = {"open": "warn", "merged": "ok"}
 
 
+def merged_since(snap):
+    return next((b["merged_since"] for b in (snap.get("linked_prs") or {}).values() if b.get("merged_since")), f"the last {handoff.MERGED_DAYS} days")
+
+
 def client_prs_html(snap, eip):
     rows = []
     for client in config.CLIENTS:
@@ -500,7 +504,7 @@ def client_prs_html(snap, eip):
             body = '<em>none found by title</em>'
         else:
             body = " ".join(f'{a(p["url"], "#" + str(p["number"]))} <span class="pill {PR_STATE.get(p["state"], "none")}">{E(p["state"])}</span> {E(p["title"])}<br>'
-                            for p in c["prs"]) + ('<em>search hit its limit; more PRs may exist</em>' if c.get("truncated") else "")
+                            for p in c["prs"]) + ('<em>PR list hit its page limit; more PRs may exist</em>' if c.get("truncated") else "")
         rows.append(f'<tr><th class="row">{a(f"{config.GITHUB}/{c["repo"]}/pulls", config.CLIENT_LABEL[client])}</th><td class="prs">{body}</td></tr>')
     return "".join(rows)
 
@@ -509,7 +513,7 @@ def linked_html(eip, snap):
     pend = pending_html(handoff.pending_spec(snap, eip))
     return ((f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
              f'<div class="card">{pend}</div>' if pend else "")
-            + f'<h3>Client PRs</h3><p class="muted">open and merged PRs whose title names EIP-{eip}; found by GitHub search, not a verdict</p>'
+            + f'<h3>Client PRs</h3><p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}; matched by title, not a verdict</p>'
             f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div>')
 
 
