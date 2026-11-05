@@ -66,9 +66,13 @@ def collect_repo(repo, eips, only_open, since):
     return {"repo": repo, "state": "ok", "truncated": truncated, "merged_since": since[:10], "eips": found}
 
 
+def since_date(now=None):
+    return ((now or datetime.now(timezone.utc)) - timedelta(days=MERGED_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
+
+
 def collect(eips, log=print, now=None):
     eips = sorted(eips)
-    since = ((now or datetime.now(timezone.utc)) - timedelta(days=MERGED_DAYS)).strftime("%Y-%m-%dT00:00:00Z")
+    since = since_date(now)
     repos = [("eels", config.EELS_REPO, True)] + [(c, config.CLIENT_REPO[c], False) for c in config.CLIENTS]
     out = {}
     for key, repo, only_open in repos:

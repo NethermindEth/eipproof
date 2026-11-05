@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 
-from . import config, diverge, handoff, impact, index, sources
+from . import codepr, config, diverge, handoff, impact, index, sources
 
 
 def spec_revisions(eips_repo, eip):
@@ -239,6 +239,7 @@ def snapshot(out_dir, log=print):
         log(f"::warning title=divergence::{type(e).__name__}: {e}")
         divergence = {"eips": []}
     linked = handoff.collect(list(specs["eips"]), log)
+    code_status = codepr.collect(specs["eips"], log)
     pr_impact = impact.collect(config.CLIENT_REPO[impact.CLIENT], spec_texts(eips_repo, specs["eips"], log), log)
     return {
         "name": config.NAME, "fork": config.FORK,
@@ -248,6 +249,7 @@ def snapshot(out_dir, log=print):
         "listing_url": f"{config.HIVE}/listing.jsonl", "listing_rows": len(listing),
         "meta": {"eip": config.META_EIP, "name": config.META_NAME, "url": f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/EIPS/eip-{config.META_EIP}.md"},
         "eips": specs["eips"], "runs": runs, "divergence": divergence, "linked_prs": linked, "pr_impact": pr_impact,
+        "code_status": code_status,
     }
 
 
@@ -280,7 +282,7 @@ def permalink(taken_at):
 
 
 def content_key(snap):
-    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence", "linked_prs", "pr_impact")}
+    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence", "linked_prs", "pr_impact", "code_status")}
     if snap.get("divergence"):
         out["divergence"] = diverge.content(snap["divergence"])
     return out
