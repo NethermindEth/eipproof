@@ -1,0 +1,39 @@
+name: eipproof pr-impact
+description: Write to the job summary which tracked EIPs a pull request touches and their current eipproof status. Read-only; posts nothing.
+inputs:
+  repo:
+    description: owner/repo of the pull request
+    default: ${{ github.repository }}
+  number:
+    description: pull request number
+    default: ${{ github.event.pull_request.number }}
+  site:
+    description: eipproof site URL or a local site directory
+    default: https://nethermindeth.github.io/eipproof
+  token:
+    description: token for gh api reads of the pull request
+    default: ${{ github.token }}
+outputs:
+  json:
+    description: path of the JSON report
+    value: ${{ steps.impact.outputs.json }}
+runs:
+  using: composite
+  steps:
+    - id: impact
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PR_REPO: ${{ inputs.repo }}
+        PR_NUMBER: ${{ inputs.number }}
+        SITE: ${{ inputs.site }}
+        ACTION_ROOT: ${{ github.action_path }}/../../..
+      run: |
+        set -euo pipefail
+        if [ -z "$PR_NUMBER" ]; then
+          echo "pr-impact: no pull request number" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        out="$RUNNER_TEMP/pr-impact.json"
+        PYTHONPATH="$ACTION_ROOT" python3 -m eipproof.impact "$PR_REPO" "$PR_NUMBER" --site "$SITE" --json "$out" >> "$GITHUB_STEP_SUMMARY"
+        echo "json=$out" >> "$GITHUB_OUTPUT"
