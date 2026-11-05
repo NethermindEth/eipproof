@@ -166,3 +166,10 @@ def test_code_signal_never_changes_a_test_verdict(tmp_path):
 def test_known_alias_names_the_eip(text, expected):
     assert codepr.names(text, "7732") is expected
     assert codepr.names(text, "8141") is False
+
+
+def test_spec_revision_without_tests_still_makes_code_stale():
+    info = {"eip": "7732", "test_dir": None, "deltas": [], "revisions": [
+        {"commit": "aa11", "date": "2026-09-01T00:00:00Z"}, {"commit": "bb22", "date": "2026-10-30T00:00:00Z"}]}
+    prs = [{"state": "merged", "merged": "2026-10-01T00:00:00Z", "base": "unstable"}]
+    assert codepr.status(prs, 0, codepr.normative_dates(info, []), "unstable") == codepr.STALE

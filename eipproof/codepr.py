@@ -35,7 +35,8 @@ def clients_for(layer):
 
 def normative_dates(info, attestations):
     out = []
-    for d in info.get("deltas", []):
+    changes = {d["commit"]: d for d in info.get("revisions", []) + info.get("deltas", [])}
+    for d in changes.values():
         attested = [a for a in attestations if a["eip"] == info["eip"] and d["commit"].startswith(str(a["commit"]))]
         if not attested or attested[-1].get("kind") != "editorial":
             out.append(d["date"])
