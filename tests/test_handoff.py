@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+from datetime import datetime, timezone
 
 import pytest
 
@@ -10,24 +11,43 @@ from eipproof import build, cli, config, handoff, render
 SNAP = os.path.join(cli.ROOT, "snapshots", "2026-11-03.json")
 
 
-def item(number, title, state="open", merged_at=None):
+NOW = datetime(2026, 11, 5, tzinfo=timezone.utc)
+
+
+def pull(number, title, state="open", merged_at=None, updated="2026-11-01T00:00:00Z"):
     return {"number": number, "title": title, "html_url": f"https://github.com/x/y/pull/{number}", "state": state, "draft": False,
-            "created_at": "2026-10-01T00:00:00Z", "pull_request": {"merged_at": merged_at}}
+            "created_at": "2026-10-01T00:00:00Z", "updated_at": updated, "merged_at": merged_at, "head": {"sha": f"{number:040d}"}}
 
 
-def fake_search(pages):
+def fake_pulls(repos):
     calls = []
 
     def fake(path):
         calls.append(path)
-        repo = re.search(r"repo:([^+]+)", path).group(1)
-        rows = pages.get(repo)
+        m = re.match(r"repos/([^/]+/[^/]+)/pulls\?state=(\w+)&sort=updated&direction=desc&per_page=100&page=(\d+)$", path)
+        assert m, path
+        rows = repos.get(m.group(1))
         if isinstance(rows, Exception):
             raise rows
-        rows = rows or []
-        return {"total_count": len(rows), "items": rows}
+        rows = [r for r in rows or [] if (r["state"] == "open") == (m.group(2) == "open")]
+        page = int(m.group(3))
+        return rows[(page - 1) * 100:page * 100]
 
     return fake, calls
+
+
+@pytest.fixture(autouse=True)
+def fresh_listing(monkeypatch):
+    monkeypatch.setattr(handoff, "LISTED", {})
+
+
+def test_listing_is_fetched_once_per_day_across_forks(monkeypatch):
+    fake, calls = fake_pulls({})
+    monkeypatch.setattr(handoff.sources, "gh_api", fake)
+    handoff.collect(["7906"], log=lambda *_: None, now=NOW)
+    first = len(calls)
+    handoff.collect(["8141"], log=lambda *_: None, now=NOW.replace(hour=5))
+    assert len(calls) == first
 
 
 def test_title_mention_needs_the_eip_word_and_exact_number():
@@ -40,49 +60,51 @@ def test_title_mention_needs_the_eip_word_and_exact_number():
 
 
 def test_collect_keeps_open_and_merged_client_prs_and_open_eels_prs(monkeypatch):
-    fake, calls = fake_search({
-        config.CLIENT_REPO["nethermind"]: [item(3, "EIP-7906 opcodes"), item(2, "EIP-7906 old", "closed", "2026-10-02T00:00:00Z"),
-                                           item(1, "EIP-7906 abandoned", "closed"), item(4, "fix #7906 crash")],
-        config.EELS_REPO: [item(9, "feat(tests): EIP-8141 frames")],
+    fake, calls = fake_pulls({
+        config.CLIENT_REPO["nethermind"]: [pull(3, "EIP-7906 opcodes"), pull(2, "EIP-7906 old", "closed", "2026-10-02T00:00:00Z"),
+                                           pull(1, "EIP-7906 abandoned", "closed"), pull(4, "fix #7906 crash")],
+        config.EELS_REPO: [pull(9, "feat(tests): EIP-8141 frames"), pull(8, "EIP-8141 merged", "closed", "2026-10-02T00:00:00Z")],
     })
     monkeypatch.setattr(handoff.sources, "gh_api", fake)
-    out = handoff.collect(["7906", "8141"], log=lambda *_: None, gap=0)
+    out = handoff.collect(["7906", "8141"], log=lambda *_: None, now=NOW)
     nm = out["nethermind"]
     assert nm["state"] == "ok" and nm["repo"] == config.CLIENT_REPO["nethermind"]
     assert [(p["number"], p["state"]) for p in nm["eips"]["7906"]] == [(3, "open"), (2, "merged")]
     assert "8141" not in nm["eips"]
     assert [p["number"] for p in out["eels"]["eips"]["8141"]] == [9]
-    assert all("is:open" in c for c in calls if config.EELS_REPO in c)
+    assert not any(config.EELS_REPO in c and "state=closed" in c for c in calls)
+    assert not any(c.startswith("search/") for c in calls)
     assert set(out) == {"eels", *config.CLIENTS}
 
 
-def test_collect_batches_numbers_under_the_search_operator_limit(monkeypatch):
-    fake, calls = fake_search({})
+def test_closed_listing_stops_at_the_merge_window(monkeypatch):
+    recent = [pull(1000 + i, f"EIP-7906 r{i}", "closed", "2026-10-20T00:00:00Z", "2026-10-20T00:00:00Z") for i in range(150)]
+    old = [pull(i, "EIP-7906 old", "closed", "2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z") for i in range(300)]
+    fake, calls = fake_pulls({config.CLIENT_REPO["reth"]: recent + old})
     monkeypatch.setattr(handoff.sources, "gh_api", fake)
-    eips = [str(7000 + i) for i in range(13)]
-    handoff.collect(eips, log=lambda *_: None, gap=0)
-    per_repo = [c for c in calls if config.CLIENT_REPO["reth"] in c]
-    assert len(per_repo) == 5
-    assert all(c.count("+OR+") <= 5 for c in calls)
-    assert all(f"eip{e}" in "".join(per_repo) for e in eips)
+    out = handoff.collect(["7906"], log=lambda *_: None, now=NOW)
+    closed = [c for c in calls if config.CLIENT_REPO["reth"] in c and "state=closed" in c]
+    assert len(closed) == 2
+    assert len(out["reth"]["eips"]["7906"]) == 150 and out["reth"]["truncated"] is False
+    assert out["reth"]["merged_since"] == "2026-09-06"
 
 
 def test_failed_lookup_is_unreachable_not_empty(monkeypatch):
-    fake, _ = fake_search({config.CLIENT_REPO["besu"]: subprocess.CalledProcessError(1, "gh")})
+    fake, _ = fake_pulls({config.CLIENT_REPO["besu"]: subprocess.CalledProcessError(1, "gh")})
     monkeypatch.setattr(handoff.sources, "gh_api", fake)
     monkeypatch.setattr(handoff.time, "sleep", lambda s: None)
-    out = handoff.collect(["7906"], log=lambda *_: None, gap=0)
+    out = handoff.collect(["7906"], log=lambda *_: None, now=NOW)
     assert out["besu"]["state"] == "unreachable" and out["besu"]["eips"] == {}
     assert out["reth"]["state"] == "ok"
 
 
-def test_truncated_search_is_flagged(monkeypatch):
+def test_listing_that_hits_the_page_cap_is_flagged(monkeypatch):
     def fake(path):
-        return {"total_count": 1000, "items": [item(i, "EIP-7906 x") for i in range(100)]}
+        return [pull(i, "EIP-7906 x") for i in range(100)]
 
     monkeypatch.setattr(handoff.sources, "gh_api", fake)
-    out = handoff.collect(["7906"], log=lambda *_: None, gap=0)
-    assert out["geth" if "geth" in out else "go-ethereum"]["truncated"] is True
+    out = handoff.collect(["7906"], log=lambda *_: None, now=NOW)
+    assert out["go-ethereum"]["truncated"] is True
 
 
 LINKED = {

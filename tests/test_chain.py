@@ -239,17 +239,15 @@ def test_mutant_count_ignores_other_open_deltas():
     assert sorted(i["verb"] for i in chain.queue([cell], ["7906"], NEWEST)) == ["mutant uncovered", "write test"]
 
 
-def test_pending_prs_skips_issues_that_search_returns(monkeypatch):
+def test_pending_prs_keep_open_eip_prs_that_touch_the_eip_file(monkeypatch):
     calls = []
+    rows = [{"number": n, "title": t, "html_url": f"u{n}", "state": "open", "head": {"sha": f"s{n}"}}
+            for n, t in ((1, "Update EIP-7928: x"), (2, "Update EIP-7928: y"), (3, "Update EIP-1: z"))]
 
     def fake(path):
         calls.append(path)
-        if path.startswith("search/"):
-            return {"items": [{"number": 1}, {"number": 2, "pull_request": {}}]}
-        if path.endswith("/files?per_page=100"):
-            return [{"filename": "EIPS/eip-7928.md"}]
-        return {"number": 2, "title": "t", "html_url": "u", "state": "open", "merged": False, "head": {"sha": "s"}}
+        return [{"filename": "EIPS/eip-7928.md" if "/pulls/2/" in path else "EIPS/eip-1.md"}]
 
     monkeypatch.setattr(build.sources, "gh_api", fake)
-    assert [p["number"] for p in build.pending_prs("7928")] == [2]
-    assert not any("/pulls/1" in c for c in calls)
+    assert [(p["number"], p["head"]) for p in build.pending_prs("7928", rows)] == [(2, "s2")]
+    assert not any("/pulls/3/" in c for c in calls) and not any(c.startswith("search/") for c in calls)
