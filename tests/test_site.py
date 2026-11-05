@@ -168,7 +168,7 @@ def test_cell_copies_as_markdown_with_why_and_sources(live_site):
 
 def test_every_cell_drawer_has_a_copy_button(live_site):
     page = (live_site / "index.html").read_text()
-    assert page.count('onclick="copyMd(this)"') == page.count("<template id=") == 40
+    assert page.count('onclick="copyMd(this)">Copy as Markdown<') == page.count("<template id=") == 40
 
 
 def test_eip_page_copies_as_markdown_with_every_client_and_change(live_site):

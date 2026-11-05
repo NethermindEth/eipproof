@@ -1,0 +1,91 @@
+{
+ "client": "besu",
+ "client_label": "Besu",
+ "client_prs": {
+  "prs": [],
+  "repo": "besu-eth/besu",
+  "state": "not-collected"
+ },
+ "eip": "7906",
+ "fork": "bogota",
+ "headline": "stale-release",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#7906-besu",
+ "pending_spec": [
+  {
+   "number": 11267,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: fix typos",
+   "url": "https://github.com/ethereum/EIPs/pull/11267"
+  },
+  {
+   "number": 12304,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+   "url": "https://github.com/ethereum/EIPs/pull/12304"
+  },
+  {
+   "number": 11199,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode",
+   "url": "https://github.com/ethereum/EIPs/pull/11199"
+  },
+  {
+   "number": 10899,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode",
+   "url": "https://github.com/ethereum/EIPs/pull/10899"
+  },
+  {
+   "number": 11072,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: fix CALL opcode value",
+   "url": "https://github.com/ethereum/EIPs/pull/11072"
+  },
+  {
+   "number": 10972,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+   "url": "https://github.com/ethereum/EIPs/pull/10972"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 1,
+  "changes": [
+   {
+    "commit": "9099f412d228ec80ec27b713df6da61993bf4702",
+    "constants": [],
+    "date": "2026-10-27T11:42:30Z",
+    "subject": "Update EIP-7906: say where storage-kept nonce changes appear",
+    "url": "https://github.com/ethereum/EIPs/commit/9099f412d228ec80ec27b713df6da61993bf4702"
+   }
+  ],
+  "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+  "head_url": "https://github.com/ethereum/EIPs/commit/9099f412d228ec80ec27b713df6da61993bf4702",
+  "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+  "text_url": "https://github.com/ethereum/EIPs/blob/9099f412d228ec80ec27b713df6da61993bf4702/EIPS/eip-7906.md"
+ },
+ "tests": {
+  "failed": [
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-verify_after_post_tx]",
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-post_tx_with_atomic_batch_flag]",
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-batch_ends_on_post_tx]",
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-failing_batch_skips_assertion]",
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-default_after_post_tx]",
+   "tests/bogota/eip7906_transaction_assertions/test_static_validity.py::test_post_tx_static_rules[fork_Bogota-blockchain_test_engine_from_state_test-sender_after_post_tx]"
+  ],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 299,
+  "release": "tests-bogota-devnet@v1.1.1",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+  "state": "stale-release",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip7906_transaction_assertions",
+  "total": 305
+ },
+ "text": "old tests v1.1.1",
+ "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 299/305 is shown but does not count. Next: run v2.0.0."
+}

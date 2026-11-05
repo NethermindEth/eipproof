@@ -1,0 +1,46 @@
+{
+ "client": "besu",
+ "client_label": "Besu",
+ "client_prs": {
+  "prs": [],
+  "repo": "besu-eth/besu",
+  "state": "not-collected"
+ },
+ "eip": "8250",
+ "fork": "bogota",
+ "headline": "stale-release",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#8250-besu",
+ "pending_spec": [
+  {
+   "number": 12039,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8250: Define keyed mempool concurrency",
+   "url": "https://github.com/ethereum/EIPs/pull/12039"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 0,
+  "changes": [],
+  "head": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+  "head_url": "https://github.com/ethereum/EIPs/commit/1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+  "pin_commit": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
+  "text_url": "https://github.com/ethereum/EIPs/blob/1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02/EIPS/eip-8250.md"
+ },
+ "tests": {
+  "failed": [],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 106,
+  "release": "tests-bogota-devnet@v1.1.1",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+  "state": "stale-release",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip8250_keyed_nonces",
+  "total": 106
+ },
+ "text": "old tests v1.1.1",
+ "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 106/106 is shown but does not count. Next: run v2.0.0."
+}

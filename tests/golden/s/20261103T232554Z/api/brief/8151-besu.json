@@ -1,0 +1,46 @@
+{
+ "client": "besu",
+ "client_label": "Besu",
+ "client_prs": {
+  "prs": [],
+  "repo": "besu-eth/besu",
+  "state": "not-collected"
+ },
+ "eip": "8151",
+ "fork": "bogota",
+ "headline": "stale-release",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#8151-besu",
+ "pending_spec": [
+  {
+   "number": 12605,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8151: treat the 0xef0200 opt-out marker as an eligible EOA",
+   "url": "https://github.com/ethereum/EIPs/pull/12605"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 0,
+  "changes": [],
+  "head": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+  "head_url": "https://github.com/ethereum/EIPs/commit/e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+  "pin_commit": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
+  "text_url": "https://github.com/ethereum/EIPs/blob/e2fad38cfe2d441614fbb3c7eaedce2f661b1886/EIPS/eip-8151.md"
+ },
+ "tests": {
+  "failed": [],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 0,
+  "release": "tests-bogota-devnet@v1.1.1",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+  "state": "stale-release",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip8151_account_code_restricted_ecrecover",
+  "total": 0
+ },
+ "text": "old tests v1.1.1",
+ "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 0/0 is shown but does not count. Next: run v2.0.0."
+}

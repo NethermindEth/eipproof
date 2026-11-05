@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import build, config, diverge, index
+from . import build, config, diverge, handoff, index
 from .chain import EELS, cell_action, chain, delta_verbs, eels_action, eels_todo, headline_text, queue, release_short
 
 E = html.escape
@@ -75,8 +75,8 @@ def md(url, text):
     return f"[{text}]({url})"
 
 
-def copy_md(text):
-    return (f'<div class="copy"><button type="button" onclick="copyMd(this)">Copy as Markdown</button>'
+def copy_md(text, label="Copy as Markdown"):
+    return (f'<div class="copy"><button type="button" onclick="copyMd(this)">{E(label)}</button>'
             f'<textarea class="md" readonly hidden aria-label="Markdown">{E(text)}</textarea></div>')
 
 
@@ -137,7 +137,7 @@ def tokens_marked(text, tokens):
     return out
 
 
-def spec_html(cell, eip_info):
+def spec_html(cell, eip_info, snap):
     s = cell["links"]["spec"]
     rows = [f'<div class="kv"><span>EIP now</span><code>{a(gh(config.EIPS_REPO, "commit", eip_info["head"]), eip_info["head"][:8])}</code> {E(eip_info["head_date"][:10])}</div>',
             f'<div class="kv"><span>EELS has</span><code>{a(eip_info["pin"]["spec_py"], s["pin_blob"][:8])}</code> = EIPs '
@@ -145,9 +145,7 @@ def spec_html(cell, eip_info):
             f' at {E(release_short(eip_info["pin"]["release"]))} '
             + (f'<span class="pill warn">{s["behind"]} change(s) behind</span>' if s["behind"] else '<span class="pill ok">current</span>')
             + (' <span class="pill none">same text in several commits</span>' if s["pin_ambiguous"] else "") + "</div>"]
-    for p in s["pending"]:
-        rows.append(f'<div class="overlay" data-mark="pending"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} '
-                    f'{E(p["title"])} <em>not merged, not counted</em></div>')
+    rows.append(pending_html(handoff.pending_spec(snap, cell["eip"])))
     return link_block(1, "Spec: does EELS implement the current EIP text?", s["state"], "".join(rows))
 
 
@@ -219,7 +217,8 @@ def drawer(cell, snap):
     return (f'<div class="dhead"><div><div class="muted">EIP-{cell["eip"]} &times; {E(config.CLIENT_LABEL[cell["client"]])}</div>'
             f'<div class="headline {STATE_CLASS[h]}" data-mark="headline">{E(headline_text(cell))}</div></div><button class="x" onclick="closeD()" aria-label="Close">&times;</button></div>'
             f'<p class="why" data-mark="why">{E(why(cell, snap))}</p>{copy_md(cell_markdown(cell, snap))}'
-            + spec_html(cell, eip_info) + test_html(cell, eip_info) + run_html(cell, run_full))
+            + (copy_md(handoff.brief_markdown(handoff.brief(cell, snap, why(cell, snap))), "Copy implement brief") if h != "pass" else "")
+            + spec_html(cell, eip_info, snap) + test_html(cell, eip_info) + run_html(cell, run_full))
 
 
 CSS = """
@@ -288,8 +287,8 @@ const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
 function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
 function filt(v){document.querySelectorAll('#feed .rev').forEach(r=>r.hidden=!!v&&r.dataset.eip!==v);history.replaceState(null,'',v?'#eip-'+v:location.pathname)}
-function copyMd(b){const t=b.nextElementSibling,show=()=>{t.hidden=false;t.select()};if(!navigator.clipboard)return show();
-navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy as Markdown'},1500)},show)}
+function copyMd(b){const t=b.nextElementSibling,l=b.dataset.l||(b.dataset.l=b.textContent),show=()=>{t.hidden=false;t.select()};if(!navigator.clipboard)return show();
+navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copied';setTimeout(()=>{b.textContent=l},1500)},show)}
 """
 
 
@@ -481,19 +480,49 @@ def tests_line(rev, info, snap):
     return '<div class="tl">' + " &middot; ".join(parts) + "</div>"
 
 
+def pending_html(rows):
+    return "".join(f'<div class="overlay" data-mark="pending"><span class="pill none">open PR</span> {a(p["url"], p["repo"].split("/")[1] + "#" + str(p["number"]))} '
+                   f'{E(p["title"])} <em>not merged, not counted</em></div>' for p in rows)
+
+
+PR_STATE = {"open": "warn", "merged": "ok"}
+
+
+def client_prs_html(snap, eip):
+    rows = []
+    for client in config.CLIENTS:
+        c = handoff.client_prs(snap, client, eip)
+        if c["state"] == "unreachable":
+            body = '<em>lookup failed in this snapshot</em>'
+        elif c["state"] == "not-collected":
+            body = '<em>not collected in this snapshot</em>'
+        elif not c["prs"]:
+            body = '<em>none found by title</em>'
+        else:
+            body = " ".join(f'{a(p["url"], "#" + str(p["number"]))} <span class="pill {PR_STATE.get(p["state"], "none")}">{E(p["state"])}</span> {E(p["title"])}<br>'
+                            for p in c["prs"]) + ('<em>search hit its limit; more PRs may exist</em>' if c.get("truncated") else "")
+        rows.append(f'<tr><th class="row">{a(f"{config.GITHUB}/{c["repo"]}/pulls", config.CLIENT_LABEL[client])}</th><td class="prs">{body}</td></tr>')
+    return "".join(rows)
+
+
+def linked_html(eip, snap):
+    pend = pending_html(handoff.pending_spec(snap, eip))
+    return ((f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
+             f'<div class="card">{pend}</div>' if pend else "")
+            + f'<h3>Client PRs</h3><p class="muted">open and merged PRs whose title names EIP-{eip}; found by GitHub search, not a verdict</p>'
+            f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div>')
+
+
 def untested_page_html(eip, snap, attestations):
     info = snap["eips"][eip]
     timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)}</div>' for rev in reversed(info["revisions"]))
-    pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
-                   f'<em>not merged, not counted</em></div>' for p in info["pending"])
     return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h2>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
             f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
             f'No client cell is shown: there is nothing to run.</span></div>{eels_todo_html(eels_item(eip, snap), snap)}'
-            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>'
-            + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
+            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>{linked_html(eip, snap)}')
 
 
 def eip_page_html(eip, snap, cells, attestations):
@@ -516,8 +545,6 @@ def eip_page_html(eip, snap, cells, attestations):
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
                         f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
                         f'{tests_line(rev, info, snap)}{consts}</div>')
-    pend = "".join(f'<div class="overlay"><span class="pill none">open PR</span> {a(p["url"], "EIPs#" + str(p["number"]))} {E(p["title"])} '
-                   f'<em>not merged, not counted</em></div>' for p in info["pending"])
     return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h2>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
@@ -527,8 +554,7 @@ def eip_page_html(eip, snap, cells, attestations):
             f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
             f'<h3>Spec changes and their tests, newest first</h3>'
             f'<p class="muted">each EIP commit, then the EELS change that pinned that text, its first release and the client runs on it</p>'
-            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>'
-            + (f'<h3>Open EIP PRs</h3><div class="card">{pend}</div>' if pend else ""))
+            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>{linked_html(eip, snap)}')
 
 
 def client_page_html(client, snap, cells, items):
@@ -602,7 +628,7 @@ def feed_tests(t):
     return f' <span class="muted">&middot; tests: {a(t["eels_url"], who)}{rel}</span>'
 
 
-def feed_html(snap, rows):
+def feed_html(snap, rows, pending=()):
     eips = index.row_order(snap["eips"])
     opts = '<option value="">all EIPs</option>' + "".join(
         f'<option value="{e}">EIP-{e} ({sum(r["eip"] == e for r in rows)})</option>' for e in eips)
@@ -613,7 +639,8 @@ def feed_html(snap, rows):
             f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
             f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text &middot; {a_local("api/changes.json", "JSON")}</p>'
             f'<p><label for="f">Show</label> <select id="f" onchange="filt(this.value)">{opts}</select></p>'
-            f'<div class="card" id="feed">{items}</div>')
+            f'<div class="card" id="feed">{items}</div>'
+            + (f'<h3>Open spec PRs <span class="muted">not merged, not counted</span></h3><div class="card">{pending_html(pending)}</div>' if pending else ""))
 
 
 def stale_banner(snap):
@@ -816,10 +843,16 @@ def site(snap, attestations, out_dir):
     for sub in ("eip", "client"):
         os.makedirs(os.path.join(out_dir, "api", sub), exist_ok=True)
     rows = feed_rows(snap, attestations)
+    pending = [{"eip": eip, **p} for eip in index.row_order(snap["eips"]) for p in handoff.pending_spec(snap, eip)]
     with open(os.path.join(out_dir, "changes.html"), "w") as f:
-        f.write(page(f"{config.NAME} · spec changes", "changes", feed_html(snap, rows), snap))
+        f.write(page(f"{config.NAME} · spec changes", "changes", feed_html(snap, rows, pending), snap))
     with open(os.path.join(out_dir, "api", "changes.json"), "w") as f:
-        json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "changes": rows}, f, indent=1, sort_keys=True)
+        json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "changes": rows, "pending": pending}, f, indent=1, sort_keys=True)
+    os.makedirs(os.path.join(out_dir, "api", "brief"), exist_ok=True)
+    for c in cells:
+        if c["headline"] != "pass":
+            with open(os.path.join(out_dir, "api", "brief", f'{c["eip"]}-{c["client"]}.json'), "w") as f:
+                json.dump(handoff.brief(c, snap, why(c, snap)), f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "api", "eips.json"), "w") as f:
         json.dump(eips_doc(snap), f, indent=1, sort_keys=True)
     for eip in index.row_order(snap["eips"]):

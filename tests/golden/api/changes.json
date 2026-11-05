@@ -702,6 +702,155 @@
   }
  ],
  "fork": "bogota",
+ "pending": [
+  {
+   "eip": "8141",
+   "number": 12596,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: clarify EXTCODEHASH restrictions for precompiles",
+   "url": "https://github.com/ethereum/EIPs/pull/12596"
+  },
+  {
+   "eip": "8141",
+   "number": 12505,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: Check signer key authority",
+   "url": "https://github.com/ethereum/EIPs/pull/12505"
+  },
+  {
+   "eip": "8141",
+   "number": 12588,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: charge the EIP-8037 legacy share as extra execution gas",
+   "url": "https://github.com/ethereum/EIPs/pull/12588"
+  },
+  {
+   "eip": "8141",
+   "number": 12537,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: explain gas refunds and block limits",
+   "url": "https://github.com/ethereum/EIPs/pull/12537"
+  },
+  {
+   "eip": "8141",
+   "number": 12559,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: price frame and signature entries at the floor",
+   "url": "https://github.com/ethereum/EIPs/pull/12559"
+  },
+  {
+   "eip": "8141",
+   "number": 12506,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: set code from the default code in SENDER mode",
+   "url": "https://github.com/ethereum/EIPs/pull/12506"
+  },
+  {
+   "eip": "8141",
+   "number": 12321,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: define early rejection and payer revalidation rules",
+   "url": "https://github.com/ethereum/EIPs/pull/12321"
+  },
+  {
+   "eip": "8141",
+   "number": 12494,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: clarify transient storage and deploy targets in trace rules",
+   "url": "https://github.com/ethereum/EIPs/pull/12494"
+  },
+  {
+   "eip": "8141",
+   "number": 12041,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: assembled canonical paymaster reference bytecode",
+   "url": "https://github.com/ethereum/EIPs/pull/12041"
+  },
+  {
+   "eip": "8141",
+   "number": 12301,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: define MAX_VERIFY_GAS as a shared mempool floor",
+   "url": "https://github.com/ethereum/EIPs/pull/12301"
+  },
+  {
+   "eip": "8141",
+   "number": 12252,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: add valid_after to the expiry verifier frame",
+   "url": "https://github.com/ethereum/EIPs/pull/12252"
+  },
+  {
+   "eip": "7906",
+   "number": 11267,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: fix typos",
+   "url": "https://github.com/ethereum/EIPs/pull/11267"
+  },
+  {
+   "eip": "7906",
+   "number": 12304,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: add ASSERT_EXEMPT frame flag",
+   "url": "https://github.com/ethereum/EIPs/pull/12304"
+  },
+  {
+   "eip": "7906",
+   "number": 11199,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode",
+   "url": "https://github.com/ethereum/EIPs/pull/11199"
+  },
+  {
+   "eip": "7906",
+   "number": 10899,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode",
+   "url": "https://github.com/ethereum/EIPs/pull/10899"
+  },
+  {
+   "eip": "7906",
+   "number": 11072,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: fix CALL opcode value",
+   "url": "https://github.com/ethereum/EIPs/pull/11072"
+  },
+  {
+   "eip": "7906",
+   "number": 10972,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-7906: correct CALL opcode value from 0xFA to 0xF1",
+   "url": "https://github.com/ethereum/EIPs/pull/10972"
+  },
+  {
+   "eip": "8250",
+   "number": 12039,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8250: Define keyed mempool concurrency",
+   "url": "https://github.com/ethereum/EIPs/pull/12039"
+  },
+  {
+   "eip": "8151",
+   "number": 12605,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8151: treat the 0xef0200 opt-out marker as an eligible EOA",
+   "url": "https://github.com/ethereum/EIPs/pull/12605"
+  },
+  {
+   "eip": "8272",
+   "number": 12310,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8272: clarify public mempool scope",
+   "url": "https://github.com/ethereum/EIPs/pull/12310"
+  },
+  {
+   "eip": "4758",
+   "number": 12492,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-4758: Move to Draft",
+   "url": "https://github.com/ethereum/EIPs/pull/12492"
+  }
+ ],
  "snapshot": "2026-11-03T23:25:54Z",
  "source": "live"
 }
