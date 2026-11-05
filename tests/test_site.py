@@ -526,3 +526,45 @@ def test_smoke_rejects_missing_releases_and_permalink(tmp_path, live_site):
     errs = smoke.check(local_get(site))
     assert "api/releases.json: newest release 'tests-bogota-devnet@v2.0.0' not listed" in errs
     assert any(e.startswith("permalink: ") for e in errs)
+
+
+def start_block(page, n):
+    return re.findall(r'<section class="start">.*?</section>', page, re.S)[n]
+
+
+def test_start_page_answers_three_questions_from_the_same_snapshot(wide_site):
+    root, cells = wide_site
+    page = (root / "start.html").read_text()
+    clients = start_block(page, 0)
+    assert all(f'href="client-{c}.html"' in clients for c in config.CLIENTS)
+    besu = re.search(r'<tr><th class="row"><a href="client-besu.html">Besu</a></th><td>(.*?)</td></tr>', clients).group(1)
+    assert besu == "run v2.0.0 (8 EIPs)"
+    reth = re.search(r'<a href="client-reth.html">Reth</a></th><td>(.*?)</td>', clients).group(1)
+    assert "fix client (1 EIP)" in reth
+    eips = start_block(page, 1)
+    for eip in ("8141", "7805", "8077"):
+        assert f'href="eip-{eip}.html"' in eips and f'href="index.html#r-{eip}"' in eips
+    row_8141 = re.search(r'href="eip-8141.html".*?</tr>', eips).group(0)
+    assert render.counts_html([c for c in cells if c["eip"] == "8141"]) in row_8141
+    assert "no tests yet" in re.search(r'href="eip-7805.html".*?</tr>', eips).group(0)
+    assert "proven by a test or marked wording-only" in eips
+    index_page = (root / "index.html").read_text()
+    assert all(f'id="r-{eip}"' in index_page for eip in ("8141", "7906", "7805"))
+    eels = start_block(page, 2)
+    assert 'href="queue.html?owner=eels"' in eels and "4 items" in eels
+    assert "write tests (2)" in eels and "update tests (2)" in eels
+
+
+def test_start_page_is_first_in_the_nav_and_linked_from_the_matrix(live_site):
+    for name in ("index.html", "queue.html", "start.html", "client-besu.html"):
+        nav = re.search(r'<nav>(.*?)</nav>', (live_site / name).read_text()).group(1)
+        assert nav.startswith('<a href="start.html"') and ">Start here</a>" in nav
+    assert 'New here? <a href="start.html">Start here</a>' in (live_site / "index.html").read_text()
+    assert "start.html" in smoke.PAGES
+
+
+def test_start_page_has_no_test_team_link_when_nothing_is_owed():
+    snap = build.load_snapshot(SNAP)
+    page = render.start_html(snap, [], [])
+    assert "queue.html?owner=eels" not in page and "nothing for the test team" in start_block(page, 2)
+    assert start_block(page, 0).count("nothing to do") == len(config.CLIENTS)

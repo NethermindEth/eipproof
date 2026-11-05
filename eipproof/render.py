@@ -248,6 +248,7 @@ td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px so
 #d.on{transform:none}.dhead{display:flex;justify-content:space-between}.x{background:none;border:0;color:var(--mut);font-size:28px;cursor:pointer}
 .headline{font-size:26px;font-weight:800}.headline.ok{color:var(--ok)}.headline.warn{color:var(--warn)}.headline.bad{color:var(--bad)}.headline.stale{color:var(--stale)}.headline.none{color:var(--mut)}
 .why{color:#cbd5e1;background:#151d2c;border-radius:10px;padding:10px 12px;margin:12px 0}
+section.start{margin:22px 0}section.start h3{margin:0 0 4px}
 section.link{border:1px solid var(--none);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--card)}
 section.link.ok{border-color:var(--ok)}section.link.warn{border-color:var(--warn)}section.link.bad{border-color:var(--bad)}section.link.stale{border-color:var(--stale)}
 section.link header{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:6px}section.link header .pill{margin-left:auto}
@@ -687,7 +688,7 @@ def asof_href(snap):
 def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
-                    [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
+                    [("start", "start.html", "Start here"), ("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
                      ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", root + "history.html", "History")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>'
@@ -741,7 +742,7 @@ def matrix_html(snap, cells):
                       f'{action_html(cell_action(c, snap["newest_release"]), config.CLIENT_LABEL[client])}</td>')
             templates.append(f'<template id="t-{cid}">{drawer(c, snap)}</template>')
         tr.append(eels_cell(eip, info, [by[(eip, cl)] for cl in config.CLIENTS], snap))
-        rows.append("<tr>" + "".join(tr) + "</tr>")
+        rows.append(f'<tr id="r-{eip}">' + "".join(tr) + "</tr>")
     strip = ""
     wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == snap["newest_release"]}
     if wide:
@@ -752,7 +753,8 @@ def matrix_html(snap, cells):
     cov = coverage_html(snap) if snap.get("meta") else ""
     toggle = ('<div class="tog" role="group" aria-label="Cell view"><button type="button" id="v-st" aria-pressed="true" onclick="view(\'st\')">Status</button>'
               '<button type="button" id="v-ac" aria-pressed="false" onclick="view(\'ac\')">Next action</button></div>')
-    return strip + cov + toggle + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
+    intro = '<p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
+    return intro + strip + cov + toggle + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
 
 
 def action_html(verb, owner):
@@ -832,6 +834,54 @@ def queue_html(snap, cells):
     return "".join(out), items
 
 
+def by_verb(items):
+    counts = {}
+    for it in items:
+        counts[it["verb"]] = counts.get(it["verb"], 0) + 1
+    return list(counts.items())
+
+
+def plural(n, word):
+    return f"{n} {word}" + ("" if n == 1 else "s")
+
+
+def start_section(title, how, body):
+    return f'<section class="start"><h3>{E(title)}</h3><p class="muted">{how}</p>{body}</section>'
+
+
+def start_html(snap, cells, items):
+    eels = [it for it in items if it["owner"] == EELS]
+    rows = []
+    for client in config.CLIENTS:
+        parts = [f"{E(verb)} ({plural(n, 'EIP')})" for verb, n in by_verb([it for it in items if it["owner"] == client])]
+        waiting = len({it["eip"] for it in eels if client in it["clients"]})
+        if waiting:
+            parts.append(f"{plural(waiting, 'EIP')} wait on the test team")
+        rows.append(f'<tr><th class="row">{a_local(client_href(client), config.CLIENT_LABEL[client])}</th><td>{" &middot; ".join(parts) or "nothing to do"}</td></tr>')
+    clients = start_section("What is my client missing today?",
+                            "Open your client. Its To do list puts the most important item first.",
+                            f'<div class="wrap"><table class="m list">{"".join(rows)}</table></div>')
+    rows = []
+    for eip in index.row_order(snap["eips"]):
+        mine = [c for c in cells if c["eip"] == eip]
+        state = counts_html(mine) if mine else '<span class="muted">no tests yet</span>'
+        rows.append(f'<tr><th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(snap["eips"][eip]))}</small></th>'
+                    f'<td>{state} &middot; <a href="index.html#r-{eip}">matrix row</a></td></tr>')
+    eips = start_section("Is this EIP really done?",
+                         "Done means: the client's latest hive run on the newest EELS release passes, and every EIP change since the version EELS implements "
+                         "is proven by a test or marked wording-only. Anything else stays open.",
+                         f'<div class="wrap"><table class="m list">{"".join(rows)}</table></div>')
+    if eels:
+        verbs = ", ".join(f"{E(verb)} ({n})" for verb, n in by_verb(eels))
+        body = f'<p>{plural(len(eels), "item")}: {verbs}. <a href="queue.html?owner=eels">Open the test team list</a>.</p>'
+    else:
+        body = '<p>nothing for the test team</p>'
+    team = start_section("What do I tell the test team?",
+                         "Each item names an EIP and the tests it needs. Every EIP page has a Copy as Markdown button for the message.", body)
+    return (f'<h2>Start here</h2><p class="muted">Three questions a core dev asks, a minute each. Every number comes from the snapshot shown at the top.</p>'
+            f'{clients}{eips}{team}')
+
+
 def eels_items(snap):
     return [t for t in (eels_item(e, snap) for e in index.row_order(snap["eips"])) if t]
 
@@ -844,6 +894,8 @@ def site(snap, attestations, out_dir):
     qbody, items = queue_html(snap, cells)
     with open(os.path.join(out_dir, "queue.html"), "w") as f:
         f.write(page(f"{config.NAME} · queue", "queue", qbody, snap))
+    with open(os.path.join(out_dir, "start.html"), "w") as f:
+        f.write(page(f"{config.NAME} · start here", "start", start_html(snap, cells, items + eels_items(snap)), snap))
     for sub in ("eip", "client"):
         os.makedirs(os.path.join(out_dir, "api", sub), exist_ok=True)
     rows = feed_rows(snap, attestations)

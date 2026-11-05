@@ -7,7 +7,7 @@ import urllib.request
 
 from . import config, diverge
 
-PAGES = ["index.html", "queue.html", "changes.html", "releases.html", "history.html", "client-nethermind.html", "divergences.html"]
+PAGES = ["start.html", "index.html", "queue.html", "changes.html", "releases.html", "history.html", "client-nethermind.html", "divergences.html"]
 ASOF = re.compile(r'as of <a href="(s/[^"]+)"')
 HEADLINES = {"pass", "open", "fail", "stale-release", "no-run", "no-tests"}
 CELL_KEYS = {"eip", "client", "headline", "text", "why", "links"}
