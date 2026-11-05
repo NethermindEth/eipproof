@@ -293,7 +293,7 @@ navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copied';setTimeo
 """
 
 
-COUNT_WORD = {"pass": "pass", "open": "untested", "stale-release": "old tests", "fail": "fails", "no-run": "no run", "no-tests": "no tests"}
+COUNT_WORD = {"pass": "pass", "open": "untested", "stale-release": "on old tests", "fail": "fails", "no-run": "no run", "no-tests": "no tests"}
 COUNT_ORDER = ["fail", "open", "stale-release", "no-tests", "no-run", "pass"]
 
 

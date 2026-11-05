@@ -548,6 +548,7 @@ def test_start_page_answers_three_questions_from_the_same_snapshot(wide_site):
     assert render.counts_html([c for c in cells if c["eip"] == "8141"]) in row_8141
     assert "no tests yet" in re.search(r'href="eip-7805.html".*?</tr>', eips).group(0)
     assert "proven by a test or marked wording-only" in eips
+    assert re.search(r"\d+ old tests", eips) is None and re.search(r"\d+ on old tests", eips)
     index_page = (root / "index.html").read_text()
     assert all(f'id="r-{eip}"' in index_page for eip in ("8141", "7906", "7805"))
     eels = start_block(page, 2)
