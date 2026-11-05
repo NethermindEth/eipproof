@@ -1,0 +1,122 @@
+{
+ "client": "besu",
+ "client_label": "Besu",
+ "client_prs": {
+  "prs": [],
+  "repo": "besu-eth/besu",
+  "state": "not-collected"
+ },
+ "eip": "8141",
+ "fork": "bogota",
+ "headline": "stale-release",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#8141-besu",
+ "pending_spec": [
+  {
+   "number": 12596,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: clarify EXTCODEHASH restrictions for precompiles",
+   "url": "https://github.com/ethereum/EIPs/pull/12596"
+  },
+  {
+   "number": 12505,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: Check signer key authority",
+   "url": "https://github.com/ethereum/EIPs/pull/12505"
+  },
+  {
+   "number": 12588,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: charge the EIP-8037 legacy share as extra execution gas",
+   "url": "https://github.com/ethereum/EIPs/pull/12588"
+  },
+  {
+   "number": 12537,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: explain gas refunds and block limits",
+   "url": "https://github.com/ethereum/EIPs/pull/12537"
+  },
+  {
+   "number": 12559,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: price frame and signature entries at the floor",
+   "url": "https://github.com/ethereum/EIPs/pull/12559"
+  },
+  {
+   "number": 12506,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: set code from the default code in SENDER mode",
+   "url": "https://github.com/ethereum/EIPs/pull/12506"
+  },
+  {
+   "number": 12321,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: define early rejection and payer revalidation rules",
+   "url": "https://github.com/ethereum/EIPs/pull/12321"
+  },
+  {
+   "number": 12494,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: clarify transient storage and deploy targets in trace rules",
+   "url": "https://github.com/ethereum/EIPs/pull/12494"
+  },
+  {
+   "number": 12041,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: assembled canonical paymaster reference bytecode",
+   "url": "https://github.com/ethereum/EIPs/pull/12041"
+  },
+  {
+   "number": 12301,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: define MAX_VERIFY_GAS as a shared mempool floor",
+   "url": "https://github.com/ethereum/EIPs/pull/12301"
+  },
+  {
+   "number": 12252,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-8141: add valid_after to the expiry verifier frame",
+   "url": "https://github.com/ethereum/EIPs/pull/12252"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 1,
+  "changes": [
+   {
+    "commit": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+    "constants": [],
+    "date": "2026-11-01T04:20:25-07:00",
+    "subject": "Update EIP-8141: Transaction nonce check boundary",
+    "url": "https://github.com/ethereum/EIPs/commit/dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f"
+   }
+  ],
+  "head": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+  "head_url": "https://github.com/ethereum/EIPs/commit/dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+  "pin_commit": "7372d10a457b29eceb02cd052345af165de1fb60",
+  "text_url": "https://github.com/ethereum/EIPs/blob/dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f/EIPS/eip-8141.md"
+ },
+ "tests": {
+  "failed": [
+   "tests/bogota/eip8141_frame_transactions/test_blob_limits.py::test_frame_and_blob_txs_against_the_block_blob_limit[fork_Bogota-blockchain_test_engine-blob_tx_last-above_limit]",
+   "tests/bogota/eip8141_frame_transactions/test_blob_limits.py::test_frame_and_blob_txs_against_the_block_blob_limit[fork_Bogota-blockchain_test_engine-frame_tx_last-above_limit]",
+   "tests/bogota/eip8141_frame_transactions/test_blob_network_wrapper.py::test_reject_frame_tx_network_wrapper_in_block[fork_Bogota-blockchain_test_engine]",
+   "tests/bogota/eip8141_frame_transactions/test_static_validity.py::test_frame_constraints[fork_Bogota-blockchain_test_engine_from_state_test-frame_state_gas_above_64_bits]",
+   "tests/bogota/eip8141_frame_transactions/test_static_validity.py::test_frame_constraints[fork_Bogota-blockchain_test_engine_from_state_test-frame_gas_above_64_bits]",
+   "tests/bogota/eip8141_frame_transactions/test_static_validity.py::test_invalid_tx_fields[fork_Bogota-blockchain_test_engine_from_state_test-max_fee_overflow]",
+   "tests/bogota/eip8141_frame_transactions/test_static_validity.py::test_invalid_tx_fields[fork_Bogota-blockchain_test_engine_from_state_test-priority_fee_overflow]"
+  ],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 259,
+  "release": "tests-bogota-devnet@v1.1.1",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+  "state": "stale-release",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip8141_frame_transactions",
+  "total": 266
+ },
+ "text": "old tests v1.1.1",
+ "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 259/266 is shown but does not count. Next: run v2.0.0."
+}

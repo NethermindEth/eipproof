@@ -1,0 +1,41 @@
+{
+ "client": "reth",
+ "client_label": "Reth",
+ "client_prs": {
+  "prs": [],
+  "repo": "paradigmxyz/reth",
+  "state": "not-collected"
+ },
+ "eip": "8253",
+ "fork": "bogota",
+ "headline": "fail",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#8253-reth",
+ "pending_spec": [],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 0,
+  "changes": [],
+  "head": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+  "head_url": "https://github.com/ethereum/EIPs/commit/0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+  "pin_commit": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
+  "text_url": "https://github.com/ethereum/EIPs/blob/0cc66cb8a489925c5a56ff2df112cbcd1293c148/EIPS/eip-8253.md"
+ },
+ "tests": {
+  "failed": [
+   "tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts/test_block_access_lists_invalid.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"
+  ],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 81,
+  "release": "tests-bogota-devnet@v2.0.0",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793677677-1ec9ba4e8cd0e1e7555b4e7bbddff610.json&suitename=eels%2Fconsume-engine",
+  "state": "fail",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts",
+  "total": 82
+ },
+ "text": "fail 81/82",
+ "why": "1 test(s) for this EIP failed in Reth's run on v2.0.0. Next: fix the client or report the test."
+}

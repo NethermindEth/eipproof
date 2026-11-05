@@ -1,0 +1,46 @@
+{
+ "client": "besu",
+ "client_label": "Besu",
+ "client_prs": {
+  "prs": [],
+  "repo": "besu-eth/besu",
+  "state": "not-collected"
+ },
+ "eip": "4758",
+ "fork": "bogota",
+ "headline": "stale-release",
+ "hints": {
+  "rows": [],
+  "state": "none"
+ },
+ "page": "https://nethermindeth.github.io/eipproof/index.html#4758-besu",
+ "pending_spec": [
+  {
+   "number": 12492,
+   "repo": "ethereum/EIPs",
+   "title": "Update EIP-4758: Move to Draft",
+   "url": "https://github.com/ethereum/EIPs/pull/12492"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "spec": {
+  "behind": 0,
+  "changes": [],
+  "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+  "head_url": "https://github.com/ethereum/EIPs/commit/1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+  "pin_commit": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
+  "text_url": "https://github.com/ethereum/EIPs/blob/1a0895b7f5adb56df83ca27aa15381ef0705aa74/EIPS/eip-4758.md"
+ },
+ "tests": {
+  "failed": [],
+  "newest_release": "tests-bogota-devnet@v2.0.0",
+  "passed": 0,
+  "release": "tests-bogota-devnet@v1.1.1",
+  "run_url": "https://hive.ethpandaops.io/bogota/suite.html?suiteid=1793192114-c7f97c0c92a15f1808e553bc58ebe6a6.json&suitename=eels%2Fconsume-engine",
+  "state": "stale-release",
+  "test_dir_url": "https://github.com/ethereum/execution-specs/tree/tests-bogota-devnet%40v2.0.0/tests/bogota/eip4758_sendall",
+  "total": 0
+ },
+ "text": "old tests v1.1.1",
+ "why": "Besu's newest run used tests v1.1.1, but the newest EELS release is v2.0.0. Old tests do not check the current spec, so the old 0/0 is shown but does not count. Next: run v2.0.0."
+}
