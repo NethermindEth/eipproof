@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 
 from eipproof import build, cli, config, diverge, render, smoke
 
@@ -180,3 +181,8 @@ def test_smoke_requires_the_divergence_page_and_json(tmp_path):
     assert smoke.check_divergences(lambda p: (tmp_path / "missing" / p).read_text())[0].startswith("api/divergences.json:")
     errs = smoke.check_divergences(lambda p: (tmp_path / p).read_text())
     assert any(e.startswith("divergences.json: row 0 status") for e in errs)
+
+
+def test_post_deploy_smoke_imports_without_pyyaml():
+    code = "import sys; sys.modules['yaml'] = None; import eipproof.smoke"
+    assert subprocess.run([sys.executable, "-c", code], cwd=os.path.dirname(os.path.dirname(__file__))).returncode == 0

@@ -3,8 +3,6 @@ import re
 import subprocess
 from urllib.parse import quote
 
-import yaml
-
 from . import config, index, sources
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +16,7 @@ def load_targets(fork=None):
     path = os.path.join(ROOT, "targets", f"{fork or config.FORK}.yaml")
     if not os.path.exists(path):
         return []
+    import yaml
     return yaml.safe_load(open(path)) or []
 
 
