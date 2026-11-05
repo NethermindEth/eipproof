@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from urllib.parse import urlencode
 
-from . import config, diverge, handoff, index, sources
+from . import config, diverge, handoff, impact, index, sources
 
 
 def spec_revisions(eips_repo, eip):
@@ -239,6 +239,7 @@ def snapshot(out_dir, log=print):
         log(f"::warning title=divergence::{type(e).__name__}: {e}")
         divergence = {"eips": []}
     linked = handoff.collect(list(specs["eips"]), log)
+    pr_impact = impact.collect(config.CLIENT_REPO[impact.CLIENT], spec_texts(eips_repo, specs["eips"], log), log)
     return {
         "name": config.NAME, "fork": config.FORK,
         "taken_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -246,8 +247,19 @@ def snapshot(out_dir, log=print):
         "release_url": release_url(tag), "releases": release_list(eels_repo, tags), "hive_runs": history,
         "listing_url": f"{config.HIVE}/listing.jsonl", "listing_rows": len(listing),
         "meta": {"eip": config.META_EIP, "name": config.META_NAME, "url": f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/EIPS/eip-{config.META_EIP}.md"},
-        "eips": specs["eips"], "runs": runs, "divergence": divergence, "linked_prs": linked,
+        "eips": specs["eips"], "runs": runs, "divergence": divergence, "linked_prs": linked, "pr_impact": pr_impact,
     }
+
+
+def spec_texts(eips_repo, eips, log):
+    out = {}
+    for eip, info in eips.items():
+        try:
+            out[eip] = sources.git(eips_repo, "show", f'{info["head"]}:{info["path"]}')
+        except Exception as e:
+            log(f"::warning title=pr impact::EIP-{eip} text: {type(e).__name__}")
+            out[eip] = ""
+    return out
 
 
 def write_snapshot(snap, out_dir):
@@ -268,7 +280,7 @@ def permalink(taken_at):
 
 
 def content_key(snap):
-    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence", "linked_prs")}
+    out = {k: v for k, v in snap.items() if k not in ("taken_at", "listing_rows", "source", "asof", "divergence", "linked_prs", "pr_impact")}
     if snap.get("divergence"):
         out["divergence"] = diverge.content(snap["divergence"])
     return out

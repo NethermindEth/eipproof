@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 
-from . import build, config, diverge, handoff, index
+from . import build, config, diverge, handoff, impact, index
 from .chain import EELS, cell_action, chain, delta_verbs, eels_action, eels_todo, headline_text, queue, release_short
 
 E = html.escape
@@ -688,7 +688,7 @@ def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
                     [("matrix", "index.html", "Matrix"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
-                     ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("history", root + "history.html", "History")])
+                     ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", root + "history.html", "History")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
@@ -878,6 +878,11 @@ def site(snap, attestations, out_dir):
         json.dump(ddoc, f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "api", "releases.json"), "w") as f:
         json.dump(releases_doc(snap), f, indent=1, sort_keys=True)
+    pdoc = prs_doc(snap, cells)
+    with open(os.path.join(out_dir, "prs.html"), "w") as f:
+        f.write(page(f"{config.NAME} · PRs", "prs", prs_html(pdoc), snap))
+    with open(os.path.join(out_dir, "api", "prs.json"), "w") as f:
+        json.dump(pdoc, f, indent=1, sort_keys=True)
     for client in config.CLIENTS:
         with open(os.path.join(out_dir, client_href(client)), "w") as f:
             f.write(page(f"{config.NAME} · {config.CLIENT_LABEL[client]}", "", client_page_html(client, snap, cells, items), snap))
@@ -921,6 +926,74 @@ def divergences_html(doc):
                    f'{a(e["spec"]["url"], e["spec"]["commit"][:8])} {E(e["spec"]["date"][:10])}</span></h3>'
                    f'<div class="wrap"><table class="m list">{thead}{body}</table></div>')
     return "".join(out)
+
+
+def prs_doc(snap, cells):
+    block = snap.get("pr_impact")
+    base = {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live")}
+    if not block:
+        return {**base, "state": "not-collected", "repo": config.CLIENT_REPO[impact.CLIENT], "prs": []}
+    by = {(c["eip"], c["client"]): c for c in cells}
+    client = block.get("client")
+    rows = []
+    for p in block["prs"]:
+        eips = []
+        for eip in index.row_order({e: snap["eips"][e] for e in p["evidence"] if e in snap["eips"]}):
+            c = by.get((eip, client))
+            eips.append({"eip": eip, "evidence": p["evidence"][eip],
+                         "cell": c and {"client": client, "headline": c["headline"], "text": headline_text(c)},
+                         "href": f"index.html#{eip}-{client}" if c else eip_href(eip)})
+        if eips:
+            rows.append({**{k: v for k, v in p.items() if k != "evidence"}, "eips": eips})
+    return {**base, **{k: v for k, v in block.items() if k != "prs"}, "prs": rows}
+
+
+def prs_html(doc):
+    label = config.CLIENT_LABEL.get(doc.get("client"), doc["repo"])
+    head = (f'<h2>Open {E(label)} PRs <span class="muted">that name a tracked EIP or use one of its spec constants</span></h2>'
+            f'<p class="muted">read from {a(f"{config.GITHUB}/{doc["repo"]}/pulls", doc["repo"])} on each rebuild: the title, the body and the changed lines of each open PR; '
+            f'a match says the PR touches the EIP, not that it is correct &middot; run <code>{E(config.NAME)} pr-impact {E(doc["repo"])} &lt;pr&gt;</code> '
+            f'for one PR &middot; {a_local("api/prs.json", "JSON")}</p>')
+    if doc["state"] == "not-collected":
+        return head + '<p class="muted">PRs not collected in this snapshot</p>'
+    if doc["state"] != "ok":
+        return head + f'<p class="muted">open PRs could not be listed in this snapshot ({E(doc.get("reason") or doc["state"])}); check the repo by hand</p>'
+    notes = []
+    if doc.get("unchecked"):
+        notes.append(f'{doc["unchecked"]} older open PR(s) not checked')
+    if doc.get("truncated"):
+        notes.append("the open PR list hit the page cap")
+    items = []
+    for p in doc["prs"]:
+        draft = ' <span class="pill none">draft</span>' if p.get("draft") else ""
+        cut = ' <span class="muted">&middot; only the first changed files were read</span>' if p.get("files_truncated") else ""
+        eips = "".join(f'<div class="sub">{a_local(e["href"], "EIP-" + e["eip"])} '
+                       + (f'<span class="pill {CELL_PILL.get(e["cell"]["headline"], "none")}">{E(e["cell"]["text"])}</span> ' if e["cell"] else "")
+                       + f'<span class="muted">{E(evidence_text(e["evidence"]))}</span></div>' for e in p["eips"])
+        items.append(f'<div class="rev">{a(p["url"], "#" + str(p["number"]))} {E(p["title"])}{draft} '
+                     f'<span class="muted">updated {E(p["updated"])}</span>{cut}{eips}</div>')
+    body = f'<div class="card">{"".join(items)}</div>' if items else '<p class="muted">no open PR touches a tracked EIP</p>'
+    return (head + f'<h3>{len(doc["prs"])} of {doc.get("checked", 0)} checked open PR(s)</h3>'
+            + (f'<p class="muted">{E("; ".join(notes))}</p>' if notes else "") + body)
+
+
+CELL_PILL = {"pass": "ok", "open": "warn", "stale-release": "warn", "fail": "bad"}
+
+
+def evidence_text(rows):
+    def one(ev):
+        base = lambda p: p.rsplit("/", 1)[-1]
+        k = ev["kind"]
+        if k == "commit":
+            return f'commit {ev["sha"][:8]}'
+        if k == "path":
+            return f'path {base(ev["file"])}'
+        if k == "code":
+            return f'{ev["token"]} in {base(ev["file"])}'
+        if k == "constant":
+            return ev["name"] + (f' as {ev["as"]}' if ev["as"] != ev["name"] else "") + f' in {base(ev["file"])}'
+        return k
+    return "; ".join(one(e) for e in rows[:6]) + (f"; and {len(rows) - 6} more" if len(rows) > 6 else "")
 
 
 def releases_doc(snap):
@@ -985,7 +1058,7 @@ def eips_doc(snap):
     for eip in index.row_order(snap["eips"]):
         info = snap["eips"][eip]
         rows.append({"eip": eip, "title": info.get("title"), "status": info.get("status"), "category": info.get("category"),
-                     "stage": info.get("stage") or [], "test_dir": info.get("test_dir"), "checked": info.get("checked"),
+                     "stage": info.get("stage") or [], "test_dir": info.get("test_dir"), "checked": info.get("checked"), "head": info.get("head"),
                      "behind": len(info["deltas"]) if info.get("pin") else None, "eels_todo": eels_item(eip, snap), "page": f'{config.SITE_URL}/{eip_href(eip)}'})
     return {"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "newest_release": snap["newest_release"],
             "meta": snap.get("meta"), "eips": rows}

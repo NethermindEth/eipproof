@@ -23,6 +23,7 @@
     "verb": "update tests"
    },
    "eip": "8141",
+   "head": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
    "page": "https://nethermindeth.github.io/eipproof/eip-8141.html",
    "stage": [
     "Scheduled"
@@ -54,6 +55,7 @@
     "verb": "update tests"
    },
    "eip": "7906",
+   "head": "9099f412d228ec80ec27b713df6da61993bf4702",
    "page": "https://nethermindeth.github.io/eipproof/eip-7906.html",
    "stage": [
     "Considered"
@@ -68,6 +70,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "8250",
+   "head": "1a086d5c67cdcf3a134cc571eb4bb4b9bed6fb02",
    "page": "https://nethermindeth.github.io/eipproof/eip-8250.html",
    "stage": [
     "Considered"
@@ -82,6 +85,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "8151",
+   "head": "e2fad38cfe2d441614fbb3c7eaedce2f661b1886",
    "page": "https://nethermindeth.github.io/eipproof/eip-8151.html",
    "stage": [
     "Considered"
@@ -96,6 +100,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "8272",
+   "head": "5e32ce9abb16d8a8d1a55b65fc2aa55b606b882c",
    "page": "https://nethermindeth.github.io/eipproof/eip-8272.html",
    "stage": [
     "Considered"
@@ -110,6 +115,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "8298",
+   "head": "f4a9f9655ee88ed923ceac6cb6271820477e11c5",
    "page": "https://nethermindeth.github.io/eipproof/eip-8298.html",
    "stage": [
     "Considered"
@@ -124,6 +130,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "4758",
+   "head": "1a0895b7f5adb56df83ca27aa15381ef0705aa74",
    "page": "https://nethermindeth.github.io/eipproof/eip-4758.html",
    "stage": [
     "Considered"
@@ -138,6 +145,7 @@
    "checked": null,
    "eels_todo": null,
    "eip": "8253",
+   "head": "0cc66cb8a489925c5a56ff2df112cbcd1293c148",
    "page": "https://nethermindeth.github.io/eipproof/eip-8253.html",
    "stage": [
     "Considered"

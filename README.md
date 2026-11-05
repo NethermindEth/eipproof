@@ -43,6 +43,22 @@ Data sources, all public: `ethereum/EIPs`, `ethereum/execution-specs` release ta
 - After each deploy, `python -m eipproof.smoke <url> <sha>` checks the live pages and JSON, and fails the run if they are wrong.
 - Run `pages` by hand with `force_fallback` to test the snapshot path.
 
+## Check a client PR
+
+```bash
+python -m eipproof.cli pr-impact NethermindEth/nethermind 12612 --json impact.json
+```
+
+It prints Markdown: the tracked EIPs that the PR names (title, body, commits, paths, code) or whose SNAKE_CASE spec constants appear in its changed lines. For each EIP it also shows the spec version, whether the EELS tests are behind it, and the matrix cell. A match says the PR touches the EIP, not that it is correct. A PR that names neither the EIP nor one of its constants is not found.
+
+In a client repo, `.github/actions/pr-impact` writes the same report to the job summary. It posts no comments and needs only `pull-requests: read`:
+
+```yaml
+- uses: NethermindEth/eipproof/.github/actions/pr-impact@<sha>
+```
+
+`prs.html` and `api/prs.json` list the open Nethermind PRs that touch a tracked EIP. Each hourly build refreshes them.
+
 ## Prove a spec change
 
 1. Check out `ethereum/execution-specs` at the newest release tag.

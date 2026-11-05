@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-from . import build, config, health, history, prove, render
+from . import build, config, health, history, impact, prove, render
 from .chain import headline_text
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -130,6 +130,9 @@ def cmd_prove(args):
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["pr-impact"]:
+        return impact.main(argv[1:])
     p = argparse.ArgumentParser(prog=config.NAME)
     sub = p.add_subparsers(required=True)
     b = sub.add_parser("build")
