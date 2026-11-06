@@ -2,7 +2,17 @@ PY ?= .venv/bin/python
 PORT ?= 8765
 ARGS ?=
 
-.PHONY: venv test golden check build offline serve
+.PHONY: help venv test golden check build offline serve site
+
+help:
+	@echo "make site      build site/ from the latest snapshot and serve it on http://localhost:$(PORT)"
+	@echo "make test      unit, golden and site tests"
+	@echo "make golden    rewrite tests/golden/ after an intended output change"
+	@echo "make build     fetch public data, write snapshots/ and site/"
+	@echo "make offline   rebuild site/ from the latest snapshot, no network"
+	@echo "make check     HTML balance and internal links of site/"
+	@echo "make serve     serve site/ on http://localhost:$(PORT)"
+	@echo "make venv      install the pinned dependencies into .venv with uv"
 
 venv:
 	uv sync -q --frozen
@@ -24,3 +34,5 @@ offline: venv
 
 serve:
 	cd site && python3 -m http.server $(PORT)
+
+site: offline serve

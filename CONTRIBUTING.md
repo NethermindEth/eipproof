@@ -5,6 +5,7 @@ All settings live in `eipproof/config.py`. Data comes from public sources only: 
 ## Set up and test
 
 ```
+make site        # install, build site/ from the committed snapshot, serve it
 make test        # unit, golden and site tests
 make offline     # build site/ from the committed snapshot, no network
 make check       # HTML balance and internal links of site/
