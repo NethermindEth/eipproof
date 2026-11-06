@@ -21,8 +21,35 @@ def gh(repo, kind, ref):
     return f"{config.GITHUB}/{repo}/{kind}/{ref}"
 
 
+GLYPH = {"ok": "✓", "bad": "✕", "stale": "◷", "warn": "?", "none": "–", "edit": "–"}
+
+
+def url_attr(url):
+    return E(url).replace("&amp;", "&")
+
+
 def a(url, text, cls=""):
-    return f'<a href="{E(url)}" target="_blank" rel="noopener"{f" class={chr(34)}{cls}{chr(34)}" if cls else ""}>{E(text)}</a>'
+    return f'<a href="{url_attr(url)}" target="_blank" rel="noopener"{f" class={chr(34)}{cls}{chr(34)}" if cls else ""}>{E(text)}</a>'
+
+
+def glyph(cls):
+    return f'<span class="g" aria-hidden="true">{GLYPH[cls]}</span>'
+
+
+def chip(cls, text, extra=""):
+    return f'<span class="chip {cls}{extra}">{glyph(cls)}<span class="n">{E(text)}</span></span>'
+
+
+def kv(key, value):
+    return f'<div class="kv"><span class="k">{E(key)}</span><span class="v">{value}</span></div>'
+
+
+def json_link(href):
+    return f'<a class="jsn" href="{E(href)}">JSON</a>'
+
+
+def titlebar(h1, extra="", json_href=""):
+    return f'<div class="titlebar"><h1>{h1}</h1>{extra}{json_link(json_href) if json_href else ""}</div>'
 
 
 def short_test(test_id):
@@ -63,12 +90,9 @@ def why(cell, snap):
     return f"No {config.SIMULATOR} run for {label}."
 
 
-def dots(cell):
-    out = []
-    for key in ("spec", "test", "run"):
-        st = cell["links"][key]["state"]
-        out.append(f'<i class="dot {STATE_CLASS.get(st, "none")}" title="{DOT[key]}: {E(LABEL.get(st, st))}"></i>')
-    return '<span class="dots">' + "".join(out) + "</span>"
+def run_count(cell):
+    r = cell["links"]["run"]
+    return f'{r["passed"]}/{r["total"]}' if r.get("total") is not None else LABEL.get(cell["headline"], cell["headline"])
 
 
 def md(url, text):
@@ -76,7 +100,7 @@ def md(url, text):
 
 
 def copy_md(text, label="Copy as Markdown"):
-    return (f'<div class="copy"><button type="button" onclick="copyMd(this)">{E(label)}</button>'
+    return (f'<div class="copy"><button type="button" class="btn" onclick="copyMd(this)">{E(label)}</button>'
             f'<textarea class="md" readonly hidden aria-label="Markdown">{E(text)}</textarea></div>')
 
 
@@ -121,9 +145,9 @@ def eip_markdown(eip, snap, cells, attestations):
     return "\n".join(lines) + "\n"
 
 
-def link_block(n, title, state, body):
-    return (f'<section class="link {STATE_CLASS.get(state, "none")}"><header><b>{n}</b> {E(title)}'
-            f'<span class="pill {STATE_CLASS.get(state, "none")}">{E(LABEL.get(state, state))}</span></header>{body}</section>')
+def check_block(name, state, body):
+    return (f'<section class="check"><div class="chead"><span class="cname">{E(name)}</span>'
+            f'{chip(STATE_CLASS.get(state, "none"), LABEL.get(state, state))}</div><div class="cbody">{body}</div></section>')
 
 
 def added_lines(diff):
@@ -139,23 +163,21 @@ def tokens_marked(text, tokens):
 
 def spec_html(cell, eip_info, snap):
     s = cell["links"]["spec"]
-    rows = [f'<div class="kv"><span>EIP now</span><code>{a(gh(config.EIPS_REPO, "commit", eip_info["head"]), eip_info["head"][:8])}</code> {E(eip_info["head_date"][:10])}</div>',
-            f'<div class="kv"><span>EELS has</span><code>{a(eip_info["pin"]["spec_py"], s["pin_blob"][:8])}</code> = EIPs '
-            f'<code>{a(gh(config.EIPS_REPO, "commit", s["pin_commit"]), s["pin_commit"][:8]) if s["pin_commit"] else "?"}</code>'
-            f' at {E(release_short(eip_info["pin"]["release"]))} '
-            + (f'<span class="pill warn">{plural(s["behind"], "change")} behind</span>' if s["behind"] else '<span class="pill ok">current</span>')
-            + (' <span class="pill none">same text in several commits</span>' if s["pin_ambiguous"] else "") + "</div>"]
-    rows.append(pending_html(handoff.pending_spec(snap, cell["eip"])))
-    return link_block(1, "Spec: does EELS implement the current EIP text?", s["state"], "".join(rows))
+    rows = [kv("EIP now", f'<code>{a(gh(config.EIPS_REPO, "commit", eip_info["head"]), eip_info["head"][:8])}</code> {E(eip_info["head_date"][:10])}'),
+            kv("EELS has", f'<code>{a(eip_info["pin"]["spec_py"], s["pin_blob"][:8])}</code> = EIPs '
+               f'<code>{a(gh(config.EIPS_REPO, "commit", s["pin_commit"]), s["pin_commit"][:8]) if s["pin_commit"] else "?"}</code>'
+               f' at {E(release_short(eip_info["pin"]["release"]))} '
+               + (f'<span class="pill warn">{plural(s["behind"], "change")} behind</span>' if s["behind"] else '<span class="pill ok">current</span>')
+               + (' <span class="pill none">same text in several commits</span>' if s["pin_ambiguous"] else ""))]
+    return check_block("Spec change", s["state"], "".join(rows))
 
 
 def test_html(cell, eip_info):
     t = cell["links"]["test"]
     if t["state"] == "n/a":
-        return link_block(2, "Tests: does a test catch each spec change?", "n/a",
-                          '<p class="muted">n/a: this run used old tests, so proofs for the current tests do not apply.</p>')
+        return check_block("Test proof", "n/a", '<p class="muted">n/a: this run used old tests, so proofs for the current tests do not apply.</p>')
     if not t["deltas"]:
-        return link_block(2, "Tests: does a test catch each spec change?", "pass", '<p class="muted">EELS implements the current EIP text: no change to prove.</p>')
+        return check_block("Test proof", "pass", '<p class="muted">EELS implements the current EIP text: no change to prove.</p>')
     deltas = {d["commit"]: d for d in eip_info["deltas"]}
     rows = []
     for d in t["deltas"]:
@@ -167,10 +189,10 @@ def test_html(cell, eip_info):
             cands += (f'<div class="cand" data-mark="candidate"><span class="pill ok">{c["passed"]}/{c["cases"]} pass here</span> likely test '
                       f'<code>{a(src, c["test"])}</code> <em>shares words {", ".join(E(x) for x in c["tokens"])}</em></div>')
         att = proof_html(d.get("attestation"))
-        rows.append(f'<div class="delta" data-mark="delta"><div class="kv"><span>change</span><code>{a(gh(config.EIPS_REPO, "commit", d["commit"]), d["commit"][:8])}</code> '
-                    f'{E(info["date"][:10])} {E(info["subject"])} <span class="pill {STATE_CLASS.get(d["state"], "none")}">{E(LABEL.get(d["state"], d["state"]))}</span></div>'
-                    f'{constants_html(info)}<div class="diff">{diff}</div>{cands}{att}</div>')
-    return link_block(2, "Tests: does a test catch each spec change?", t["state"], "".join(rows))
+        rows.append('<div class="delta" data-mark="delta">' + kv("change", f'<code>{a(gh(config.EIPS_REPO, "commit", d["commit"]), d["commit"][:8])}</code> '
+                    f'{E(info["date"][:10])} {E(info["subject"])} <span class="pill {STATE_CLASS.get(d["state"], "none")}">{E(LABEL.get(d["state"], d["state"]))}</span>')
+                    + f'{constants_html(info)}<div class="diff">{diff}</div>{cands}{att}</div>')
+    return check_block("Test proof", t["state"], "".join(rows))
 
 
 def proof_html(at):
@@ -184,113 +206,378 @@ def proof_html(at):
     if not at["killed"]:
         return (f'<div class="att" data-mark="att"><span class="pill warn">no test catches it</span> a {mutant} undoes the change and all '
                 f'{at["with_mutant"]["passed"]}/{at["with_mutant"]["cases"]} cases still pass in EELS {E(release_short(at["eels"]["ref"]))}</div>')
-    kills = "".join(f'<div><code>{E(short_test(k))}</code></div>' for k in at["killed"])
+    b, w = at["baseline"], at["with_mutant"]
     return (f'<div class="att" data-mark="att"><span class="pill ok">proven</span> a {mutant} undoes the change; in EELS '
-            f'{E(release_short(at["eels"]["ref"]))} it fails {len(at["killed"])} of {at["baseline"]["cases"]} cases '
-            f'<em>({E(at["date"])})</em>{kills}</div>')
+            f'{E(release_short(at["eels"]["ref"]))} it fails {len(at["killed"])} of {b["cases"]} cases <em>({E(at["date"])})</em>'
+            + kv("baseline", f'<span class="num">{b["passed"]}/{b["cases"]}</span> pass')
+            + kv("with mutant", f'<span class="num">{w["passed"]}/{w["cases"]}</span> pass')
+            + kv("killed", f'<span class="num">{len(at["killed"])}</span>{ids_list(at["killed"])}')
+            + kv("EELS", f'{E(at["eels"]["ref"])} <code>{a(gh(at["eels"]["repo"], "commit", at["eels"]["commit"]), at["eels"]["commit"][:8])}</code>')
+            + f'<div class="cmd"><span class="k">command</span><code>{E(at["command"])}</code></div></div>')
+
+
+def ids_list(ids):
+    return '<ul class="ids">' + "".join(f"<li><code>{E(short_test(i))}</code></li>" for i in ids) + "</ul>"
 
 
 def run_html(cell, run_full):
     r = cell["links"]["run"]
     if r["state"] == "no-run":
-        return link_block(3, "Run: does the client pass the tests?", "no-run", '<p class="muted">no run</p>')
-    count = f'<b class="big">{r["passed"]}/{r["total"]}</b>'
-    body = [f'<div class="kv" data-mark="count"><span>result</span>{count} cases in <code>{E(eip_dir_name(cell))}</code></div>',
-            f'<div class="kv" data-mark="release"><span>tests</span><code>{E(r["release"])}</code>'
-            + (f' <span class="pill stale">newest is {E(release_short(r["newest_release"]))}</span>' if r["state"] == "stale-release" else "") + "</div>",
-            f'<div class="kv"><span>image</span><code>{E(r["image"] or "?")}</code></div>',
-            f'<div class="kv"><span>version</span><code>{E(r["version"])}</code></div>',
-            f'<div class="kv"><span>run</span>{E(run_full["start"][:16].replace("T", " "))}Z &rarr; {a(r["url"], "hive run")} &middot; {a(run_full["sim_log"], "sim log")}</div>']
-    if r["failed"]:
-        body.append('<div class="fails" data-mark="fails">' + "".join(f"<div><code>{E(short_test(f))}</code></div>" for f in r["failed"][:8]) + "</div>")
-    return link_block(3, "Run: does the client pass the tests?", r["state"], "".join(body))
+        return check_block("Client run", "no-run", '<p class="muted">no run</p>')
+    body = [kv("result", f'<b class="num">{r["passed"]}/{r["total"]}</b> cases in <code>{E(eip_dir_name(cell))}</code>'),
+            kv("tests", f'<code>{E(r["release"])}</code>'
+               + (f' <span class="pill stale">newest is {E(release_short(r["newest_release"]))}</span>' if r["state"] == "stale-release" else "")),
+            kv("image", f'<code>{E(r["image"] or "?")}</code>'),
+            kv("version", f'<code>{E(r["version"])}</code>'),
+            kv("run", f'{E(run_full["start"][:16].replace("T", " "))}Z &rarr; {a(r["url"], "hive run")} &middot; {a(run_full["sim_log"], "sim log")}')]
+    return check_block("Client run", r["state"], "".join(body))
 
 
 def eip_dir_name(cell):
     return cell["links"]["_dir"]
 
 
+def image_tag(image):
+    return image.rsplit(":", 1)[-1].replace("-linux-amd64", "") if image else ""
+
+
+def test_dir_url(release, test_dir):
+    return f'{config.GITHUB}/{config.EELS_REPO}/tree/{release.replace("@", "%40")}/{test_dir}'
+
+
+def drawer_head(eip, who, title):
+    return (f'<div class="dh"><div><div class="dt">EIP-{E(eip)} &middot; {E(who)}</div><div class="dsub">{E(title)}</div></div>'
+            f'<button type="button" class="x" data-close aria-label="Close">&times;</button></div>')
+
+
+def next_line(verb, owner):
+    return '<div class="next"><span class="k">Next</span> ' + (f'<b>{E(verb)}</b> &middot; owner {E(owner)}' if verb else "nothing to do") + '</div>'
+
+
+def pending_block(rows):
+    if not rows:
+        return ""
+    return f'<h3>Open EIP PRs <span class="num">{len(rows)}</span> <span class="muted">not merged, not counted</span></h3>{pending_html(rows)}'
+
+
 def drawer(cell, snap):
-    eip_info = snap["eips"][cell["eip"]]
-    run_full = snap["runs"].get(cell["client"], {})
-    h = cell["headline"]
-    return (f'<div class="dhead"><div><div class="muted">EIP-{cell["eip"]} &times; {E(config.CLIENT_LABEL[cell["client"]])}</div>'
-            f'<div class="headline {STATE_CLASS[h]}" data-mark="headline">{E(headline_text(cell))}</div></div><button class="x" onclick="closeD()" aria-label="Close">&times;</button></div>'
-            f'<p class="why" data-mark="why">{E(why(cell, snap))}</p>{copy_md(cell_markdown(cell, snap))}'
+    eip, client = cell["eip"], cell["client"]
+    eip_info = snap["eips"][eip]
+    run_full = snap["runs"].get(client, {})
+    h, r, s = cell["headline"], cell["links"]["run"], cell["links"]["spec"]
+    tag = image_tag(r.get("image"))
+    links = [a(r["url"], "hive run")] if r.get("url") else []
+    links.append(a(f'{config.GITHUB}/{config.EIPS_REPO}/blob/{eip_info["head"]}/{eip_info["path"]}', "spec at head"))
+    if s["behind"] and s["pin_commit"]:
+        links.append(a(f'{config.GITHUB}/{config.EIPS_REPO}/compare/{s["pin_commit"]}...{eip_info["head"]}', "spec diff"))
+    if r.get("release"):
+        links.append(a(test_dir_url(r["release"], eip_info["test_dir"]), "tests"))
+    links += [f'<a href="index.html#{eip}-{client}">in status grid</a>', a_local(eip_href(eip), "EIP page"), a_local(f"api/eip/{eip}.json", "JSON")]
+    failed = r.get("failed") or []
+    return (drawer_head(eip, config.CLIENT_LABEL[client], eip_info.get("title") or eip_name(eip_info))
+            + f'<div class="dbig">{chip(STATE_CLASS[h], run_count(cell), " big")}<span class="dhl" data-mark="headline">{E(headline_text(cell))}</span>'
+            + (f'<span class="tag" title="devnet image tag">{E(tag)}</span>' if tag else "") + '</div>'
+            + f'<p class="why" data-mark="why">{E(why(cell, snap))}</p>'
+            + next_line(cell_action(cell, snap["newest_release"]), config.CLIENT_LABEL[client])
+            + f'<div class="dlinks">{" ".join(links)}</div>'
+            + copy_md(cell_markdown(cell, snap))
             + (copy_md(handoff.brief_markdown(handoff.brief(cell, snap, why(cell, snap))), "Copy implement brief") if h != "pass" else "")
-            + spec_html(cell, eip_info, snap) + test_html(cell, eip_info) + run_html(cell, run_full))
+            + (f'<h3>Failed cases <span class="num">{len(failed)}</span></h3>{ids_list(failed)}' if failed else "")
+            + '<h3>Three checks</h3>' + spec_html(cell, eip_info, snap) + test_html(cell, eip_info) + run_html(cell, run_full)
+            + pending_block(handoff.pending_spec(snap, eip)))
 
 
 CSS = """
-:root{--bg:#0b0f17;--card:#111827;--line:#1f2937;--fg:#e5e7eb;--mut:#8b95a7;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--stale:#818cf8;--none:#4b5563;--edit:#38bdf8}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI","DejaVu Sans",sans-serif}
-a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}code{font:13px "DejaVu Sans Mono",monospace;color:#cbd5e1}
-header.top{display:flex;align-items:center;gap:18px;padding:16px 28px;border-bottom:1px solid var(--line)}
-.brand{font-weight:800;font-size:20px;letter-spacing:.2px}.brand span{color:var(--ok)}
-nav a{margin-right:14px;color:var(--mut)}nav a.on{color:var(--fg);font-weight:600}
-nav.forks{border:1px solid var(--line);border-radius:8px;padding:3px 4px}nav.forks a{margin:0;padding:2px 8px;border-radius:6px}nav.forks a.on{background:var(--line)}
-.meta{margin-left:auto;color:var(--mut);font-size:13px;text-align:right}
-main{padding:20px 28px}.strip{background:#1a1320;border:1px solid #3b1d2a;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;color:#fca5a5}
-table.m{border-collapse:separate;border-spacing:6px;width:100%}th{color:var(--mut);font-weight:600;font-size:13px;text-align:left;padding:0 8px}
-th.row{width:150px}th.row a{color:var(--fg);font-size:15px}th.row small{display:block;color:var(--mut);font-weight:400;font-size:12.5px}th small{font-size:12px}
-.wrap{overflow-x:auto}table td.c:focus-visible,a:focus-visible,.x:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-h1{text-wrap:balance;font-size:22px;margin:4px 0 12px}h1 .muted{font-size:15px;font-weight:400}.badge.pend{background:#1f2937;color:var(--mut)}.rev{overflow-wrap:anywhere}p{overflow-wrap:break-word}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
-td.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;vertical-align:top}
-td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outline:2px solid #e5e7eb;outline-offset:-1px}
-.hl{font-weight:700;font-size:15px}.ok .hl,.hl.ok{color:var(--ok)}.warn .hl,.hl.warn{color:var(--warn)}.bad .hl{color:var(--bad)}.stale .hl{color:var(--stale)}.none .hl{color:var(--mut)}
-td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px solid var(--warn);outline-offset:-3px}td.c.bad{outline:1px solid var(--bad);outline-offset:-3px}td.c.stale{outline:1px solid var(--stale);outline-offset:-3px}td.c.none{outline:1px solid var(--none);outline-offset:-3px}
-.sub{color:var(--mut);font-size:12px;margin-top:2px}.dots{float:right;margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px;background:var(--none)}
-.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
-.stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.tl{font-size:13px;color:var(--mut);margin:2px 0 0 76px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
-.badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
-.swipe{display:none}table.m:not(.list) th.row{position:sticky;left:0;z-index:1;background:var(--bg)}
-.legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend summary{cursor:pointer;width:max-content}.legend i{margin:0 4px 0 12px}
-#d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
-#d.on{transform:none}.dhead{display:flex;justify-content:space-between}.x{background:none;border:0;color:var(--mut);font-size:28px;cursor:pointer}
-.headline{font-size:26px;font-weight:800}.headline.ok{color:var(--ok)}.headline.warn{color:var(--warn)}.headline.bad{color:var(--bad)}.headline.stale{color:var(--stale)}.headline.none{color:var(--mut)}
-.why{color:#cbd5e1;background:#151d2c;border-radius:10px;padding:10px 12px;margin:12px 0}
-section.start{margin:22px 0}section.start h3{margin:0 0 4px}
-section.link{border:1px solid var(--none);border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--card)}
-section.link.ok{border-color:var(--ok)}section.link.warn{border-color:var(--warn)}section.link.bad{border-color:var(--bad)}section.link.stale{border-color:var(--stale)}
-section.link header{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:6px}section.link header .pill{margin-left:auto}
-.pill{font-size:11px;padding:1px 8px;border-radius:99px;background:#1f2937;color:var(--mut);font-weight:600}.pill.ok{background:#0f2a1a;color:var(--ok)}.pill.warn{background:#2a2112;color:var(--warn)}.pill.bad{background:#2a1212;color:var(--bad)}.pill.stale{background:#1c1d3a;color:var(--stale)}
-.kv{margin:3px 0}.kv>span:first-child{display:inline-block;width:78px;color:var(--mut);font-size:13px}.big{font-size:20px;color:var(--fg)}
-.diff{background:#0b1220;border-radius:8px;padding:6px 10px;margin:6px 0;font-size:13px}.add{color:#bbf7d0}mark{background:#3b3412;color:#fde68a;border-radius:3px;padding:0 2px}
-.cand,.att,.overlay{margin:6px 0;font-size:13.5px}.overlay{color:var(--mut)}em{color:var(--mut);font-style:normal}.muted{color:var(--mut)}
-.fails{font-size:12.5px;max-height:150px;overflow:auto;background:#1a1010;border-radius:8px;padding:6px 10px}
-.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}.q .k{font-weight:700}.q .k.bad{color:var(--bad)}.q .k.warn{color:var(--warn)}.q .k.stale{color:var(--stale)}
-.q .k.none{color:var(--mut)}.ac{display:none}body.act .ac{display:block}body.act .st{display:none}.hl.av{color:var(--fg)}th.eels a{color:var(--fg)}
-.tog{display:inline-flex;border:1px solid var(--line);border-radius:99px;margin:0 6px 8px;overflow:hidden}.tog button{font:inherit;font-size:13px;background:none;color:var(--mut);border:0;padding:4px 14px;cursor:pointer}
-.tog button[aria-pressed="true"]{background:var(--fg);color:#0b0f17;font-weight:600}.tog button:focus-visible{outline:2px solid #93c5fd;outline-offset:-2px}
-.q .act{float:right;font-size:13px;color:#0b0f17;background:var(--fg);padding:2px 10px;border-radius:99px;margin:0 0 6px 8px}
-h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:22px 0 8px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-.rev{margin:4px 0;font-size:14px}table.list td.c{cursor:default;width:190px}table.list td.c:hover{transform:none}a.hl{display:block}
-td.why-cell{color:#cbd5e1;font-size:13.5px;vertical-align:top;padding:8px 10px}.why-cell p{margin:0;max-width:62ch;text-wrap:pretty}tr.counts th{font-weight:400;padding-top:0}tr.counts small .hl{font-size:12px}.hl.bad{color:var(--bad)}.hl.stale{color:var(--stale)}.hl.none{color:var(--mut)}
-[hidden]{display:none!important}.strip.age{background:#2a2112;border-color:#4a3a14;color:var(--warn)}
-.copy{margin:8px 0}.copy button{font:inherit;font-size:13px;color:var(--fg);background:#1f2937;border:1px solid var(--line);border-radius:99px;padding:3px 12px;cursor:pointer}
-.copy button:hover{border-color:#475569}.copy textarea{display:block;width:100%;height:180px;margin-top:6px;background:#0b1220;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:12.5px "DejaVu Sans Mono",monospace}
-select{font:inherit;font-size:14px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:4px 8px}label{color:var(--mut);font-size:13px}
-.find{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 6px 8px}.find input[type=search]{width:10em}.find label{display:inline-flex;gap:4px;align-items:center}
-.pick{position:relative;color:var(--mut)}.pick summary{cursor:pointer}.pick div{position:absolute;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 0;margin-top:4px;min-width:140px}.pick a{display:block;padding:3px 12px}
-.copy button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-@media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}.swipe{display:block}}
+:root{--ink:#14171c;--mut:#5b6472;--bd:#e3e6ea;--bg:#fff;--sf:#f6f7f9;--ok:#0b7a5a;--bad:#c2410c;--stale:#b45309;--warn:#6d28d9;--none:#6b7280;--focus:#1d4ed8;
+--sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,"DejaVu Sans Mono",monospace;--r:6px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:14px/1.45 var(--sans);color:var(--ink);background:var(--bg)}
+a{color:inherit;text-decoration:underline;text-decoration-color:#b9c0c9;text-underline-offset:2px}
+a:hover{text-decoration-color:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+.num,.n{font-variant-numeric:tabular-nums}
+.mono,code{font-family:var(--mono);font-size:12px}
+.muted,em{color:var(--mut);font-style:normal}
+.small{font-size:12px;font-weight:400}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+p{overflow-wrap:break-word}
+.bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;height:48px;padding:0 16px;background:var(--bg);border-bottom:1px solid var(--bd)}
+.brand{font-weight:600;text-decoration:none;font-size:15px}
+.forks{display:flex;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;flex:none}
+.forks a{padding:4px 10px;text-decoration:none;color:var(--mut);font-size:13px}
+.forks a+a{border-left:1px solid var(--bd)}
+.forks a.on{background:var(--ink);color:#fff}
+.pnav{display:flex;align-items:center;gap:4px;flex:1}
+.pnav>a,.pnav>.pop>summary{padding:6px 10px;border-radius:var(--r);text-decoration:none;color:var(--ink);cursor:pointer}
+.pnav>a:hover,.pnav>.pop>summary:hover{background:var(--sf)}
+.pnav>a.on{font-weight:600;box-shadow:inset 0 -2px 0 var(--ink);border-radius:0}
+.menu,.qk{display:none}
+.pop{position:relative}
+.pop>summary{list-style:none;user-select:none}
+.pop>summary::-webkit-details-marker{display:none}
+.pnav .pop>summary::after{content:"";display:inline-block;margin-left:6px;border:4px solid transparent;border-top-color:currentColor;transform:translateY(2px)}
+.panel{position:absolute;z-index:40;top:calc(100% + 6px);left:0;min-width:220px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(20,23,28,.12);padding:8px;color:var(--ink);font-size:13px}
+.panel.right{left:auto;right:0;width:360px}
+.panel.wide{width:380px}
+.panel p{margin:4px 0 8px}
+.panel.list{display:flex;flex-direction:column;padding:4px}
+.panel.list a{display:flex;justify-content:space-between;gap:16px;padding:8px;border-radius:4px;text-decoration:none}
+.panel.list a:hover{background:var(--sf)}
+.snap{margin-left:auto}
+.schip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid currentColor;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap}
+.schip>span:not(.g){color:var(--ink)}
+.schip.old{color:var(--stale);background:#fdf6ec}
+.schip.ok{color:var(--ok)}
+.asof{margin:0 0 6px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:8px;padding:4px 0;border-top:1px solid var(--bd);font-size:13px}
+.kv:first-child{border-top:0}
+.k{color:var(--mut)}
+.kv .v{min-width:0;overflow-wrap:anywhere}
+main{padding:16px 16px 48px;max-width:1440px;margin:0 auto}
+.titlebar{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;margin:0 0 8px}
+h1{font-size:20px;line-height:1.25;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:15px;font-weight:600;margin:24px 0 8px}
+h3{font-size:13px;font-weight:600;margin:16px 0 6px}
+.jsn{font-size:13px;color:var(--mut)}
+.titlebar .jsn{margin-left:auto}
+.crumbs{font-size:13px;color:var(--mut);margin-bottom:4px}
+.intro{margin:0 0 8px;font-size:13px}
+.facts{display:flex;flex-wrap:wrap;gap:4px 24px;font-size:13px;color:var(--mut);margin-bottom:8px}
+.ut{margin-left:6px;color:var(--ink)}
+.ut .num{font-weight:600;color:var(--bad)}
+.strip{padding:8px 12px;margin-bottom:12px;border:1px solid #e7c48f;border-radius:var(--r);background:#fdf6ec;font-size:13px}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 12px}
+.find{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
+input[type=search],select{font:inherit;height:32px;padding:0 8px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--ink)}
+.find input[type=search]{width:220px}
+label{font-size:13px;color:var(--mut)}
+.find label{display:inline-flex;align-items:center;gap:6px}
+.tog{display:inline-flex;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.tog button{font:inherit;font-size:13px;background:var(--bg);color:var(--mut);border:0;padding:5px 12px;cursor:pointer}
+.tog button+button{border-left:1px solid var(--bd)}
+.tog button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--mut)}
+.tools .legend{margin-left:auto}
+.legend .panel{left:auto;right:0}
+.lg .g,.cnt .g,.tw .g,.rel .g{font-weight:700}
+.lg.ok .g,.cnt.ok .g,.tw.ok .g{color:var(--ok)}.lg.bad .g,.cnt.bad .g,.tw.bad .g{color:var(--bad)}.lg.stale .g,.cnt.stale .g,.rel .g{color:var(--stale)}.lg.warn .g,.cnt.warn .g,.tw.warn .g{color:var(--warn)}.lg.none .g,.cnt.none .g,.tw.none .g{color:var(--none)}
+.legend summary{cursor:pointer;color:var(--ink);text-decoration:underline;text-decoration-color:#b9c0c9;text-underline-offset:2px}
+.pill{display:inline-block;padding:0 6px;border:1px solid var(--bd);border-radius:4px;font-size:11px;font-weight:600;line-height:16px;color:var(--mut);background:var(--sf)}
+.pill.sb{border-color:var(--ink);color:var(--ink);background:var(--bg);margin-right:4px}
+.pill.ok{color:var(--ok);border-color:#9fd3c1;background:#f0f8f5}.pill.bad{color:var(--bad);border-color:#f0b9a0;background:#fdf1ec}
+.pill.warn{color:var(--warn);border-color:#c9b6f2;background:#f6f2fd}.pill.stale{color:var(--stale);border-color:#e7c48f;background:#fdf6ec}
+.nb{display:inline-flex;align-items:center;gap:2px;padding:0 5px;border-radius:4px;font-size:11px;line-height:16px;background:var(--sf);border:1px solid var(--bd);color:var(--ink)}
+.nb.p{border-style:dashed;color:var(--mut)}
+.hl.ok{color:var(--ok)}.hl.bad{color:var(--bad)}.hl.stale{color:var(--stale)}.hl.warn{color:var(--warn)}.hl.none{color:var(--mut)}
+.wrap{position:relative;overflow-x:auto;border:1px solid var(--bd);border-radius:var(--r)}
+table.m{border-collapse:separate;border-spacing:0;width:100%}
+table.m th,table.m td{padding:4px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:middle}
+table.m tr:last-child>*{border-bottom:0}
+table.m:not(.list){min-width:860px}
+table.m:not(.list) thead th{background:var(--sf);font-weight:600}
+table.m:not(.list) th.row{position:sticky;left:0;z-index:2;background:var(--bg);min-width:240px;max-width:300px;border-right:1px solid var(--bd);font-weight:400}
+.corner{position:sticky;left:0;z-index:3;font-size:12px;color:var(--mut)}
+.ch{white-space:nowrap;padding:8px!important}
+.ch a{text-decoration:none}
+.ch a:hover{text-decoration:underline}
+.rel{display:block;font-weight:400;color:var(--mut);font-size:11px;font-family:var(--mono)}
+.rel.oldrel{color:var(--stale);font-weight:600}
+.ch.eels,td.c.eels{border-left:1px solid var(--bd)}
+.sums>*{background:var(--sf);font-size:12px}
+table.m:not(.list) .sums th.row{background:var(--sf);color:var(--mut)}
+.sum{white-space:nowrap}
+.cnt{display:inline-flex;align-items:center;gap:2px;margin-right:6px}
+.eipn{font-weight:600;text-decoration:none;font-variant-numeric:tabular-nums}
+.eipn:hover{text-decoration:underline}
+th.row .tt{font-weight:400}
+.r2{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:2px;font-size:12px;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;min-width:96px;width:100%;padding:0 8px;border:1px solid;border-radius:var(--r);font:inherit;font-size:13px;color:var(--ink);background:var(--bg);white-space:nowrap}
+button.chip{cursor:pointer}
+button.chip:hover{box-shadow:0 0 0 1px currentColor inset}
+.chip .st{display:inline-flex;align-items:center;gap:6px}
+.chip .g{font-weight:700;font-size:14px;line-height:1}
+.chip.ok{border-color:#9fd3c1;background:#f0f8f5}.chip.ok .g{color:var(--ok)}
+.chip.bad{border-color:var(--bad);background:var(--bad);color:#fff}.chip.bad .g{color:#fff}
+.chip.stale{border-color:#e7c48f;background:#fdf6ec}.chip.stale .g{color:var(--stale)}
+.chip.warn{border-color:#c9b6f2;background:#f6f2fd}.chip.warn .g{color:var(--warn)}
+.chip.none,.chip.edit{border-color:var(--bd);background:var(--sf);color:var(--mut)}.chip.none .g,.chip.edit .g{color:var(--none)}
+.chip.sel{outline:2px solid var(--ink);outline-offset:1px}
+.check .chip,.todo .chip,.runbox .chip,.card .chip{width:auto;min-width:0;height:22px;font-size:12px;padding:0 6px}
+td.c .ac{display:none;flex-direction:column;align-items:flex-start;text-align:left;line-height:1.2}
+body.act td.c .ac{display:flex}body.act td.c .st{display:none}
+body.act td.c button.chip{height:auto;min-height:32px;padding:4px 8px;justify-content:flex-start}
+.ac .hl{font-weight:600}.ac .hl.av{color:inherit}.ac .sub{font-size:11px;opacity:.8}
+td.c.none[data-mark="no-tests"]{color:var(--mut);font-size:12px}
+td.c.none[data-mark="no-tests"] .hl{color:var(--ink);font-weight:600;font-size:13px}
+table.list td.c.ok{background:#f0f8f5}table.list td.c.bad{background:#fdf1ec}table.list td.c.warn{background:#f6f2fd}table.list td.c.stale{background:#fdf6ec}table.list td.c.none{background:var(--sf);color:var(--mut)}
+table.list td.c a.hl{font-weight:600;text-decoration:none}
+table.list th.row{font-weight:600;width:180px;vertical-align:top}
+table.list th small,table.m th.row small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.sub{color:var(--mut);font-size:12px}
+.swipe{display:none}
+.empty{padding:16px}
+.scrim{position:fixed;inset:0;z-index:45;background:rgba(20,23,28,.32)}
+#d{position:fixed;z-index:50;top:48px;right:0;bottom:0;width:460px;max-width:100vw;background:var(--bg);border-left:1px solid var(--bd);box-shadow:-8px 0 24px rgba(20,23,28,.08);overflow-y:auto;padding:0 16px 24px}
+.dh{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;gap:8px;padding:12px 0 8px;background:var(--bg);border-bottom:1px solid var(--bd)}
+.dt{font-weight:600;font-size:15px}
+.dsub{color:var(--mut);font-size:13px}
+.x{width:32px;height:32px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);cursor:pointer;font-size:18px;line-height:1;color:var(--ink);flex:none}
+.dbig{display:flex;align-items:center;gap:8px;margin:12px 0 8px;flex-wrap:wrap}
+.chip.big{width:auto;height:36px;font-size:15px;padding:0 12px}
+.dhl{font-weight:600}
+.tag{padding:1px 6px;background:var(--sf);border:1px solid var(--bd);border-radius:4px;font-size:11px;font-family:var(--mono)}
+.why{margin:8px 0;text-wrap:pretty}
+.next{padding:8px;background:var(--sf);border-radius:var(--r);font-size:13px}
+.dlinks{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0;font-size:13px}
+.check{border:1px solid var(--bd);border-radius:var(--r);margin:8px 0;padding:8px}
+.chead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.cname{font-weight:600;font-size:13px}
+.cbody{font-size:13px}
+.cbody p{margin:4px 0}
+.delta+.delta{margin-top:8px;padding-top:8px;border-top:1px dashed var(--bd)}
+.diff{background:var(--sf);border-radius:4px;padding:6px 8px;margin:6px 0;font-size:12px;font-family:var(--mono);overflow-wrap:anywhere}
+.add{color:var(--ok)}
+mark{background:#fdf0c4;color:inherit;border-radius:3px;padding:0 2px}
+.cand,.att{margin:6px 0;font-size:13px}
+.att{padding-top:4px;border-top:1px dashed var(--bd)}
+.cmd{padding:4px 0;font-size:13px}
+.cmd code{display:block;margin-top:2px;padding:6px;background:var(--sf);border-radius:4px;white-space:pre-wrap}
+.ids{list-style:none;margin:4px 0;padding:0;font-size:12px;max-height:220px;overflow:auto}
+.ids li{padding:2px 0}
+.q code,.ids code,.kv code,.cand code,.att code,.cmd code,.rev code{overflow-wrap:anywhere}
+.prs{list-style:none;margin:4px 0;padding:0;font-size:13px}
+.prs li{padding:4px 0;border-top:1px solid var(--bd)}
+.prs li:first-child{border-top:0}
+.consts{margin:4px 0;font-size:13px}.const code{color:var(--stale)}
+.btn{font:inherit;font-size:13px;height:32px;padding:0 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn:hover{background:var(--sf)}
+.copy{display:inline-block;margin:4px 8px 4px 0}
+.copy textarea{display:block;width:100%;min-width:280px;height:180px;margin-top:6px;padding:8px;border:1px solid var(--bd);border-radius:var(--r);font:12px var(--mono);color:var(--ink);background:var(--sf)}
+.stage{font-size:12px;color:var(--mut);margin-top:2px}
+.stage a{color:inherit}
+.linksline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:13px;margin:4px 0 8px}
+.cols{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.colh{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-size:13px;font-weight:600;margin-bottom:4px}
+.colh a{text-decoration:none}
+.colh .rel{display:inline}
+.chip.wide{height:40px;font-size:14px}
+.card{border:1px solid var(--bd);border-radius:var(--r);padding:8px;margin:8px 0;font-size:13px}
+.card[data-mark="eels-todo"]{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.card[data-mark="eels-todo"]>div{flex-basis:100%}
+.tl{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:var(--r)}
+.tli+.tli{border-top:1px solid var(--bd)}
+.tlrow,.tli summary{display:grid;grid-template-columns:92px 80px 1fr auto auto;gap:8px;align-items:baseline;padding:8px;font-size:13px}
+.tli summary{cursor:pointer;list-style:none}
+.tli summary::-webkit-details-marker{display:none}
+.tli summary::after{content:"attestation";font-size:12px;color:var(--mut);text-decoration:underline;text-decoration-color:#b9c0c9}
+.tli details[open] summary{background:var(--sf)}
+.tli .tnote,.tli .consts,.tli .att{margin:0;padding:0 8px 8px;font-size:12px;color:var(--mut)}
+.tli .att{padding-top:8px;color:var(--ink)}
+.tli.none .ts{color:var(--mut)}
+.tw{white-space:nowrap;font-size:12px}
+.box>summary{cursor:pointer;margin:24px 0 8px;font-weight:600;font-size:15px}
+.split{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px}
+.todos{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:var(--r)}
+.todo{padding:8px}
+.todo+.todo{border-top:1px solid var(--bd)}
+.tr1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px}
+.tr2{margin:4px 0 0 32px;font-size:13px}
+.lnk{background:none;border:0;padding:0;font:inherit;color:var(--ink);text-decoration:underline;text-decoration-color:#b9c0c9;text-underline-offset:2px;cursor:pointer}
+.runbox{border:1px solid var(--bd);border-radius:var(--r);padding:4px 8px}
+.runbox details summary{cursor:pointer}
+.sumw{font-size:13px}
+.elist{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:var(--r);max-width:720px}
+.erow{display:grid;grid-template-columns:48px 1fr 160px;gap:8px;align-items:center;padding:4px 8px}
+.erow+.erow{border-top:1px solid var(--bd)}
+.erow .chip{min-width:0}
+.q{border:1px solid var(--bd);border-radius:var(--r);padding:8px 12px;margin:8px 0;font-size:13px}
+.q .k{font-weight:600}.q .k.bad{color:var(--bad)}.q .k.warn{color:var(--warn)}.q .k.stale{color:var(--stale)}.q .k.none{color:var(--mut)}
+.q .act{float:right;margin:0 0 6px 8px;padding:2px 10px;border-radius:999px;background:var(--ink);color:#fff;text-decoration:none;font-size:12px}
+.rev{padding:6px 0;border-top:1px solid var(--bd);font-size:13px}
+.rev:first-child{border-top:0}
+section.start{margin:24px 0}section.start h3{font-size:15px;margin:0 0 4px}
+@media (min-width:701px){.scrim{display:none}}
+@media (max-width:700px){
+body{font-size:15px}
+.bar{gap:2px;padding:0 4px;height:52px}
+.brand{display:none}
+.forks a{display:flex;align-items:center;min-height:44px;padding:0 6px}
+.menu{display:inline-flex;align-items:center;height:44px;padding:0 6px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg);font:inherit;color:var(--ink);order:5}
+.qk{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;order:4;color:var(--ink)}
+.pnav{display:none;position:absolute;top:52px;left:0;right:0;flex-direction:column;align-items:stretch;background:var(--bg);border-bottom:1px solid var(--bd);padding:8px;gap:0;box-shadow:0 6px 24px rgba(20,23,28,.12)}
+.bar.open .pnav{display:flex}
+.pnav>a,.pnav>.pop>summary{display:flex;align-items:center;min-height:44px;padding:0 12px}
+.pnav>a.on{box-shadow:inset 3px 0 0 var(--ink)}
+.pnav .panel{position:static;box-shadow:none;border:0;padding:0 0 0 12px}
+.pnav .panel.list a{min-height:44px;align-items:center}
+.schip{min-height:44px;padding:0 6px;gap:4px}
+.schip .lbl{display:none}
+.panel.right{position:fixed;top:56px;left:8px;right:8px;width:auto}
+.panel.wide{position:fixed;left:8px;right:8px;top:auto;width:auto}
+main{padding:12px 12px 48px}
+.find{display:grid;grid-template-columns:auto 1fr;align-items:center;width:100%}
+.find label:last-child{grid-column:1/-1}
+input[type=search],select{height:44px}
+.tools .legend{margin-left:0}
+.legend summary{min-height:44px;display:flex;align-items:center}
+.tog button{min-height:44px}
+.swipe{display:block}
+table.m:not(.list){min-width:0}
+table.m:not(.list) th.row{min-width:150px;max-width:160px}
+.tt{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px}
+th.row .tt{display:block}
+.chip{height:44px;min-width:84px;font-size:14px}
+table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}table.list th.row{width:auto}
+#d{top:auto;left:0;right:0;bottom:0;width:auto;max-height:85vh;border-left:0;border-top:1px solid var(--bd);border-radius:12px 12px 0 0;box-shadow:0 -8px 24px rgba(20,23,28,.12)}
+.x{width:44px;height:44px}
+.dlinks a,.lnk,.linksline a{display:inline-flex;align-items:center;min-height:44px}
+.cols{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tlrow,.tli summary{grid-template-columns:auto 1fr auto;min-height:44px}
+.tlrow .ts,.tli summary .ts{grid-column:1/-1;order:5}
+.tli summary::after{display:none}
+.split{grid-template-columns:1fr}
+.erow{grid-template-columns:44px 1fr 120px;min-height:52px}
+.btn{height:44px}
+.kv{grid-template-columns:96px 1fr}
+.runbox details summary,.box>summary{min-height:44px}
+.chip.wide{height:44px}
+.q .act{float:none;display:inline-block}
+}
+@media (prefers-reduced-motion:no-preference){#d{animation:din .14s ease-out}}
+@keyframes din{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}
+@media (max-width:700px) and (prefers-reduced-motion:no-preference){#d{animation-name:dup}}
+@keyframes dup{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 """
 
 JS = """
-function openD(id,el){document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));if(el)el.classList.add('sel');
-document.getElementById('dc').innerHTML=document.getElementById('t-'+id).innerHTML;document.getElementById('d').classList.add('on');history.replaceState(null,'','#'+id)}
-function closeD(){document.getElementById('d').classList.remove('on');document.querySelectorAll('td.c.sel').forEach(x=>x.classList.remove('sel'));history.replaceState(null,'',location.pathname+location.search)}
+let lastFocus=null;
+function sel(id){document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));if(id)document.querySelectorAll('[data-open="'+id+'"]').forEach(x=>x.classList.add('sel'))}
+function openD(id,el){const t=document.getElementById('t-'+id);if(!t)return false;const c=document.getElementById('c-'+id);if(c&&c.closest('[hidden]')&&document.getElementById('mf'))clearF();
+const d=document.getElementById('d');document.getElementById('dc').replaceChildren(t.content.cloneNode(true));d.hidden=false;document.querySelector('.scrim').hidden=false;
+lastFocus=el||document.activeElement;sel(id);history.replaceState(null,'','#'+id);d.scrollTop=0;d.querySelector('[data-close]').focus();return true}
+function closeD(){const d=document.getElementById('d');if(!d||d.hidden)return;d.hidden=true;document.querySelector('.scrim').hidden=true;sel('');history.replaceState(null,'',location.pathname+location.search);if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+function clearF(){document.getElementById('mc').value='';document.getElementById('hp').checked=false;document.getElementById('me').value='';mf()}
 function view(v){const on=v==='ac';document.body.classList.toggle('act',on);['st','ac'].forEach(k=>{const b=document.getElementById('v-'+k);if(b)b.setAttribute('aria-pressed',String(k===v))});
 const u=new URL(location.href);if(on)u.searchParams.set('view','action');else u.searchParams.delete('view');history.replaceState(null,'',u)}
 function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&q.dataset.owner!==v);const u=new URL(location.href);if(v)u.searchParams.set('owner',v);else u.searchParams.delete('owner');history.replaceState(null,'',u)}
-addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
+addEventListener('click',e=>{const t=e.target;if(!t.closest)return;const o=t.closest('[data-open]');if(o){e.preventDefault();openD(o.dataset.open,o);return}
+if(t.closest('[data-close]')||t.classList.contains('scrim')){closeD();return}
+document.querySelectorAll('details.pop[open]').forEach(p=>{if(!p.contains(t))p.open=false})});
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;const p=document.querySelector('details.pop[open]');if(p){p.open=false;p.querySelector('summary').focus()}else closeD()});
 addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
 const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
 const m=document.getElementById('mf');if(m){m.hidden=false;const mc=document.getElementById('mc');if(mc.querySelector('option[value="'+CSS.escape(p.get('client')||'')+'"]'))mc.value=p.get('client')||'';document.getElementById('hp').checked=p.get('hide')==='pass';document.getElementById('me').value=p.get('eip')||'';mf()}
-const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(m&&c&&c.closest('[hidden]')){document.getElementById('mc').value='';document.getElementById('hp').checked=false;document.getElementById('me').value='';mf()}if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
+const h=decodeURIComponent(location.hash.slice(1)),c=h&&document.getElementById('c-'+h);if(h&&!openD(h,c)&&c)c.scrollIntoView({block:'center'});
 const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
-const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
+const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}
+const g=document.getElementById('age'),k=g&&g.closest('[data-taken]');if(k){g.textContent=ageText(k.dataset.taken,Date.now());if(Date.now()-Date.parse(k.dataset.taken)>216e5)k.classList.replace('ok','old')}
+const b=document.querySelector('.bar'),mb=b&&b.querySelector('.menu');if(mb)mb.addEventListener('click',()=>mb.setAttribute('aria-expanded',String(b.classList.toggle('open'))));
+document.querySelectorAll('details.pop').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)document.querySelectorAll('details.pop[open]').forEach(x=>{if(x!==d&&!x.contains(d))x.open=false})}))});
 function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
+function ageText(taken,now){const h=Math.max(0,Math.floor((now-Date.parse(taken))/36e5));return(h<24?h+'h':Math.floor(h/24)+'d '+h%24+'h')+' old'}
 function filt(v){document.querySelectorAll('#feed .rev').forEach(r=>r.hidden=!!v&&r.dataset.eip!==v);history.replaceState(null,'',v?'#eip-'+v:location.pathname)}
 function mf(){const c=document.getElementById('mc').value,h=document.getElementById('hp').checked,q=document.getElementById('me').value.trim().toLowerCase().replace(/^eip-?/,'');document.querySelectorAll('table.m [data-cl]').forEach(x=>x.hidden=!!c&&x.dataset.cl!==c);document.querySelectorAll('table.m td[data-span]').forEach(x=>x.colSpan=c?1:+x.dataset.span);
 document.querySelectorAll('table.m tr[id^="r-"]').forEach(r=>{const t=[...r.querySelectorAll('td.c[data-cl]')].filter(x=>!c||x.dataset.cl===c);r.hidden=(h&&t.length>0&&t.every(x=>x.classList.contains('ok')))||(!!q&&!r.querySelector('th.row').textContent.toLowerCase().includes(q))});
@@ -362,7 +649,7 @@ def coverage_html(snap):
     line = f'SFI+CFI in {E(snap["meta"]["name"])}: {len(listed)} EIPs, {len(with_tests)} with EELS tests, {len(listed) - len(with_tests)} without'
     if net:
         line += f' &middot; Networking EIPs ({", ".join("EIP-" + e for e in net)}) are out of EELS scope'
-    return f'<p class="muted cov" data-mark="coverage">{line} &middot; {a_local("api/eips.json", "JSON")}</p>'
+    return f'<span class="fact" data-mark="coverage">{line}</span>'
 
 
 def headline_counts(cells):
@@ -376,11 +663,24 @@ def counts_html(cells):
     return " &middot; ".join(f'<span class="hl {STATE_CLASS[h]}">{n} {E(COUNT_WORD[h])}</span>' for h, n in headline_counts(cells))
 
 
-def delta_word(eip, commit, attestations):
+def counts_text(cells):
+    return " · ".join(f"{n} {COUNT_WORD[h]}" for h, n in headline_counts(cells))
+
+
+def counts_glyph(cells, words=False):
+    return " ".join(f'<span class="cnt {STATE_CLASS[h]}">{glyph(STATE_CLASS[h])}<span class="n">{n}</span>'
+                    + (f" {E(COUNT_WORD[h])}" if words else f'<span class="sr"> {E(COUNT_WORD[h])}</span>') + "</span>" for h, n in headline_counts(cells))
+
+
+def attestation_for(eip, commit, attestations):
     mine = [a for a in attestations if a["eip"] == eip and commit.startswith(str(a["commit"]))]
-    if not mine:
+    return mine[-1] if mine else None
+
+
+def delta_word(eip, commit, attestations):
+    at = attestation_for(eip, commit, attestations)
+    if not at:
         return "open"
-    at = mine[-1]
     if at.get("kind") == "editorial":
         return "editorial"
     if "killed" not in at:
@@ -445,7 +745,7 @@ def eels_todo_html(todo, snap):
     link = f' {a(todo["diff_url"], "EIP diff")}' if todo.get("diff_url") else ""
     consts = "".join(f'<div class="const"><code>{E(c["name"])}</code> {E(", ".join(c["before"]) or "none")} &rarr; <b>{E(", ".join(c["after"]) or "removed")}</b></div>'
                      for c in todo.get("constants", []))
-    return (f'<div class="card" data-mark="eels-todo"><span class="pill warn">EELS to do</span> <b>{E(todo["action"])}</b>{link}'
+    return (f'<div class="card" data-mark="eels-todo">{chip("stale", "EELS to do")} <b>{E(todo["action"])}</b>{link}'
             f'<div class="muted">{E(eels_detail(todo, snap))}</div>' + (f'<div class="consts">{consts}</div>' if consts else "") + '</div>')
 
 
@@ -465,10 +765,10 @@ def tests_line(rev, info, snap):
     if t is None:
         return ""
     if t["state"] == "waiting":
-        return (f'<div class="tl" data-mark="not-updated"><b>tests:</b> not updated to this text. EELS {E(release_short(info["pin"]["release"]))} '
+        return (f'<div class="tnote" data-mark="not-updated"><b>tests:</b> not updated to this text. EELS {E(release_short(info["pin"]["release"]))} '
                 f'still tests {pinned_text(info)}.</div>')
     if t["state"] == "never":
-        return '<div class="tl"><b>tests:</b> no EELS release tests this text.</div>'
+        return '<div class="tnote"><b>tests:</b> no EELS release tests this text.</div>'
     if t["eels_url"]:
         who = f'EELS PR #{t["eels_pr"]}' if t["eels_pr"] else f'EELS commit {t["eels_commit"][:8]}'
         files = files_text(t["files"])
@@ -486,12 +786,11 @@ def tests_line(rev, info, snap):
         runs = snap.get("runs") or {}
         parts.append("run against it: " + ", ".join(a(runs[c]["url"], config.CLIENT_LABEL[c]) for c in t["ran"]) if t["ran"]
                      else "no client run on a release with this text")
-    return '<div class="tl">' + " &middot; ".join(parts) + "</div>"
+    return '<div class="tnote">' + " &middot; ".join(parts) + "</div>"
 
 
 def pending_html(rows):
-    return "".join(f'<div class="overlay" data-mark="pending"><span class="pill none">open PR</span> {a(p["url"], p["repo"].split("/")[1] + "#" + str(p["number"]))} '
-                   f'{E(p["title"])} <em>not merged, not counted</em></div>' for p in rows)
+    return '<ul class="prs">' + "".join(f'<li>{a(p["url"], p["repo"].split("/")[1] + "#" + str(p["number"]))} {E(p["title"])}</li>' for p in rows) + "</ul>"
 
 
 PR_STATE = {"open": "warn", "merged": "ok"}
@@ -536,29 +835,69 @@ def code_html(snap, eip, attestations):
 
 
 def linked_html(eip, snap, attestations=()):
-    pend = pending_html(handoff.pending_spec(snap, eip))
-    spec = (f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
-            f'<div class="card">{pend}</div>' if pend else "")
+    pend = handoff.pending_spec(snap, eip)
+    spec = (f'<details class="box" data-mark="pending-prs"><summary>Open EIP PRs <span class="num">{len(pend)}</span> <span class="muted small">not merged, not counted</span></summary>'
+            f'<p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>{pending_html(pend)}</details>' if pend else "")
     if snap.get("code_status") is not None:
-        return (spec + f'<h3>Code and PRs</h3><p class="muted">code merged: at least {codepr.MIN_CODE_FILES} files on the default branch name EIP-{eip} in path or contents, '
+        return (spec + f'<h2>Code and PRs</h2><p class="muted">code merged: at least {codepr.MIN_CODE_FILES} files on the default branch name EIP-{eip} in path or contents, '
                 f'or a merged PR whose title names it; spec changed since: a spec change after the last merged PR; '
                 f'PRs merged since {E(merged_since(snap, "code_status"))}; a hint from names, it never changes a test verdict</p>'
                 f'<div class="wrap"><table class="m list" data-mark="code-status">{code_html(snap, eip, attestations)}</table></div>')
     return (spec
-            + f'<h3>Client PRs</h3><p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}; matched by title, not a verdict</p>'
+            + f'<h2>Client PRs</h2><p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}; matched by title, not a verdict</p>'
             f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div>')
+
+
+def timeline_html(eip, info, snap, attestations):
+    deltas = {d["commit"]: d for d in info.get("deltas") or []}
+    items = []
+    for rev in reversed(info["revisions"]):
+        st, word = rev_state(eip, info, rev, attestations)
+        k = STATE_CLASS[st]
+        row = (f'<span class="td mono">{E(rev["date"][:10])}</span><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code>'
+               f'<span class="ts">{E(rev["subject"])}{rev_note(eip, rev, info)}</span><span class="tw {k}">{glyph(k)} {E(word)}</span>')
+        extra = tests_line(rev, info, snap) + (constants_html(deltas[rev["commit"]]) if rev["commit"] in deltas else "")
+        proof = proof_html(attestation_for(eip, rev["commit"], attestations)) if rev["commit"] in deltas else ""
+        if proof:
+            items.append(f'<li class="tli {k}"><details><summary>{row}</summary>{extra}{proof}</details></li>')
+        else:
+            items.append(f'<li class="tli {k}"><div class="tlrow">{row}</div>{extra}</li>')
+    return f'<ol class="tl" data-mark="spec-tests">{"".join(items)}</ol>'
+
+
+def eip_head(eip, info, snap, json_href, links):
+    return (f'<div class="crumbs"><a href="index.html">Status</a> / EIP-{E(eip)}</div>'
+            + titlebar(f'EIP-{E(eip)} <span class="muted">{E(info.get("title") or eip_name(info))}</span>', stage_html(info, snap), json_href)
+            + f'<div class="linksline">{" &middot; ".join(links)}</div>')
+
+
+def eip_text_link(info):
+    return a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info['path']}", "EIP text")
 
 
 def untested_page_html(eip, snap, attestations):
     info = snap["eips"][eip]
-    timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                       f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)}</div>' for rev in reversed(info["revisions"]))
-    return (f'<h1>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h1>{stage_html(info, snap)}'
-            f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
-            f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
-            f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
+    return (eip_head(eip, info, snap, "api/eips.json", [eip_text_link(info), a_local(f"changes.html#eip-{eip}", "all spec changes")])
+            + f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
             f'No client cell is shown: there is nothing to run.</span></div>{eels_todo_html(eels_item(eip, snap), snap)}'
-            f'<h3>Spec changes, newest first</h3><div class="card">{timeline}</div>{linked_html(eip, snap, attestations)}')
+            f'<h2>Spec changes <span class="muted small">newest first</span></h2>{timeline_html(eip, info, snap, attestations)}{linked_html(eip, snap, attestations)}')
+
+
+def release_label(release, newest):
+    old = bool(release) and release != newest
+    return (f'<span class="rel{" oldrel" if old else ""}">{glyph("stale") if old else ""}{E(release_short(release) if release else "-")}'
+            + ('<span class="sr"> old release</span>' if old else "") + "</span>")
+
+
+def cell_button(cell, extra="", action=""):
+    k = STATE_CLASS[cell["headline"]]
+    cid = f'{cell["eip"]}-{cell["client"]}'
+    return (f'<button type="button" class="chip {k}{extra}" data-open="{cid}"><span class="st">{glyph(k)}<span class="n">{E(run_count(cell))}</span>'
+            f'<span class="sr"> EIP-{cell["eip"]} {E(config.CLIENT_LABEL[cell["client"]])}: {E(headline_text(cell))}</span></span>{action}</button>')
+
+
+def cell_templates(cells, snap):
+    return "".join(f'<template id="t-{c["eip"]}-{c["client"]}">{drawer(c, snap)}</template>' for c in cells)
 
 
 def eip_page_html(eip, snap, cells, attestations):
@@ -566,31 +905,28 @@ def eip_page_html(eip, snap, cells, attestations):
     if not info.get("test_dir"):
         return untested_page_html(eip, snap, attestations)
     mine = [c for c in cells if c["eip"] == eip]
-    deltas = {d["commit"]: d for d in info["deltas"]}
-    rows = []
-    for c in mine:
-        r = c["links"]["run"]
-        tests = E(release_short(r.get("release"))) if r["state"] != "no-run" else "-"
-        rows.append(f'<tr><th class="row">{a_local(client_href(c["client"]), config.CLIENT_LABEL[c["client"]])}</th>'
-                    f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{eip}-{c["client"]}">{E(headline_text(c))}</a>'
-                    f'<div class="sub">tests {tests}</div></td><td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>')
-    timeline = []
-    for rev in reversed(info["revisions"]):
-        st, word = rev_state(eip, info, rev, attestations)
-        consts = constants_html(deltas[rev["commit"]]) if rev["commit"] in deltas else ""
-        timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
-                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
-                        f'{tests_line(rev, info, snap)}{consts}</div>')
-    return (f'<h1>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h1>{stage_html(info, snap)}'
-            f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
-            f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
-            f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local(f"api/eip/{eip}.json", "JSON")}</p>'
-            f'{copy_md(eip_markdown(eip, snap, cells, attestations))}'
+    newest = snap["newest_release"]
+    cols = "".join(f'<div class="col"><div class="colh">{a_local(client_href(c["client"]), config.CLIENT_LABEL[c["client"]])}'
+                   f'{release_label(c["links"]["run"].get("release"), newest)}</div>{cell_button(c, " wide")}</div>' for c in mine)
+    cols += f'<div class="col"><div class="colh">EELS<span class="rel">tests {E(release_short(newest))}</span></div>{eels_button(eip, info, mine, snap, " wide")}</div>'
+    links = [eip_text_link(info), a(test_dir_url(info["pin"]["release"], info["test_dir"]), "EELS tests"),
+             a_local(f"changes.html#eip-{eip}", "all spec changes"), copy_md(eip_markdown(eip, snap, cells, attestations))]
+    return (eip_head(eip, info, snap, f"api/eip/{eip}.json", links)
+            + f'<h2>Clients <span class="muted small">open a cell for the why, the three checks and the evidence</span></h2><div class="cols">{cols}</div>{legend_html()}'
             f'{eels_todo_html(eels_item(eip, snap), snap)}'
-            f'<h3>Clients</h3><div class="wrap"><table class="m list">{"".join(rows)}</table></div>'
-            f'<h3>Spec changes and their tests, newest first</h3>'
-            f'<p class="muted">each EIP commit, then the EELS change that pinned that text, its first release and the client runs on it</p>'
-            f'<div class="card" data-mark="spec-tests">{"".join(timeline)}</div>{linked_html(eip, snap, attestations)}')
+            f'<h2>Spec changes and their tests <span class="muted small">newest first; each EIP commit, the EELS change that pinned it, its first release and the client runs on it</span></h2>'
+            f'{timeline_html(eip, info, snap, attestations)}{linked_html(eip, snap, attestations)}'
+            + cell_templates(mine, snap) + f'<template id="t-{eip}-{EELS}">{eels_drawer(eip, info, mine, snap)}</template>')
+
+
+def client_prs_section(snap, client, eips):
+    found = [handoff.client_prs(snap, client, e) for e in eips] or [handoff.client_prs(snap, client, "")]
+    repo = found[0]["repo"]
+    prs = list({p["number"]: p for f in found for p in f["prs"]}.values())
+    state = {"not-collected": "not collected in this snapshot", "unreachable": "lookup failed in this snapshot"}.get(found[0]["state"])
+    rows = "".join(f'<li>{a(p["url"], "#" + str(p["number"]))} <span class="pill {PR_STATE.get(p["state"], "none")}">{E(p["state"])}</span> {E(p["title"])}</li>' for p in prs)
+    line = state or (f'{plural(len(prs), "PR")} whose title names a tracked EIP' if prs else "none found by title")
+    return f'<h2>Client PRs</h2><p class="muted">{a(f"{config.GITHUB}/{repo}/pulls", repo)}: {line}</p>' + (f'<ul class="prs">{rows}</ul>' if rows else "")
 
 
 def client_page_html(client, snap, cells, items):
@@ -598,27 +934,36 @@ def client_page_html(client, snap, cells, items):
     mine = [c for c in cells if c["client"] == client]
     run = snap["runs"].get(client)
     if run:
+        wide = run["client_wide_failures"]
         stale = (f' <span class="pill stale">newest is {E(release_short(snap["newest_release"]))}</span>'
                  if run["release"] != snap["newest_release"] else "")
-        receipt = (f'<div class="card"><div class="kv"><span>tests</span><code>{E(run["release"])}</code>{stale}</div>'
-                   f'<div class="kv"><span>image</span><code>{E(run["image"] or "?")}</code></div>'
-                   f'<div class="kv"><span>version</span><code>{E(run["version"])}</code></div>'
-                   f'<div class="kv"><span>run</span>{E(run["start"][:16].replace("T", " "))}Z &rarr; {a(run["url"], "hive run")} &middot; {a(run["sim_log"], "sim log")}</div>'
-                   f'<div class="kv"><span>other tests</span>{plural(len(run["client_wide_failures"]), "failing case")} in tests for EIPs this site does not track, not counted above</div></div>')
+        other = (f'<details><summary><span class="num">{len(wide)}</span> {"failing case" if len(wide) == 1 else "failing cases"} in tests for EIPs this site does not track, not counted above</summary>{ids_list(wide)}</details>'
+                 if wide else "no failing cases in tests for EIPs this site does not track")
+        receipt = ('<div class="runbox">' + kv("tests", f'<code>{E(run["release"])}</code>{stale}')
+                   + kv("image", f'<code>{E(run["image"] or "?")}</code>') + kv("version", f'<code>{E(run["version"])}</code>')
+                   + kv("run", f'{E(run["start"][:16].replace("T", " "))}Z &rarr; {a(run["url"], "hive run")} &middot; {a(run["sim_log"], "sim log")}')
+                   + kv("cases", f'<span class="num">{run["ntests"] - run["fails"]}/{run["ntests"]}</span> pass in the whole run')
+                   + kv("other tests", other) + '</div>')
     else:
-        receipt = f'<div class="card muted">No {E(config.SIMULATOR)} run for {E(label)}.</div>'
-    todo = [it for it in items if client in it["clients"]]
-    todo_html = "".join(f'<div class="q"><a class="act" href="index.html#{it["eip"]}-{client}">{E(it["action"])}</a>'
-                        f'<span class="k {STATE_CLASS[QUEUE_STATE[it["kind"]]]}">EIP-{it["eip"]} &middot; {E(QUEUE_WORD[it["kind"]])}</span> '
-                        f'{queue_detail(it, snap)}</div>' for it in todo) or '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
-    rows = "".join(f'<tr><th class="row">{a_local(eip_href(c["eip"]), "EIP-" + c["eip"])}<small>{E(eip_name(snap["eips"][c["eip"]]))}</small></th>'
-                   f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{c["eip"]}-{client}">{E(headline_text(c))}</a></td>'
-                   f'<td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>' for c in mine)
-    return (f'<h1>{E(label)} <span class="muted">{counts_html(mine)}</span></h1>'
-            f'<p class="muted">{a(f"{config.GITHUB}/{config.CLIENT_REPO[client]}", config.CLIENT_REPO[client])} &middot; {a_local(f"api/client/{client}.json", "JSON")}</p>'
-            f'<h3>To do, most important first</h3>{todo_html}'
-            f'<h3>Run</h3>{receipt}'
-            f'<h3>EIPs</h3><div class="wrap"><table class="m list">{rows}</table></div>')
+        receipt = f'<div class="runbox muted">No {E(config.SIMULATOR)} run for {E(label)}.</div>'
+    todo = []
+    for i, it in enumerate([it for it in items if client in it["clients"]], 1):
+        k = STATE_CLASS[QUEUE_STATE[it["kind"]]]
+        evidence = f'<button type="button" class="lnk" data-open="{it["eip"]}-{client}">evidence</button>'
+        detail = (f'<span class="muted">{plural(len(it["failed"]), "failing case")}</span>{ids_list(it["failed"])}' if it["kind"] == "run-fail"
+                  else queue_detail(it, snap))
+        todo.append(f'<li class="todo"><div class="tr1"><span class="rank num">{i}</span><b>{E(it["action"])}</b>{a_local(eip_href(it["eip"]), "EIP-" + it["eip"])}'
+                    f'{chip(k, QUEUE_WORD[it["kind"]])}{evidence}</div><div class="tr2">{detail}</div></li>')
+    todo_html = f'<ol class="todos">{"".join(todo)}</ol>' if todo else '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
+    rows = "".join(f'<li class="erow"><a class="eipn" href="{eip_href(c["eip"])}">{c["eip"]}</a><span class="tt">{E(snap["eips"][c["eip"]].get("title") or eip_name(snap["eips"][c["eip"]]))}</span>'
+                   f'{cell_button(c, " wide")}</li>' for c in mine)
+    repo = config.CLIENT_REPO[client]
+    return (f'<div class="crumbs"><a href="index.html">Status</a> / {E(label)}</div>'
+            + titlebar(E(label), f'<span class="sumw">{counts_glyph(mine, True)}</span>{a(f"{config.GITHUB}/{repo}", repo, "mono")}', f"api/client/{client}.json")
+            + f'<div class="split"><section><h2>To do <span class="muted small">most important first</span></h2>{todo_html}</section>'
+            f'<section><h2>Run</h2>{receipt}</section></div>'
+            f'<section><h2>EIPs <span class="muted small">open a cell for the why and the evidence</span></h2>{legend_html()}<ul class="elist">{rows}</ul></section>'
+            + client_prs_section(snap, client, [c["eip"] for c in mine]) + cell_templates(mine, snap))
 
 
 QUEUE_STATE = {"run-fail": "fail", "open-delta": "open", "stale-release": "stale-release", "run-missing": "no-run"}
@@ -671,12 +1016,12 @@ def feed_html(snap, rows, pending=()):
     items = "".join(f'<div class="rev" data-eip="{r["eip"]}">{a_local(eip_href(r["eip"]), "EIP-" + r["eip"])} '
                     f'<code>{a(r["url"], r["commit"][:8])}</code> <span class="muted">{E(r["date"][:10])}</span> {E(r["subject"])} '
                     f'<span class="pill {STATE_CLASS[r["state"]]}">{E(r["word"])}</span>{feed_tests(r["tests"])}</div>' for r in rows)
-    return (f'<h1>Spec changes <span class="muted">every change to a tracked EIP text, newest first</span></h1>'
-            f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
-            f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text &middot; {a_local("api/changes.json", "JSON")}</p>'
+    return (titlebar("Spec changes", '<span class="muted">every change to a tracked EIP text, newest first</span>', "api/changes.json")
+            + f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
+            f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text</p>'
             f'<p><label for="f">Show</label> <select id="f" onchange="filt(this.value)">{opts}</select></p>'
             f'<div class="card" id="feed">{items}</div>'
-            + (f'<h3>Open spec PRs <span class="muted">not merged, not counted</span></h3><div class="card">{pending_html(pending)}</div>' if pending else ""))
+            + (f'<h2>Open spec PRs <span class="muted small">not merged, not counted</span></h2><div class="card">{pending_html(pending)}</div>' if pending else ""))
 
 
 def stale_banner(snap):
@@ -720,21 +1065,45 @@ def scoped(body):
     return re.sub(r'<th\b(?![^>]*scope=)([^>]*)>', lambda m: f'<th{m.group(1)} scope="{"row" if "class=\"row" in m.group(1) else "col"}">', body)
 
 
-def clients_nav():
-    return ('<details class="pick"><summary>Clients</summary><div>'
-            + "".join(f'<a href="{client_href(c)}">{E(config.CLIENT_LABEL[c])}</a>' for c in config.CLIENTS) + "</div></details>")
+NAV = [("start", "start.html", "Start here"), ("matrix", "index.html", "Status")]
+NAV_AFTER = [("changes", "changes.html", "Changes"), ("queue", "queue.html", "Queue")]
+MORE = [("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", "history.html", "History")]
+
+
+def nav_links(rows, nav, root=""):
+    return "".join(f'<a href="{root if key == "history" else ""}{href}" class="{"on" if key == nav else ""}"{" aria-current=page" if key == nav else ""}>{E(label)}</a>'
+                   for key, href, label in rows)
+
+
+def clients_nav(snap):
+    return ('<details class="pop clients"><summary>My client</summary><div class="panel list">'
+            + "".join(f'<a href="{client_href(c)}">{E(config.CLIENT_LABEL[c])}<span class="muted mono">{E(release_short(snap["runs"][c]["release"]) if c in snap["runs"] else "no run")}</span></a>'
+                      for c in config.CLIENTS) + "</div></details>")
+
+
+def snapshot_chip(snap):
+    old = snap.get("source") in ("archive", "snapshot")
+    return (f'<details class="pop snap"><summary class="schip {"old" if old else "ok"}" data-taken="{E(snap["taken_at"])}">{glyph("stale")}'
+            f'<span><span class="lbl">Snapshot </span><span id="age">{E(snap["taken_at"][:10])}</span></span><span class="sr">, open for snapshot details</span></summary>'
+            f'<div class="panel right"><p class="asof">as of <a href="{E(asof_href(snap))}" title="permalink to this snapshot">{E(snap["taken_at"])}</a></p>'
+            + kv("fork", f'{E(config.FORKS[config.FORK]["FORK_LABEL"])} &middot; EL')
+            + kv("newest EELS", a(snap["release_url"], snap["newest_release"]))
+            + kv("hive", f'{a(snap["listing_url"], "hive listing")} <span class="num">{snap["listing_rows"]}</span> runs') + "</div></details>")
+
+
+def header_html(nav, snap, root):
+    return (f'<header class="bar"><a class="brand" href="index.html">{E(config.NAME)}</a>{forks_nav(root)}<a class="qk" href="queue.html">Queue</a>'
+            f'<button type="button" class="menu" aria-expanded="false" aria-controls="pnav">Menu</button>'
+            f'<nav class="pnav" id="pnav" aria-label="Primary">{nav_links(NAV, nav)}{clients_nav(snap)}{nav_links(NAV_AFTER, nav)}'
+            f'<details class="pop more"><summary>More</summary><div class="panel list">{nav_links(MORE, nav, root)}</div></details></nav>'
+            f'{snapshot_chip(snap)}</header>')
 
 
 def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
-    links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
-                    [("start", "start.html", "Start here"), ("matrix", "index.html", "Status"), ("queue", "queue.html", "Work queue"), ("changes", "changes.html", "Spec changes"),
-                     ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", root + "history.html", "History")])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
-            f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>{clients_nav()}'
-            f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
-            f'as of <a href="{E(asof_href(snap))}" title="permalink to this snapshot">{E(snap["taken_at"])}</a> &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
-            f'<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{scoped(body)}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'{header_html(nav, snap, root)}<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{scoped(body)}</main>'
+            f'<div class="scrim" hidden></div><aside id="d" role="dialog" aria-label="Evidence" hidden><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):
@@ -747,57 +1116,69 @@ def cells_for(snap, attestations):
     return cells
 
 
-def cell_sub(cell):
-    r = cell["links"]["run"]
-    if cell["headline"] == "stale-release":
-        return f"old {r['passed']}/{r['total']} &middot; newest {E(release_short(r['newest_release']))}"
-    if cell["headline"] == "open":
-        return f"run {r['passed']}/{r['total']} &middot; next: prove"
-    if r.get("image"):
-        return E(r["image"].rsplit(":", 1)[-1].replace("-linux-amd64", ""))
-    return ""
+def legend_html():
+    items = [("ok", "pass"), ("bad", "fails"), ("stale", "old tests, re-run"), ("warn", "spec change untested"), ("none", "no data")]
+    return ('<div class="legend">' + "".join(f'<span class="lg {k}">{glyph(k)} {E(w)}</span>' for k, w in items)
+            + '<details class="pop how"><summary>How to read</summary><div class="panel wide">'
+            '<p>Each cell shows its weakest check. Numbers are tests passed / total for the EIP\'s test directory on the release the client ran. '
+            'Open a cell for the three checks: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.</p>'
+            '<p><span class="pill sb">SFI</span> Scheduled for inclusion &middot; <span class="pill sb">CFI</span> Considered for inclusion.</p>'
+            '<p><span class="nb d">&Delta; 1</span> spec changes since the version EELS implements &middot; <span class="nb p">PR 11</span> open EIP PRs, not merged, not counted.</p>'
+            f'<p>Column headers show the test release each client ran; {glyph("stale")} marks a release older than the newest EELS release.</p></div></details></div>')
+
+
+def row_head(eip, info):
+    nb = ""
+    if info.get("deltas"):
+        nb += (f'<span class="nb d" title="EIP text changed after the version EELS implements"><span aria-hidden="true">&Delta;</span> '
+               f'<span class="num">{len(info["deltas"])}</span><span class="sr"> spec changes since EELS</span></span>')
+    if info.get("pending"):
+        nb += f'<span class="nb p" title="open EIP PRs, not spec yet">PR <span class="num">{len(info["pending"])}</span><span class="sr"> open EIP PRs, not counted</span></span>'
+    stage = " &middot; ".join(E(x) for x in [*(info.get("stage") or []), info.get("status") or ""] if x)
+    return (f'<th class="row"><a href="{eip_href(eip)}" class="eipn">{E(eip)}</a> <span class="tt">{E(info.get("title") or eip_name(info))}</span>'
+            f'<div class="r2">{stage_badge(info)}<span>{stage}</span>{nb}</div></th>')
 
 
 def matrix_html(snap, cells):
     by = {(c["eip"], c["client"]): c for c in cells}
-    head = ("<tr><th></th>" + "".join(f"<th data-cl=\"{c}\">{a_local(client_href(c), config.CLIENT_LABEL[c])}<br><small class=muted>{E(release_short(snap['runs'][c]['release']) if c in snap['runs'] else '-')}</small></th>" for c in config.CLIENTS)
-            + f'<th class="eels">{a(gh(config.EELS_REPO, "releases/tag", snap["newest_release"].replace("@", "%40")), "EELS")}<br><small class=muted>tests {E(release_short(snap["newest_release"]))}</small></th></tr>')
-    head += ('<tr class="counts"><th class="row"><small>cells by weakest check</small></th>'
-             + "".join(f'<th data-cl="{cl}"><small>{counts_html([c for c in cells if c["client"] == cl])}</small></th>' for cl in config.CLIENTS) + "<th></th></tr>")
+    newest = snap["newest_release"]
+    head = ('<thead><tr><th class="corner">EIP</th>'
+            + "".join(f'<th class="ch" data-cl="{c}">{a_local(client_href(c), config.CLIENT_LABEL[c])}{release_label(snap["runs"][c]["release"] if c in snap["runs"] else None, newest)}</th>' for c in config.CLIENTS)
+            + f'<th class="ch eels">{a(gh(config.EELS_REPO, "releases/tag", newest.replace("@", "%40")), "EELS")}<span class="rel">tests {E(release_short(newest))}</span></th></tr>')
+    head += ('<tr class="sums"><th class="row">by weakest check</th>'
+             + "".join(f'<td class="sum" data-cl="{cl}" title="{E(counts_text(mine))}">{counts_glyph(mine)}</td>'
+                       for cl, mine in ((cl, [c for c in cells if c["client"] == cl]) for cl in config.CLIENTS)) + '<td class="sum"></td></tr></thead>')
     rows, templates = [], []
     for eip in index.row_order(snap["eips"]):
         info = snap["eips"][eip]
+        mine = [by[(eip, cl)] for cl in config.CLIENTS if (eip, cl) in by]
+        templates.append(f'<template id="t-{eip}-{EELS}">{eels_drawer(eip, info, mine, snap)}</template>')
         if not info.get("test_dir"):
-            rows.append(f'<tr class="nt" id="r-{eip}"><th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}</th>'
+            rows.append(f'<tr class="nt" id="r-{eip}">{row_head(eip, info)}'
                         f'<td class="c none" colspan="{len(config.CLIENTS)}" data-span="{len(config.CLIENTS)}" data-mark="no-tests"><div class="st"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></div>'
                         f'{action_html(None, "")}</td>{eels_cell(eip, info, [], snap)}</tr>')
             continue
-        badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{plural(len(info["deltas"]), "spec change")} since EELS</div>' if info["deltas"] else ""
-        pend = f'<div class="badge pend" title="open EIP PRs, not spec yet">{plural(len(info["pending"]), "open PR")}, not counted</div>' if info["pending"] else ""
-        tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}{badge}{pend}</th>']
-        for client in config.CLIENTS:
-            c = by[(eip, client)]
-            cid = f"{eip}-{client}"
-            tr.append(f'<td class="c {STATE_CLASS[c["headline"]]}" id="c-{cid}" data-cl="{client}" tabindex="0" role="button" onclick="openD(\'{cid}\',this)"><div class="st">{dots(c)}<div class="hl">{E(headline_text(c))}</div><div class="sub">{cell_sub(c)}</div></div>'
-                      f'{action_html(cell_action(c, snap["newest_release"]), config.CLIENT_LABEL[client])}</td>')
-            templates.append(f'<template id="t-{cid}">{drawer(c, snap)}</template>')
-        tr.append(eels_cell(eip, info, [by[(eip, cl)] for cl in config.CLIENTS], snap))
-        rows.append(f'<tr id="r-{eip}">' + "".join(tr) + "</tr>")
-    strip = ""
-    wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == snap["newest_release"]}
+        tds = "".join(f'<td class="c {STATE_CLASS[c["headline"]]}" id="c-{c["eip"]}-{c["client"]}" data-cl="{c["client"]}">'
+                      f'{cell_button(c, "", action_html(cell_action(c, newest), config.CLIENT_LABEL[c["client"]]))}</td>' for c in mine)
+        templates.append(cell_templates(mine, snap))
+        rows.append(f'<tr id="r-{eip}">{row_head(eip, info)}{tds}{eels_cell(eip, info, mine, snap)}</tr>')
+    wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == newest}
+    facts = coverage_html(snap) if snap.get("meta") else ""
     if wide:
-        strip = '<div class="strip">Failing cases in untracked EIP tests, not counted: ' + " &middot; ".join(
-            f'{E(config.CLIENT_LABEL[c])} {len(v)}' for c, v in wide.items()) + "</div>"
-    legend = ('<details class="legend"><summary>What the dots mean</summary>A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
-              '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</details>')
-    cov = coverage_html(snap) if snap.get("meta") else ""
+        facts += ('<span class="fact">Failing cases in untracked EIP tests, not counted: <span class="uts">' + " ".join(
+            f'<a class="ut" href="{client_href(c)}">{E(config.CLIENT_LABEL[c])} <span class="num">{len(v)}</span></a>' for c, v in wide.items()) + "</span></span>")
     toggle = ('<div class="tog" role="group" aria-label="Cell view"><button type="button" id="v-st" aria-pressed="true" onclick="view(\'st\')">Status</button>'
               '<button type="button" id="v-ac" aria-pressed="false" onclick="view(\'ac\')">Next action</button></div>')
     find = ('<div class="find" id="mf" hidden><label for="me">EIP</label> <input type="search" id="me" placeholder="number or name" autocomplete="off" oninput="mf()"> <label for="mc">Client</label> <select id="mc" onchange="mf()"><option value="">All clients</option>'
             + "".join(f'<option value="{c}">{E(config.CLIENT_LABEL[c])}</option>' for c in config.CLIENTS)
             + '</select> <label><input type="checkbox" id="hp" onchange="mf()"> Hide passing rows</label></div>')
-    intro = '<h1>EIP status by client</h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
-    return intro + strip + cov + legend + toggle + find + '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>' + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates)
+    sub = " &middot; ".join(E(x) for x in (config.FORKS[config.FORK]["FORK_LABEL"], (snap.get("meta") or {}).get("name")) if x)
+    return (titlebar("EIP status by client", f'<span class="muted">{sub}</span>', "api/eips.json")
+            + '<p class="muted intro">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
+            + f'<div class="facts">{facts}</div><div class="tools">{toggle}{find}{legend_html()}</div>'
+            + '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>'
+            + f'<div class="wrap" tabindex="0" aria-label="Status grid, scrolls sideways"><table class="m" id="grid">{head}<tbody>{"".join(rows)}</tbody></table></div>'
+            + '<p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates))
 
 
 def action_html(verb, owner):
@@ -806,29 +1187,55 @@ def action_html(verb, owner):
     return f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}</div><div class="sub">owner: {E(owner)}</div></div>'
 
 
-def eels_cell(eip, info, cells, snap):
-    link = a_local(eip_href(eip), "EIP page")
-    todo = eels_item(eip, snap)
+def eels_state(info, cells, snap):
     if not info.get("test_dir"):
-        state, text, sub = "none", "no tests", f"no test dir at {E(release_short(snap['newest_release']))}"
-    else:
-        behind = len(info["deltas"])
-        untested_n = len(delta_verbs(cells))
-        if untested_n:
-            state, text, sub = "warn", f"{untested_n} spec change{'s' if untested_n > 1 else ''} untested", f"{behind} since the EELS pin"
-        elif behind and not any(c["links"]["test"]["deltas"] for c in cells):
-            state, text, sub = "none", "spec changes not checked", f"{behind} since the EELS pin, no run on the newest tests"
-        elif behind:
-            state, text, sub = "ok", "spec changes proven", f"{behind} since the EELS pin"
-        else:
-            state, text, sub = "ok", "implements current text", f"pin {E(info['pin']['blob'][:8])}"
+        return "none", "no tests", "no tests", f"no test dir at {release_short(snap['newest_release'])}"
+    behind = len(info["deltas"])
+    untested_n = len(delta_verbs(cells))
+    if untested_n:
+        return "warn", f"{untested_n} untested", f"{plural(untested_n, 'spec change')} untested", f"{behind} since the EELS pin"
+    if behind and not any(c["links"]["test"]["deltas"] for c in cells):
+        return "none", "not checked", "spec changes not checked", f"{behind} since the EELS pin, no run on the newest tests"
+    if behind:
+        return "ok", "proven", "spec changes proven", f"{behind} since the EELS pin"
+    return "ok", "current", "implements current text", f"pin {info['pin']['blob'][:8]}"
+
+
+def eels_next(eip, info, cells, snap):
     verb, n = eels_action(cells) if info.get("test_dir") else (None, 0)
     if verb:
-        count = f" &times;{n}" if n > 1 else ""
-        act = f'<div class="ac" data-mark="act"><div class="hl av">{E(verb)}{count}</div><div class="sub">owner: EELS</div></div>'
-    else:
-        act = action_html(todo["action"], "EELS") if todo else action_html(None, "")
-    return (f'<td class="c eels {state}" id="c-{eip}-{EELS}"><div class="st"><div class="hl">{text}</div><div class="sub">{sub} &middot; {link}</div></div>{act}</td>')
+        return verb + (f" ×{n}" if n > 1 else "")
+    todo = eels_item(eip, snap)
+    return todo["action"] if todo else None
+
+
+def eels_button(eip, info, cells, snap, extra="", action=""):
+    state, short, text, _ = eels_state(info, cells, snap)
+    return (f'<button type="button" class="chip {state}{extra}" data-open="{eip}-{EELS}"><span class="st">{glyph(state)}<span class="n">{E(short)}</span>'
+            f'<span class="sr"> EIP-{eip} EELS: {E(text)}</span></span>{action}</button>')
+
+
+def eels_cell(eip, info, cells, snap):
+    state = eels_state(info, cells, snap)[0]
+    return f'<td class="c eels {state}" id="c-{eip}-{EELS}">{eels_button(eip, info, cells, snap, "", action_html(eels_next(eip, info, cells, snap), "EELS"))}</td>'
+
+
+def eels_drawer(eip, info, cells, snap):
+    state, short, text, sub = eels_state(info, cells, snap)
+    todo = eels_item(eip, snap)
+    proven = {d["commit"] for c in cells for d in c["links"]["test"]["deltas"] if d["state"] == "covered"}
+    links = ([a(todo["diff_url"], "EIP diff")] if todo and todo.get("diff_url") else []) + [a_local(eip_href(eip), "EIP page")]
+    if info.get("test_dir"):
+        links.append(a(test_dir_url(snap["newest_release"], info["test_dir"]), "tests"))
+    rows = ""
+    if info.get("deltas"):
+        rows = kv("spec changes proven", f'<span class="num">{len(proven)}</span> of <span class="num">{len(info["deltas"])}</span> since the EELS pin') + "".join(
+            kv("proven", f'<code>{a(gh(config.EIPS_REPO, "commit", d["commit"]), d["commit"][:8])}</code> {E(d["subject"])}') for d in info["deltas"] if d["commit"] in proven)
+    why_text = eels_detail(todo, snap) if todo else f"EELS {release_short(snap['newest_release'])} implements the current EIP text."
+    return (drawer_head(eip, "EELS", info.get("title") or eip_name(info))
+            + f'<div class="dbig">{chip(state, short, " big")}<span class="dhl">{E(text)}</span><span class="muted">{E(sub)}</span></div>'
+            + f'<p class="why">{E(why_text)}</p>' + next_line(eels_next(eip, info, cells, snap), "EELS")
+            + f'<div class="dlinks">{" ".join(links)}</div>' + rows)
 
 
 OWNER_LABEL = {**config.CLIENT_LABEL, EELS: "EELS"}
@@ -846,7 +1253,7 @@ def queue_html(snap, cells):
     kind_rank = {"run-fail": 0, "eels-update": 1, "open-delta": 2, "stale-release": 3, "run-missing": 4, "no-tests": 5}
     shown = sorted(items + eels_items(snap),
                    key=lambda it: (order.index(it["eip"]), kind_rank[it["kind"]]))
-    out = ['<h1>Work queue <span class="muted">each item is one next action, highest-ranked EIP first</span></h1>',
+    out = [titlebar("Work queue", '<span class="muted">each item is one next action, highest-ranked EIP first</span>', "api/queue.json"),
            owner_filter(shown), '<div id="queue">']
     for i, it in enumerate(shown, 1):
         clients = ", ".join(config.CLIENT_LABEL[c] for c in it["clients"])
@@ -921,7 +1328,7 @@ def start_html(snap, cells, items):
         body = '<p>nothing for the test team</p>'
     team = start_section("What do I tell the test team?",
                          "Each item names an EIP and the tests it needs. Every EIP page has a Copy as Markdown button for the message.", body)
-    return (f'<h1>Start here</h1><p class="muted">Three questions a core dev asks, a minute each. Every number comes from the snapshot shown at the top.</p>'
+    return (titlebar("Start here") + f'<p class="muted">Three questions a core dev asks, a minute each. Every number comes from the snapshot shown at the top.</p>'
             f'{clients}{eips}{team}')
 
 
@@ -1002,10 +1409,10 @@ def divergence_cell(cell):
 
 
 def divergences_html(doc):
-    head = (f'<h1>Divergences <span class="muted">client constants that differ from the EIP text</span></h1>'
-            f'<p class="muted">each value is read from the client source at the shown commit and compared with the constants table of the EIP on '
+    head = (titlebar("Divergences", '<span class="muted">client constants that differ from the EIP text</span>', "api/divergences.json")
+            + f'<p class="muted">each value is read from the client source at the shown commit and compared with the constants table of the EIP on '
             f'{E(config.EIPS_BRANCH)}; a divergence is <b>suspect</b> until a hive run of that client fails tests of that EIP, then <b>confirmed</b>; '
-            f'a suspect may be an old branch or a later spec change &middot; {a_local("api/divergences.json", "JSON")}</p>')
+            f'a suspect may be an old branch or a later spec change</p>')
     if not doc["eips"]:
         return head + '<p class="muted">no cross-client comparison in this snapshot</p>'
     rows = "".join(f'<div class="q"><span class="k {"bad" if r["status"] == "confirmed" else "warn"}">EIP-{E(r["eip"])} &middot; {E(r["status"])}</span> '
@@ -1051,10 +1458,10 @@ def prs_doc(snap, cells):
 
 def prs_html(doc):
     label = config.CLIENT_LABEL.get(doc.get("client"), doc["repo"])
-    head = (f'<h1>Open {E(label)} PRs <span class="muted">that name a tracked EIP or use one of its spec constants</span></h1>'
-            f'<p class="muted">read from {a(f"{config.GITHUB}/{doc["repo"]}/pulls", doc["repo"])} on each rebuild: the title, the body and the changed lines of each open PR; '
+    head = (titlebar(f"Open {E(label)} PRs", '<span class="muted">that name a tracked EIP or use one of its spec constants</span>', "api/prs.json")
+            + f'<p class="muted">read from {a(f"{config.GITHUB}/{doc["repo"]}/pulls", doc["repo"])} on each rebuild: the title, the body and the changed lines of each open PR; '
             f'a match says the PR touches the EIP, not that it is correct &middot; run <code>{E(config.NAME)} pr-impact {E(doc["repo"])} &lt;pr&gt;</code> '
-            f'for one PR &middot; {a_local("api/prs.json", "JSON")}</p>')
+            f'for one PR</p>')
     if doc["state"] == "not-collected":
         return head + '<p class="muted">PRs not collected in this snapshot</p>'
     if doc["state"] != "ok":
@@ -1135,10 +1542,9 @@ def releases_html(snap):
                            f'<span class="muted">{E(r["release"] or "release not in sim log")} &middot; pass {r["ntests"] - r["fails"]}/{r["ntests"]}</span></div>'
                            for r in doc["other_runs"]) + "</div>")
     if not doc["releases"]:
-        return '<h1>Test releases</h1><p class="muted">this snapshot has no release list</p>'
-    return (f'<h1>Test releases <span class="muted">each {E(config.RELEASE_PREFIX)}* release and the {E(config.SIMULATOR)} runs that used it in hive</span></h1>'
-            f'<p class="muted">a cell shows the newest run of that client on that release; "in matrix" marks the run the matrix uses &middot; '
-            f'{a_local("api/releases.json", "JSON")}</p>'
+        return titlebar("Test releases", "", "api/releases.json") + '<p class="muted">this snapshot has no release list</p>'
+    return (titlebar("Test releases", f'<span class="muted">each {E(config.RELEASE_PREFIX)}* release and the {E(config.SIMULATOR)} runs that used it in hive</span>', "api/releases.json")
+            + f'<p class="muted">a cell shows the newest run of that client on that release; "in matrix" marks the run the matrix uses</p>'
             f'<div class="wrap"><table class="m list">{head}{"".join(rows)}</table></div>{other}')
 
 
@@ -1148,8 +1554,8 @@ def history_html(entries):
         link = a_local(e["href"], e["taken_at"]) if e.get("href") else a(e["json"], e["taken_at"])
         items.append(f'<div class="rev">{link} <span class="muted">newest release {E(release_short(e["newest_release"]))} &middot; '
                      f'{plural(e["runs"], "client run")}</span>{" " + a(e["json"], "JSON") if e.get("href") and e.get("json") else ""}</div>')
-    return (f'<h1>Snapshot history <span class="muted">one entry per change in the data, newest first</span></h1>'
-            f'<p class="muted">each link opens the site as it was for that snapshot, shown with the current code and proofs; '
+    return (titlebar("Snapshot history", '<span class="muted">one entry per change in the data, newest first</span>', "api/history.json")
+            + f'<p class="muted">each link opens the site as it was for that snapshot, shown with the current code and proofs; '
             f'older snapshots link to their JSON on the {a(gh(config.SELF_REPO, "tree", config.DATA_BRANCH), config.DATA_BRANCH)} branch</p>'
             f'<div class="card">{"".join(items)}</div>')
 
