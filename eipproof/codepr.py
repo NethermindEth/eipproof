@@ -14,7 +14,7 @@ PILL = {IMPLEMENTED: "ok", STALE: "stale", IN_PROGRESS: "warn", NOT_STARTED: "no
 
 
 def names_eip(text, eip):
-    return re.search(rf"(?:(?<![A-Za-z0-9])[Ee][Ii][Pp]|(?<=[a-z0-9])Eip)[-_ ]?{eip}(?!\d)", text or "") is not None
+    return re.search(rf"(?:(?<![A-Za-z0-9])[Ee][Ii][Pp]|(?<=[a-z0-9])(?:Eip|EIP))[-_ ]?{eip}(?!\d)", text or "") is not None
 
 
 def names(text, eip):

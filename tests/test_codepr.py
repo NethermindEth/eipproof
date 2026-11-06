@@ -194,6 +194,17 @@ def test_files_whose_contents_name_the_eip_count(tmp_path):
     assert codepr.status([], len(paths), [], BRANCH) == codepr.IMPLEMENTED
 
 
+def test_go_camel_case_upper_eip_counts(tmp_path):
+    gitdir, commit = git_tree(tmp_path, {
+        "core/vm/instructions_test.go": "func TestEIP8024_Execution(t *testing.T) {}\n",
+        "params/config.go": "func (c *ChainConfig) IsEIP8024(num uint64) bool { return true }\n",
+        "core/vm/jump.go": "seip8024 := 1\nXEIP8024\n",
+    })
+    hits = codepr.content_hits(gitdir, commit, ["8024"])
+    paths = sorted(codepr.naming_files([], hits, "8024"))
+    assert paths == ["core/vm/instructions_test.go", "params/config.go"]
+
+
 def test_hex_lock_and_genesis_hits_are_dropped(tmp_path):
     gitdir, commit = git_tree(tmp_path, {
         "tests/blob.json": '"0x31206fa80a50bb6abe2908505082500000"\n',
