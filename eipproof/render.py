@@ -243,6 +243,7 @@ td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px so
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
 .stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.tl{font-size:13px;color:var(--mut);margin:2px 0 0 76px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
+.swipe{display:none}table.m:not(.list) th.row{position:sticky;left:0;z-index:1;background:var(--bg)}
 .legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend summary{cursor:pointer;width:max-content}.legend i{margin:0 4px 0 12px}
 #d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
 #d.on{transform:none}.dhead{display:flex;justify-content:space-between}.x{background:none;border:0;color:var(--mut);font-size:28px;cursor:pointer}
@@ -272,7 +273,7 @@ select{font:inherit;font-size:14px;background:var(--card);color:var(--fg);border
 .find{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 6px 8px}.find input[type=search]{width:10em}.find label{display:inline-flex;gap:4px;align-items:center}
 .pick{position:relative;color:var(--mut)}.pick summary{cursor:pointer}.pick div{position:absolute;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 0;margin-top:4px;min-width:140px}.pick a{display:block;padding:3px 12px}
 .copy button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-@media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}}
+@media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}.swipe{display:block}}
 """
 
 JS = """
@@ -796,7 +797,7 @@ def matrix_html(snap, cells):
             + "".join(f'<option value="{c}">{E(config.CLIENT_LABEL[c])}</option>' for c in config.CLIENTS)
             + '</select> <label><input type="checkbox" id="hp" onchange="mf()"> Hide passing rows</label></div>')
     intro = '<h1>EIP status by client</h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
-    return intro + strip + cov + legend + toggle + find + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates)
+    return intro + strip + cov + legend + toggle + find + '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>' + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates)
 
 
 def action_html(verb, owner):
