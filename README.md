@@ -26,7 +26,7 @@ GitHub repo traffic, includes maintainers; not site visits. Recorded once a day 
 
 Each EIP page also shows one line per client: what the client's own repo says about the EIP. EL EIPs list the 5 EL clients; CL EIPs list Lighthouse, Prysm, Lodestar, Nimbus and Grandine; EIPs on both layers list all 10. `api/code.json` has the same data.
 
-- **code merged**: at least 2 files on the default branch name the EIP in their path or contents (`Eip8141`, `eip_8141`, `EIP-8141`, `IsEip8141Enabled`), or a PR whose title names the EIP was merged into the default branch. Contents are read with `git grep` on a shallow clone at the commit shown, so the count is reproducible and uses no API quota. A PR merged into a feature branch counts only after its merge commit reaches the default branch.
+- **code merged**: at least 2 files on the default branch name the EIP in their path or contents (`Eip8141`, `eip_8141`, `EIP-8141`, `IsEip8141Enabled`, `TestEIP8141_Execution`; not `seip8141`), or a PR whose title names the EIP was merged into the default branch. Contents are read with `git grep` on a shallow clone at the commit shown, so the count is reproducible and uses no API quota. A PR merged into a feature branch counts only after its merge commit reaches the default branch.
 - **spec changed since**: a spec change, not attested editorial, was merged after the client's last merged PR.
 - **PR open**: an open PR names the EIP, or a merged one has not reached the default branch yet.
 - **no named code or PR**: no file path, no file content and no PR title in the window names the EIP. Code that names only the fork (`gloas`) is not counted, so this is weak evidence for CL clients. A few EIPs have a known alias (EIP-7732 is `ePBS`) in `config.EIP_ALIASES`.
