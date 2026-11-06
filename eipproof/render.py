@@ -331,6 +331,7 @@ p{overflow-wrap:break-word}
 .schip.old{color:var(--stale);background:#fdf6ec}
 .schip.ok{color:var(--ok)}
 .asof{margin:0 0 6px}
+p.stale{margin:6px 0 0;color:var(--stale)}
 .kv{display:grid;grid-template-columns:110px 1fr;gap:8px;padding:4px 0;border-top:1px solid var(--bd);font-size:13px}
 .kv:first-child{border-top:0}
 .k{color:var(--mut)}
@@ -343,7 +344,6 @@ h3{font-size:13px;font-weight:600;margin:16px 0 6px}
 .jsn{font-size:13px;color:var(--mut)}
 .titlebar .jsn{margin-left:auto}
 .crumbs{font-size:13px;color:var(--mut);margin-bottom:4px}
-.intro{margin:0 0 8px;font-size:13px}
 .facts{display:flex;flex-wrap:wrap;gap:4px 24px;font-size:13px;color:var(--mut);margin-bottom:8px}
 .ut{margin-left:6px;color:var(--ink)}
 .ut .num{font-weight:600;color:var(--bad)}
@@ -416,7 +416,6 @@ table.list td.c a.hl{font-weight:600;text-decoration:none}
 table.list th.row{font-weight:600;width:180px;vertical-align:top}
 table.list th small,table.m th.row small{display:block;font-weight:400;color:var(--mut);font-size:12px}
 .sub{color:var(--mut);font-size:12px;overflow-wrap:anywhere}
-.swipe{display:none}
 .empty{padding:16px}
 .scrim{position:fixed;inset:0;z-index:45;background:rgba(20,23,28,.32)}
 #d{position:fixed;z-index:50;top:48px;right:0;bottom:0;width:460px;max-width:100vw;background:var(--bg);border-left:1px solid var(--bd);box-shadow:-8px 0 24px rgba(20,23,28,.08);overflow-y:auto;padding:0 16px 24px}
@@ -524,11 +523,9 @@ input[type=search],select{height:44px}
 .tools .legend{margin-left:0}
 .legend summary{min-height:44px;display:flex;align-items:center}
 .tog button{min-height:44px}
-.swipe{display:block}
 table.m:not(.list){min-width:0}
 table.m:not(.list) th.row{min-width:150px;max-width:160px}
 .tt{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px}
-th.row .tt{display:block}
 .chip{height:44px;min-width:84px;font-size:14px}
 table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}table.list th.row{width:auto}
 #d{top:auto;left:0;right:0;bottom:0;width:auto;max-height:85vh;border-left:0;border-top:1px solid var(--bd);border-radius:12px 12px 0 0;box-shadow:0 -8px 24px rgba(20,23,28,.12)}
@@ -846,8 +843,9 @@ def linked_html(eip, snap, attestations=()):
                 f'PRs merged since {E(merged_since(snap, "code_status"))}; a hint from names, it never changes a test verdict</p>'
                 f'<div class="wrap"><table class="m list" data-mark="code-status">{code_html(snap, eip, attestations)}</table></div>')
     return (spec
-            + f'<h2>Client PRs</h2><p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}; matched by title, not a verdict</p>'
-            f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div>')
+            + f'<details class="box" data-mark="client-prs-box"><summary>Client PRs <span class="muted small">matched by title, not a verdict</span></summary>'
+            f'<p class="muted">open and merged PRs whose title names EIP-{eip}; merged ones since {E(merged_since(snap))}</p>'
+            f'<div class="wrap"><table class="m list" data-mark="client-prs">{client_prs_html(snap, eip)}</table></div></details>')
 
 
 def timeline_html(eip, info, snap, attestations):
@@ -914,7 +912,7 @@ def eip_page_html(eip, snap, cells, attestations):
     links = [eip_text_link(info), a(test_dir_url(info["pin"]["release"], info["test_dir"]), "EELS tests"),
              a_local(f"changes.html#eip-{eip}", "all spec changes"), copy_md(eip_markdown(eip, snap, cells, attestations))]
     return (eip_head(eip, info, snap, f"api/eip/{eip}.json", links)
-            + f'<h2>Clients <span class="muted small">open a cell for the why, the three checks and the evidence</span></h2><div class="cols">{cols}</div>{legend_html()}'
+            + f'<h2>Clients <span class="muted small">open a cell for the why, the three checks and the evidence</span></h2><div class="cols">{cols}</div>'
             f'{eels_todo_html(eels_item(eip, snap), snap)}'
             f'<h2>Spec changes and their tests <span class="muted small">newest first; each EIP commit, the EELS change that pinned it, its first release and the client runs on it</span></h2>'
             f'{timeline_html(eip, info, snap, attestations)}{linked_html(eip, snap, attestations)}'
@@ -1029,7 +1027,7 @@ def feed_html(snap, rows, pending=()):
 def stale_banner(snap):
     if snap.get("source") in ("archive", "snapshot"):
         return ""
-    return f'<div class="strip age" id="stale" role="status" hidden data-taken="{E(snap["taken_at"])}"></div>'
+    return f'<p class="stale" id="stale" role="status" hidden data-taken="{E(snap["taken_at"])}"></p>'
 
 
 def fallback_banner(snap):
@@ -1067,9 +1065,9 @@ def scoped(body):
     return re.sub(r'<th\b(?![^>]*scope=)([^>]*)>', lambda m: f'<th{m.group(1)} scope="{"row" if "class=\"row" in m.group(1) else "col"}">', body)
 
 
-NAV = [("start", "start.html", "Start here"), ("matrix", "index.html", "Status")]
+NAV = [("matrix", "index.html", "Status")]
 NAV_AFTER = [("changes", "changes.html", "Changes"), ("queue", "queue.html", "Queue")]
-MORE = [("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", "history.html", "History")]
+MORE = [("start", "start.html", "Start here"), ("releases", "releases.html", "Test releases"), ("divergences", "divergences.html", "Divergences"), ("prs", "prs.html", "PRs"), ("history", "history.html", "History")]
 
 
 def nav_links(rows, nav, root=""):
@@ -1090,7 +1088,7 @@ def snapshot_chip(snap):
             f'<div class="panel right"><p class="asof">as of <a href="{E(asof_href(snap))}" title="permalink to this snapshot">{E(snap["taken_at"])}</a></p>'
             + kv("fork", f'{E(config.FORKS[config.FORK]["FORK_LABEL"])} &middot; EL')
             + kv("newest EELS", a(snap["release_url"], snap["newest_release"]))
-            + kv("hive", f'{a(snap["listing_url"], "hive listing")} <span class="num">{snap["listing_rows"]}</span> runs') + "</div></details>")
+            + kv("hive", f'{a(snap["listing_url"], "hive listing")} <span class="num">{snap["listing_rows"]}</span> runs') + f"{stale_banner(snap)}</div></details>")
 
 
 def header_html(nav, snap, root):
@@ -1104,7 +1102,7 @@ def header_html(nav, snap, root):
 def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
-            f'{header_html(nav, snap, root)}<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{scoped(body)}</main>'
+            f'{header_html(nav, snap, root)}<main>{fallback_banner(snap)}{archived_banner(snap)}{scoped(body)}</main>'
             f'<div class="scrim" hidden></div><aside id="d" role="dialog" aria-modal="true" aria-label="Evidence" hidden><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
@@ -1136,9 +1134,9 @@ def row_head(eip, info):
                f'<span class="num">{len(info["deltas"])}</span><span class="sr"> spec changes since EELS</span></span>')
     if info.get("pending"):
         nb += f'<span class="nb p" title="open EIP PRs, not spec yet">PR <span class="num">{len(info["pending"])}</span><span class="sr"> open EIP PRs, not counted</span></span>'
-    stage = " &middot; ".join(E(x) for x in [*(info.get("stage") or []), info.get("status") or ""] if x)
+    stage = "".join(f'<span class="{k}">{E(x)}</span>' for k, x in (("st", " · ".join(info.get("stage") or [])), ("es", info.get("status"))) if x)
     return (f'<th class="row"><a href="{eip_href(eip)}" class="eipn">{E(eip)}</a> <span class="tt">{E(info.get("title") or eip_name(info))}</span>'
-            f'<div class="r2">{stage_badge(info)}<span>{stage}</span>{nb}</div></th>')
+            f'<div class="r2">{stage_badge(info)}{stage}{nb}</div></th>')
 
 
 def matrix_html(snap, cells):
@@ -1176,9 +1174,7 @@ def matrix_html(snap, cells):
             + '</select> <label><input type="checkbox" id="hp" onchange="mf()"> Hide passing rows</label></div>')
     sub = " &middot; ".join(E(x) for x in (config.FORKS[config.FORK]["FORK_LABEL"], (snap.get("meta") or {}).get("name")) if x)
     return (titlebar("EIP status by client", f'<span class="muted">{sub}</span>', "api/eips.json")
-            + '<p class="muted intro">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
             + f'<div class="facts">{facts}</div><div class="tools">{toggle}{find}{legend_html()}</div>'
-            + '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>'
             + f'<div class="wrap" tabindex="0" aria-label="Status grid, scrolls sideways"><table class="m" id="grid">{head}<tbody>{"".join(rows)}</tbody></table></div>'
             + '<p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates))
 
