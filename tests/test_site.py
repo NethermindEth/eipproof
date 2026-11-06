@@ -168,7 +168,7 @@ def test_cell_copies_as_markdown_with_why_and_sources(live_site):
 
 def test_every_cell_drawer_has_a_copy_button(live_site):
     page = (live_site / "index.html").read_text()
-    assert page.count('onclick="copyMd(this)">Copy as Markdown<') == page.count("<template id=") == 40
+    assert page.count('onclick="copyMd(this)">Copy as Markdown<') == len(re.findall(r'<template id="t-\d+-(?!eels")', page)) == 40
 
 
 def test_eip_page_copies_as_markdown_with_every_client_and_change(live_site):
@@ -570,7 +570,7 @@ def test_start_page_answers_three_questions_from_the_same_snapshot(wide_site):
 
 def test_start_page_is_first_in_the_nav_and_linked_from_the_matrix(live_site):
     for name in ("index.html", "queue.html", "start.html", "client-besu.html"):
-        nav = re.search(r'<nav>(.*?)</nav>', (live_site / name).read_text()).group(1)
+        nav = re.search(r'<nav class="pnav"[^>]*>(.*?)</nav>', (live_site / name).read_text()).group(1)
         assert nav.startswith('<a href="start.html"') and ">Start here</a>" in nav
     assert 'New here? <a href="start.html">Start here</a>' in (live_site / "index.html").read_text()
     assert "start.html" in smoke.PAGES
@@ -625,7 +625,7 @@ def test_matrix_client_columns_carry_their_client(live_site):
     text = (live_site / "index.html").read_text()
     for c in config.CLIENTS:
         assert len(re.findall(rf'<td class="c [a-z]+" id="c-\d+-{c}" data-cl="{c}"', text)) == len(render.tested(build.load_snapshot(SNAP))), c
-        assert text.count(f'<th data-cl="{c}"') == 2, c
+        assert text.count(f'<th class="ch" data-cl="{c}"') + text.count(f'<td class="sum" data-cl="{c}"') == 2, c
 
 
 def test_matrix_filter_offers_each_client_and_hide_passing(live_site):
@@ -665,7 +665,7 @@ def test_matrix_filter_searches_eips_by_number_or_name(live_site):
 
 def test_matrix_legend_folds_to_one_line_above_the_table(live_site):
     text = (live_site / "index.html").read_text()
-    assert '<details class="legend"><summary>What the dots mean</summary>' in text
+    assert '<div class="legend">' in text and '<summary>How to read</summary>' in text
     assert "Failing cases in untracked EIP tests, not counted:" in text
 
 
@@ -681,6 +681,6 @@ def test_client_todo_wraps_long_failing_case_ids_on_phones():
     case = "tests/amsterdam/x.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"
     item = {"kind": "run-fail", "eip": "8141", "clients": ["reth"], "failed": [case], "action": "fix"}
     page = render.client_page_html("reth", snap, [], [item])
-    todo = re.search(r'<div class="q">.*?</div>', page).group(0)
+    todo = re.search(r'<ol class="todos">.*?</ol>', page).group(0)
     assert f"<code>{render.short_test(case)}</code>" in todo
     assert ".q code," in render.CSS and "{overflow-wrap:anywhere}" in render.CSS.split(".q code,")[1].split("\n")[0]

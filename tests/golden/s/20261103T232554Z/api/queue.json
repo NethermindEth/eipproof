@@ -1,0 +1,153 @@
+{
+ "fork": "bogota",
+ "items": [
+  {
+   "action": "update tests to EIP version dc5d5fa6",
+   "behind": 1,
+   "changes": [
+    "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f"
+   ],
+   "clients": [],
+   "constants": [],
+   "diff_url": "https://github.com/ethereum/EIPs/compare/7372d10a457b29eceb02cd052345af165de1fb60...dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+   "eip": "8141",
+   "head": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
+   "head_date": "2026-11-01T04:20:25-07:00",
+   "kind": "eels-update",
+   "owner": "eels",
+   "pin_commit": "7372d10a457b29eceb02cd052345af165de1fb60",
+   "pin_release": "tests-bogota-devnet@v2.0.0",
+   "verb": "update tests"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8141",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 0,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "update tests to EIP version 9099f412",
+   "behind": 1,
+   "changes": [
+    "9099f412d228ec80ec27b713df6da61993bf4702"
+   ],
+   "clients": [],
+   "constants": [],
+   "diff_url": "https://github.com/ethereum/EIPs/compare/25ac2920ea3a958911e380498bb7c8fbca201542...9099f412d228ec80ec27b713df6da61993bf4702",
+   "eip": "7906",
+   "head": "9099f412d228ec80ec27b713df6da61993bf4702",
+   "head_date": "2026-10-27T11:42:30Z",
+   "kind": "eels-update",
+   "owner": "eels",
+   "pin_commit": "25ac2920ea3a958911e380498bb7c8fbca201542",
+   "pin_release": "tests-bogota-devnet@v2.0.0",
+   "verb": "update tests"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "7906",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 1,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8250",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 2,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8151",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 3,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8272",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 4,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8298",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 5,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "4758",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 6,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  },
+  {
+   "action": "fix client or report test",
+   "clients": [
+    "reth"
+   ],
+   "eip": "8253",
+   "failed": [
+    "tests/bogota/eip8253_bump_nonce_of_zero_nonce_storage_accounts/test_block_access_lists_invalid.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"
+   ],
+   "kind": "run-fail",
+   "owner": "reth",
+   "rank": 7,
+   "verb": "fix client"
+  },
+  {
+   "action": "run v2.0.0",
+   "clients": [
+    "besu"
+   ],
+   "eip": "8253",
+   "kind": "stale-release",
+   "owner": "besu",
+   "rank": 7,
+   "release": "tests-bogota-devnet@v1.1.1",
+   "verb": "run v2.0.0"
+  }
+ ],
+ "snapshot": "2026-11-03T23:25:54Z",
+ "source": "archive"
+}
