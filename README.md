@@ -35,7 +35,14 @@ A bare number is not enough: hex blobs, genesis and lock files contain it too. A
 
 ## Run it
 
-Needs Python 3.11+ and git.
+Needs Python 3.11+, git and [uv](https://docs.astral.sh/uv/).
+
+```bash
+git clone https://github.com/NethermindEth/eipproof && cd eipproof
+make site        # install, build site/ from the committed snapshot, serve http://localhost:8765
+```
+
+Other targets (`make help` lists them):
 
 ```bash
 make test        # unit, golden and site tests
@@ -43,8 +50,10 @@ make golden      # rewrite tests/golden/ after an intended output change
 make build       # fetch public data, write snapshots/ and site/
 make offline     # rebuild site/ from the latest snapshot, no network
 make check       # HTML balance and internal links of site/
-make serve       # http://localhost:8765
-python -m eipproof.cli why 7906 nethermind   # explain one cell
+make serve       # serve site/ without rebuilding
+make venv        # install the pinned dependencies into .venv
+.venv/bin/python -m eipproof.cli why 7906 nethermind   # explain one cell
+.venv/bin/python -m eipproof.cli --help                # all commands
 ```
 
 Data sources, all public: `ethereum/EIPs`, `ethereum/execution-specs` release tags, `https://hive.ethpandaops.io/bogota`.
