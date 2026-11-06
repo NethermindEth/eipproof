@@ -642,3 +642,16 @@ def test_client_page_names_untracked_failures_in_plain_words(live_site):
     assert "outside the tracked EIP dirs" not in page
     assert "in tests for EIPs this site does not track, not counted above" in page
     assert "outside EIP dirs" not in (live_site / "index.html").read_text()
+
+
+def test_matrix_filter_searches_eips_by_number_or_name(live_site):
+    text = (live_site / "index.html").read_text()
+    assert '<label for="me">EIP</label> <input type="search" id="me"' in text
+    assert "searchParams.set('eip'" in text
+    assert "No rows match." in text
+
+
+def test_matrix_legend_folds_to_one_line_above_the_table(live_site):
+    text = (live_site / "index.html").read_text()
+    assert '<details class="legend"><summary>What the dots mean</summary>' in text
+    assert "Failing cases in untracked EIP tests, not counted:" in text

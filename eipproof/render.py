@@ -243,7 +243,7 @@ td.c.ok{outline:1px solid var(--ok);outline-offset:-3px}td.c.warn{outline:1px so
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.dot.stale{background:var(--stale)}.dot.edit{background:var(--edit)}
 .stage{font-size:12px;color:#8b95a7;margin-top:2px}.sb{font-size:11px;padding:0 5px;margin-right:4px}.cov{margin:4px 0 10px}.tl{font-size:13px;color:var(--mut);margin:2px 0 0 76px}.stage a{color:inherit}.consts{margin:4px 0;font-size:13px}.const code{color:var(--warn)}
 .badge{display:inline-block;font-size:12px;line-height:1.3;padding:4px 8px;border-radius:99px;background:#2a2112;color:var(--warn);margin-top:4px}
-.legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend i{margin:0 4px 0 12px}
+.legend{color:var(--mut);font-size:13px;margin:14px 6px}.legend summary{cursor:pointer;width:max-content}.legend i{margin:0 4px 0 12px}
 #d{position:fixed;top:0;right:0;height:100%;width:min(640px,100vw);background:#0f1522;border-left:1px solid var(--line);transform:translateX(100%);transition:transform .35s ease;overflow:auto;padding:20px 24px;box-shadow:-20px 0 40px #0008}
 #d.on{transform:none}.dhead{display:flex;justify-content:space-between}.x{background:none;border:0;color:var(--mut);font-size:28px;cursor:pointer}
 .headline{font-size:26px;font-weight:800}.headline.ok{color:var(--ok)}.headline.warn{color:var(--warn)}.headline.bad{color:var(--bad)}.headline.stale{color:var(--stale)}.headline.none{color:var(--mut)}
@@ -269,7 +269,7 @@ td.why-cell{color:#cbd5e1;font-size:13.5px;vertical-align:top;padding:8px 10px}.
 .copy{margin:8px 0}.copy button{font:inherit;font-size:13px;color:var(--fg);background:#1f2937;border:1px solid var(--line);border-radius:99px;padding:3px 12px;cursor:pointer}
 .copy button:hover{border-color:#475569}.copy textarea{display:block;width:100%;height:180px;margin-top:6px;background:#0b1220;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;font:12.5px "DejaVu Sans Mono",monospace}
 select{font:inherit;font-size:14px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:4px 8px}label{color:var(--mut);font-size:13px}
-.find{display:inline-flex;gap:8px;align-items:center;margin:0 6px 8px}.find label{display:inline-flex;gap:4px;align-items:center}
+.find{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 6px 8px}.find input[type=search]{width:10em}.find label{display:inline-flex;gap:4px;align-items:center}
 .pick{position:relative;color:var(--mut)}.pick summary{cursor:pointer}.pick div{position:absolute;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 0;margin-top:4px;min-width:140px}.pick a{display:block;padding:3px 12px}
 .copy button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
 @media (max-width:700px){table.list tr{display:block;margin-bottom:10px}table.list th,table.list td{display:block;width:auto}header.top{flex-wrap:wrap;padding:12px 16px}.meta{margin-left:0;text-align:left}main{padding:14px 12px}th.row{width:auto}#d{padding:16px}.q .act{float:none;display:inline-block}}
@@ -285,16 +285,16 @@ function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
 addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
 const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
-const m=document.getElementById('mf');if(m){m.hidden=false;const mc=document.getElementById('mc');if(mc.querySelector('option[value="'+CSS.escape(p.get('client')||'')+'"]'))mc.value=p.get('client')||'';document.getElementById('hp').checked=p.get('hide')==='pass';mf()}
-const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(m&&c&&c.closest('[hidden]')){document.getElementById('mc').value='';document.getElementById('hp').checked=false;mf()}if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
+const m=document.getElementById('mf');if(m){m.hidden=false;const mc=document.getElementById('mc');if(mc.querySelector('option[value="'+CSS.escape(p.get('client')||'')+'"]'))mc.value=p.get('client')||'';document.getElementById('hp').checked=p.get('hide')==='pass';document.getElementById('me').value=p.get('eip')||'';mf()}
+const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(m&&c&&c.closest('[hidden]')){document.getElementById('mc').value='';document.getElementById('hp').checked=false;document.getElementById('me').value='';mf()}if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
 const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
 function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
 function filt(v){document.querySelectorAll('#feed .rev').forEach(r=>r.hidden=!!v&&r.dataset.eip!==v);history.replaceState(null,'',v?'#eip-'+v:location.pathname)}
-function mf(){const c=document.getElementById('mc').value,h=document.getElementById('hp').checked;document.querySelectorAll('table.m [data-cl]').forEach(x=>x.hidden=!!c&&x.dataset.cl!==c);document.querySelectorAll('table.m td[data-span]').forEach(x=>x.colSpan=c?1:+x.dataset.span);
-document.querySelectorAll('table.m tr[id^="r-"]').forEach(r=>{const t=[...r.querySelectorAll('td.c[data-cl]')].filter(x=>!c||x.dataset.cl===c);r.hidden=h&&t.length>0&&t.every(x=>x.classList.contains('ok'))});
+function mf(){const c=document.getElementById('mc').value,h=document.getElementById('hp').checked,q=document.getElementById('me').value.trim().toLowerCase().replace(/^eip-?/,'');document.querySelectorAll('table.m [data-cl]').forEach(x=>x.hidden=!!c&&x.dataset.cl!==c);document.querySelectorAll('table.m td[data-span]').forEach(x=>x.colSpan=c?1:+x.dataset.span);
+document.querySelectorAll('table.m tr[id^="r-"]').forEach(r=>{const t=[...r.querySelectorAll('td.c[data-cl]')].filter(x=>!c||x.dataset.cl===c);r.hidden=(h&&t.length>0&&t.every(x=>x.classList.contains('ok')))||(!!q&&!r.querySelector('th.row').textContent.toLowerCase().includes(q))});
 document.getElementById('mf0').hidden=!!document.querySelector('table.m tr[id^="r-"]:not([hidden])');
-const u=new URL(location.href);if(c)u.searchParams.set('client',c);else u.searchParams.delete('client');if(h)u.searchParams.set('hide','pass');else u.searchParams.delete('hide');history.replaceState(null,'',u)}
+const u=new URL(location.href);if(c)u.searchParams.set('client',c);else u.searchParams.delete('client');if(h)u.searchParams.set('hide','pass');else u.searchParams.delete('hide');if(q)u.searchParams.set('eip',q);else u.searchParams.delete('eip');history.replaceState(null,'',u)}
 function copyMd(b){const t=b.nextElementSibling,l=b.dataset.l||(b.dataset.l=b.textContent),show=()=>{t.hidden=false;t.select()};if(!navigator.clipboard)return show();
 navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copied';setTimeout(()=>{b.textContent=l},1500)},show)}
 """
@@ -785,18 +785,18 @@ def matrix_html(snap, cells):
     strip = ""
     wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == snap["newest_release"]}
     if wide:
-        strip = '<div class="strip">failing cases in tests for EIPs this site does not track, not counted in the cells: ' + " &middot; ".join(
+        strip = '<div class="strip">Failing cases in untracked EIP tests, not counted: ' + " &middot; ".join(
             f'{E(config.CLIENT_LABEL[c])} {len(v)}' for c, v in wide.items()) + "</div>"
-    legend = ('<div class="legend">A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
-              '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</div>')
+    legend = ('<details class="legend"><summary>What the dots mean</summary>A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
+              '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</details>')
     cov = coverage_html(snap) if snap.get("meta") else ""
     toggle = ('<div class="tog" role="group" aria-label="Cell view"><button type="button" id="v-st" aria-pressed="true" onclick="view(\'st\')">Status</button>'
               '<button type="button" id="v-ac" aria-pressed="false" onclick="view(\'ac\')">Next action</button></div>')
-    find = ('<div class="find" id="mf" hidden><label for="mc">Client</label> <select id="mc" onchange="mf()"><option value="">All clients</option>'
+    find = ('<div class="find" id="mf" hidden><label for="me">EIP</label> <input type="search" id="me" placeholder="number or name" autocomplete="off" oninput="mf()"> <label for="mc">Client</label> <select id="mc" onchange="mf()"><option value="">All clients</option>'
             + "".join(f'<option value="{c}">{E(config.CLIENT_LABEL[c])}</option>' for c in config.CLIENTS)
             + '</select> <label><input type="checkbox" id="hp" onchange="mf()"> Hide passing rows</label></div>')
     intro = '<h1>EIP status by client <span class="muted">one row per EIP, one column per client</span></h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
-    return intro + strip + cov + legend + toggle + find + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>Every row passes for this choice. Clear "Hide passing rows" to see them.</p>' + "".join(templates)
+    return intro + strip + cov + legend + toggle + find + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates)
 
 
 def action_html(verb, owner):
