@@ -7,6 +7,7 @@ from . import config, handoff, sources
 
 MIN_CODE_FILES = 2
 SHOWN_FILES = 5
+SKIPPED_NAMES = {"go.sum", "package-lock.json", "pnpm-lock.yaml"}
 NOT_STARTED, IN_PROGRESS, IMPLEMENTED, STALE = "not-started", "in-progress", "implemented", "stale"
 WORD = {IMPLEMENTED: "code merged", STALE: "spec changed since", IN_PROGRESS: "PR open", NOT_STARTED: "no named code or PR"}
 PILL = {IMPLEMENTED: "ok", STALE: "stale", IN_PROGRESS: "warn", NOT_STARTED: "none"}
@@ -61,7 +62,34 @@ def status(prs, files, spec_dates, branch):
     return IN_PROGRESS if any(p["state"] in ("open", "merged-elsewhere") for p in prs) else NOT_STARTED
 
 
-def tree_paths(client):
+def skipped(path):
+    name = path.rsplit("/", 1)[-1]
+    return name.endswith(".lock") or name in SKIPPED_NAMES or "genesis" in path.lower()
+
+
+def grep_pattern(eips):
+    aliases = [a for eip in eips for a in config.EIP_ALIASES.get(eip, ()) if a.isalnum()]
+    return "|".join([f"eip[-_ ]?({'|'.join(eips)})", *aliases])
+
+
+def content_hits(gitdir, commit, eips):
+    proc = subprocess.run(["git", f"--git-dir={gitdir}", "grep", "-z", "-I", "-i", "-E", "-e", grep_pattern(eips), commit, "--"],
+                          capture_output=True, text=True, errors="replace")
+    if proc.returncode not in (0, 1):
+        raise RuntimeError(proc.stderr.strip()[:200])
+    hits = []
+    for row in proc.stdout.splitlines():
+        where, _, line = row.partition("\0")
+        hits.append((where[len(commit) + 1:], line))
+    return hits
+
+
+def naming_files(paths, hits, eip):
+    found = [p for p in paths if names(p, eip)] + [p for p, line in hits if names(line, eip)]
+    return [p for p in dict.fromkeys(found) if not skipped(p)]
+
+
+def tree_files(client, eips):
     meta = config.CODE_CLIENTS[client]
     path = os.path.join(sources.CACHE, "trees", f"{client}.git")
     if not os.path.isdir(path):
@@ -69,9 +97,9 @@ def tree_paths(client):
         subprocess.run(["git", "init", "--quiet", "--bare", path], check=True)
     url = f"{config.GITHUB}/{meta['repo']}.git"
     ref = f"refs/heads/{meta['branch']}"
-    sources.git(path, "fetch", "--quiet", "--force", "--depth=1", "--filter=blob:none", url, f"+{ref}:{ref}")
+    sources.git(path, "fetch", "--quiet", "--force", "--depth=1", url, f"+{ref}:{ref}")
     commit = sources.git(path, "rev-parse", ref).strip()
-    return commit, sources.git(path, "ls-tree", "-r", "--name-only", commit).splitlines()
+    return commit, sources.git(path, "ls-tree", "-r", "--name-only", commit).splitlines(), content_hits(path, commit, eips)
 
 
 def pr_row(pull):
@@ -101,11 +129,11 @@ def client_prs(repo, eips, since):
 
 def collect_client(client, eips, since):
     meta = config.CODE_CLIENTS[client]
-    commit, paths = tree_paths(client)
+    commit, paths, hits = tree_files(client, eips)
     found, truncated = client_prs(meta["repo"], eips, since)
     out = {}
     for eip in eips:
-        files = [p for p in paths if names(p, eip)]
+        files = naming_files(paths, hits, eip)
         prs = []
         for p in found.get(eip, []):
             if p["state"] == "merged" and p.get("base") not in (None, meta["branch"]):
@@ -165,11 +193,11 @@ def evidence_text(c):
         return "lookup failed in this snapshot"
     parts = []
     if c["files"]:
-        parts.append(f"{plural(c['files'], 'file')} named for the EIP on {c['branch']}")
+        parts.append(f"{plural(c['files'], 'file')} on {c['branch']} name the EIP")
     merged = [p for p in c["prs"] if p["state"] == "merged"]
     pending = [p for p in c["prs"] if p["state"] in ("open", "merged-elsewhere")]
     if merged:
         parts.append(f"{plural(len(merged), 'merged PR')}")
     if pending:
         parts.append(f"{plural(len(pending), 'open or unlanded PR')}")
-    return ", ".join(parts) or f"no file or PR title names the EIP on {c['branch']}"
+    return ", ".join(parts) or f"no file on {c['branch']} and no PR title names the EIP"

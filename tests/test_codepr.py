@@ -1,5 +1,6 @@
 import copy
 import re
+import subprocess
 
 import pytest
 
@@ -105,7 +106,7 @@ def merged_pull(number, title, merged_at, base, sha):
 def test_collect_reads_files_and_prs_per_layer(monkeypatch):
     monkeypatch.setattr(handoff, "LISTED", {})
     trees = {c: ["src/Eip8141Tx.cs", "src/eip8141/Validate.cs", "genesis/0x8141.json"] if c == "nethermind" else [] for c in config.CODE_CLIENTS}
-    monkeypatch.setattr(codepr, "tree_paths", lambda c: ("c" * 40, trees[c]))
+    monkeypatch.setattr(codepr, "tree_files", lambda c, eips: ("c" * 40, trees[c], []))
     repos = {config.CODE_CLIENTS["go-ethereum"]["repo"]: [
         merged_pull(10, "core: EIP-8141 frames", "2026-10-30T00:00:00Z", "bogota", "a" * 40),
         merged_pull(11, "core: EIP-8141 validation", "2026-10-31T00:00:00Z", "bogota", "b" * 40),
@@ -126,10 +127,10 @@ def test_collect_reads_files_and_prs_per_layer(monkeypatch):
 def test_unreachable_client_is_reported_not_guessed(monkeypatch):
     monkeypatch.setattr(handoff, "LISTED", {})
 
-    def boom(client):
+    def boom(client, eips):
         raise OSError("network")
 
-    monkeypatch.setattr(codepr, "tree_paths", boom)
+    monkeypatch.setattr(codepr, "tree_files", boom)
     out = codepr.collect({"8141": {"eip": "8141", "test_dir": "x", "deltas": []}}, log=lambda *_: None, now=NOW)
     c = codepr.cell({"eips": {"8141": {"eip": "8141", "deltas": []}}, "code_status": out}, "nethermind", "8141")
     assert c["state"] == "unreachable" and codepr.evidence_text(c) == "lookup failed in this snapshot"
@@ -166,6 +167,61 @@ def test_code_signal_never_changes_a_test_verdict(tmp_path):
 def test_known_alias_names_the_eip(text, expected):
     assert codepr.names(text, "7732") is expected
     assert codepr.names(text, "8141") is False
+
+
+def git_tree(tmp_path, files):
+    work = tmp_path / "work"
+    for name, text in files.items():
+        (work / name).parent.mkdir(parents=True, exist_ok=True)
+        (work / name).write_text(text)
+    run = lambda *a: subprocess.run(["git", "-C", str(work), *a], check=True, capture_output=True, text=True).stdout
+    run("init", "-q")
+    run("add", "-A")
+    run("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "t")
+    return str(work / ".git"), run("rev-parse", "HEAD").strip()
+
+
+def test_files_whose_contents_name_the_eip_count(tmp_path):
+    gitdir, commit = git_tree(tmp_path, {
+        "core/vm/interpreter.go": "// EIP-7702: set code\nfunc run() {}\n",
+        "core/types/tx_setcode.go": "if rules.IsPrague { applyEip7702(tx) }\n",
+        "core/state.go": "func untouched() {}\n",
+        "params/config.go": "seip7702 := 1\nEIP-77021\n",
+    })
+    hits = codepr.content_hits(gitdir, commit, ["7702"])
+    paths = sorted(codepr.naming_files([], hits, "7702"))
+    assert paths == ["core/types/tx_setcode.go", "core/vm/interpreter.go"]
+    assert codepr.status([], len(paths), [], BRANCH) == codepr.IMPLEMENTED
+
+
+def test_hex_lock_and_genesis_hits_are_dropped(tmp_path):
+    gitdir, commit = git_tree(tmp_path, {
+        "tests/blob.json": '"0x31206fa80a50bb6abe2908505082500000"\n',
+        "Cargo.lock": 'name = "eip-8250"\n',
+        "go.sum": "github.com/x/eip8250 v1\n",
+        "config/genesis/hoodi.json": '{"eip8250Time": 0}\n',
+        "src/Eip8250.cs": "class Eip8250 {}\n",
+    })
+    hits = codepr.content_hits(gitdir, commit, ["8250"])
+    files = codepr.naming_files(["Cargo.lock", "src/Eip8250.cs"], hits, "8250")
+    assert files == ["src/Eip8250.cs"]
+    assert codepr.status([], len(files), [], BRANCH) == codepr.NOT_STARTED
+
+
+def test_alias_in_contents_counts_for_cl_code(tmp_path):
+    gitdir, commit = git_tree(tmp_path, {
+        "beacon/a.rs": "// ePBS bid processing\n",
+        "beacon/b.rs": "use crate::epbs::Envelope;\n",
+        "beacon/c.rs": "fn deepbs() {}\n",
+    })
+    hits = codepr.content_hits(gitdir, commit, ["7732", "8141"])
+    assert sorted(codepr.naming_files([], hits, "7732")) == ["beacon/a.rs", "beacon/b.rs"]
+    assert codepr.naming_files([], hits, "8141") == []
+
+
+def test_a_file_named_by_path_and_content_counts_once():
+    hits = [("src/Eip8141Tx.cs", "Eip8141"), ("src/Eip8141Tx.cs", "EIP-8141"), ("src/Other.cs", "EIP-8141")]
+    assert codepr.naming_files(["src/Eip8141Tx.cs", "src/Plain.cs"], hits, "8141") == ["src/Eip8141Tx.cs", "src/Other.cs"]
 
 
 def test_spec_revision_without_tests_still_makes_code_stale():
