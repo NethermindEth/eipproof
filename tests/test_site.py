@@ -674,3 +674,13 @@ def test_matrix_keeps_the_eip_column_in_view_and_says_it_scrolls_on_phones(live_
     assert "table.m:not(.list) th.row{position:sticky;left:0" in text
     assert '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>' in text
     assert ".swipe{display:none}" in text and ".swipe{display:block}" in text
+
+
+def test_client_todo_wraps_long_failing_case_ids_on_phones():
+    snap = build.load_snapshot(SNAP)
+    case = "tests/amsterdam/x.py::test_bal_invalid_bump_index_zero_encoding[fork_AmsterdamToBogotaAtTime15k-blockchain_test_engine-header_commits_to_canonical_rlp]"
+    item = {"kind": "run-fail", "eip": "8141", "clients": ["reth"], "failed": [case], "action": "fix"}
+    page = render.client_page_html("reth", snap, [], [item])
+    todo = re.search(r'<div class="q">.*?</div>', page).group(0)
+    assert f"<code>{render.short_test(case)}</code>" in todo
+    assert ".q code," in render.CSS and "{overflow-wrap:anywhere}" in render.CSS.split(".q code,")[1].split("\n")[0]

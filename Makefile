@@ -33,7 +33,7 @@ offline: venv
 	$(PY) -m eipproof.cli build --offline $(ARGS)
 
 serve:
-	cd site && python3 -m http.server $(PORT)
+	cd site && python3 -m http.server $(PORT) || { echo "Could not serve on port $(PORT). If it is busy, run: PORT=8766 make site"; exit 1; }
 
 site: offline
 	$(MAKE) serve
