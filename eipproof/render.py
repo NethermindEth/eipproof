@@ -610,7 +610,7 @@ def client_page_html(client, snap, cells, items):
     todo = [it for it in items if client in it["clients"]]
     todo_html = "".join(f'<div class="q"><a class="act" href="index.html#{it["eip"]}-{client}">{E(it["action"])}</a>'
                         f'<span class="k {STATE_CLASS[QUEUE_STATE[it["kind"]]]}">EIP-{it["eip"]} &middot; {E(QUEUE_WORD[it["kind"]])}</span> '
-                        f'{E(queue_detail(it, snap))}</div>' for it in todo) or '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
+                        f'{queue_detail(it, snap)}</div>' for it in todo) or '<p class="muted">Nothing to do: every tracked EIP passes on the newest tests.</p>'
     rows = "".join(f'<tr><th class="row">{a_local(eip_href(c["eip"]), "EIP-" + c["eip"])}<small>{E(eip_name(snap["eips"][c["eip"]]))}</small></th>'
                    f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{c["eip"]}-{client}">{E(headline_text(c))}</a></td>'
                    f'<td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>' for c in mine)
@@ -628,13 +628,13 @@ QUEUE_WORD = {"run-fail": "fails", "open-delta": "spec change untested", "stale-
 
 def queue_detail(it, snap):
     if it["kind"] == "run-fail":
-        return f'{len(it["failed"])} failing: ' + ", ".join(short_test(f) for f in it["failed"][:3])
+        return f'{len(it["failed"])} failing: ' + ", ".join(f"<code>{E(short_test(f))}</code>" for f in it["failed"][:3])
     if it["kind"] == "open-delta":
         delta = next(d for d in snap["eips"][it["eip"]]["deltas"] if d["commit"] == it["commit"])
-        return f'{it["commit"][:8]} {delta["subject"]}'
+        return E(f'{it["commit"][:8]} {delta["subject"]}')
     if it["kind"] == "run-missing":
-        return f'{MISSING_WORD[it["headline"]]} at {release_short(snap["newest_release"])}'
-    return f'last ran {release_short(it["release"])}'
+        return E(f'{MISSING_WORD[it["headline"]]} at {release_short(snap["newest_release"])}')
+    return E(f'last ran {release_short(it["release"])}')
 
 
 def a_local(href, text):
