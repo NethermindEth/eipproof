@@ -679,7 +679,7 @@ def feed_html(snap, rows, pending=()):
 
 
 def stale_banner(snap):
-    if snap.get("source") == "archive":
+    if snap.get("source") in ("archive", "snapshot"):
         return ""
     return f'<div class="strip age" id="stale" role="status" hidden data-taken="{E(snap["taken_at"])}"></div>'
 
@@ -795,7 +795,7 @@ def matrix_html(snap, cells):
     find = ('<div class="find" id="mf" hidden><label for="me">EIP</label> <input type="search" id="me" placeholder="number or name" autocomplete="off" oninput="mf()"> <label for="mc">Client</label> <select id="mc" onchange="mf()"><option value="">All clients</option>'
             + "".join(f'<option value="{c}">{E(config.CLIENT_LABEL[c])}</option>' for c in config.CLIENTS)
             + '</select> <label><input type="checkbox" id="hp" onchange="mf()"> Hide passing rows</label></div>')
-    intro = '<h1>EIP status by client <span class="muted">one row per EIP, one column per client</span></h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
+    intro = '<h1>EIP status by client</h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
     return intro + strip + cov + legend + toggle + find + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div><p class="muted" id="mf0" hidden>No rows match. Clear the EIP search or "Hide passing rows".</p>' + "".join(templates)
 
 
