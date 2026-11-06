@@ -262,7 +262,7 @@ def test_untested_sfi_cfi_eips_get_rows_but_no_cells(wide_site):
     root, cells = wide_site
     assert {c["eip"] for c in cells} == {"8141", "7906", "8250", "8151", "8272", "8298", "4758", "8253"}
     page = (root / "index.html").read_text()
-    order = [m for m in re.findall(r'<th class="row"><a href="eip-(\d+)\.html"', page)]
+    order = [m for m in re.findall(r'<th class="row" scope="row"><a href="eip-(\d+)\.html"', page)]
     assert order == ["8141", "7805", "7906", "8250", "8151", "8272", "8298", "4758", "8253", "8077"]
     row = re.search(r'<tr class="nt" id="r-7805">.*?</tr>', page).group(0)
     assert "no tests yet" in row and "checked tests/bogota/eip7805_*" in row and "v2.0.0" in row
@@ -537,7 +537,7 @@ def test_start_page_answers_three_questions_from_the_same_snapshot(wide_site):
     page = (root / "start.html").read_text()
     clients = start_block(page, 0)
     assert all(f'href="client-{c}.html"' in clients for c in config.CLIENTS)
-    besu = re.search(r'<tr><th class="row"><a href="client-besu.html">Besu</a></th><td>(.*?)</td></tr>', clients).group(1)
+    besu = re.search(r'<tr><th class="row" scope="row"><a href="client-besu.html">Besu</a></th><td>(.*?)</td></tr>', clients).group(1)
     assert besu == "run v2.0.0 (8 EIPs)"
     reth = re.search(r'<a href="client-reth.html">Reth</a></th><td>(.*?)</td>', clients).group(1)
     assert "fix client (1 EIP)" in reth
@@ -569,3 +569,28 @@ def test_start_page_has_no_test_team_link_when_nothing_is_owed():
     page = render.start_html(snap, [], [])
     assert "queue.html?owner=eels" not in page and "nothing for the test team" in start_block(page, 2)
     assert start_block(page, 0).count("nothing to do") == len(config.CLIENTS)
+
+
+def html_pages(root):
+    return [p for p in root.rglob("*.html")]
+
+
+def test_every_page_has_exactly_one_h1(live_site):
+    for p in html_pages(live_site):
+        assert p.read_text().count("<h1") == 1, p
+
+
+def test_every_table_header_has_a_scope(live_site):
+    for p in html_pages(live_site):
+        heads = re.findall(r"<th\b[^>]*>", p.read_text())
+        assert all("scope=" in h for h in heads), (p, [h for h in heads if "scope=" not in h][:3])
+
+
+def test_matrix_legend_comes_before_the_table(live_site):
+    text = (live_site / "index.html").read_text()
+    assert text.index('class="legend"') < text.index('<table class="m"')
+
+
+def test_pages_carry_no_inline_styles(live_site):
+    for p in html_pages(live_site):
+        assert ' style="' not in p.read_text(), p
