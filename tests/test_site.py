@@ -628,3 +628,10 @@ def test_matrix_filter_offers_each_client_and_hide_passing(live_site):
 def test_pages_use_real_plurals(live_site):
     for p in html_pages(live_site):
         assert "(s)" not in p.read_text(), (p, re.findall(r".{30}\(s\)", p.read_text())[:2])
+
+
+def test_untested_rows_keep_their_full_span_for_the_client_filter(wide_site):
+    page = (wide_site[0] / "index.html").read_text()
+    spans = re.findall(r'<td class="c none" colspan="(\d+)" data-span="(\d+)"', page)
+    assert spans and all(a == b == str(len(config.CLIENTS)) for a, b in spans)
+    assert "x.colSpan=c?1:+x.dataset.span" in page

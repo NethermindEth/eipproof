@@ -285,14 +285,14 @@ function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&
 addEventListener('keydown',e=>{if(e.key==='Escape')closeD();else if((e.key==='Enter'||e.key===' ')&&e.target.matches('td.c')){e.preventDefault();e.target.click()}});
 addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
 const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
-const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
-const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const m=document.getElementById('mf');if(m){m.hidden=false;const mc=document.getElementById('mc');if(mc.querySelector('option[value="'+CSS.escape(p.get('client')||'')+'"]'))mc.value=p.get('client')||'';document.getElementById('hp').checked=p.get('hide')==='pass';mf()}
+const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(m&&c&&c.closest('[hidden]')){document.getElementById('mc').value='';document.getElementById('hp').checked=false;mf()}if(h&&document.getElementById('t-'+h))openD(h,c);else if(c){c.classList.add('sel');c.scrollIntoView({block:'center'})}
+const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}});
 function staleText(taken,now){const h=(now-Date.parse(taken))/36e5;return h>6?'data from snapshot '+taken.slice(0,16).replace('T',' ')+' UTC, '+Math.floor(h)+' h old: newer runs or spec changes may exist':''}
 function filt(v){document.querySelectorAll('#feed .rev').forEach(r=>r.hidden=!!v&&r.dataset.eip!==v);history.replaceState(null,'',v?'#eip-'+v:location.pathname)}
-function mf(){const c=document.getElementById('mc').value,h=document.getElementById('hp').checked;document.querySelectorAll('table.m [data-cl]').forEach(x=>x.hidden=!!c&&x.dataset.cl!==c);
-document.querySelectorAll('table.m tr[id^="r-"]').forEach(r=>{const t=[...r.querySelectorAll('td.c')].filter(x=>!c||x.dataset.cl===c||!x.dataset.cl);r.hidden=h&&t.length>0&&t.every(x=>x.classList.contains('ok'))});
+function mf(){const c=document.getElementById('mc').value,h=document.getElementById('hp').checked;document.querySelectorAll('table.m [data-cl]').forEach(x=>x.hidden=!!c&&x.dataset.cl!==c);document.querySelectorAll('table.m td[data-span]').forEach(x=>x.colSpan=c?1:+x.dataset.span);
+document.querySelectorAll('table.m tr[id^="r-"]').forEach(r=>{const t=[...r.querySelectorAll('td.c[data-cl]')].filter(x=>!c||x.dataset.cl===c);r.hidden=h&&t.length>0&&t.every(x=>x.classList.contains('ok'))});
 document.getElementById('mf0').hidden=!!document.querySelector('table.m tr[id^="r-"]:not([hidden])');
 const u=new URL(location.href);if(c)u.searchParams.set('client',c);else u.searchParams.delete('client');if(h)u.searchParams.set('hide','pass');else u.searchParams.delete('hide');history.replaceState(null,'',u)}
 function copyMd(b){const t=b.nextElementSibling,l=b.dataset.l||(b.dataset.l=b.textContent),show=()=>{t.hidden=false;t.select()};if(!navigator.clipboard)return show();
@@ -768,7 +768,7 @@ def matrix_html(snap, cells):
         info = snap["eips"][eip]
         if not info.get("test_dir"):
             rows.append(f'<tr class="nt" id="r-{eip}"><th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}</th>'
-                        f'<td class="c none" colspan="{len(config.CLIENTS)}" data-mark="no-tests"><div class="st"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></div>'
+                        f'<td class="c none" colspan="{len(config.CLIENTS)}" data-span="{len(config.CLIENTS)}" data-mark="no-tests"><div class="st"><div class="hl">no tests yet</div><div class="sub">{E(no_tests_text(info, snap))}</div></div>'
                         f'{action_html(None, "")}</td>{eels_cell(eip, info, [], snap)}</tr>')
             continue
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{plural(len(info["deltas"]), "spec change")} since EELS</div>' if info["deltas"] else ""
