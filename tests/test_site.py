@@ -635,3 +635,10 @@ def test_untested_rows_keep_their_full_span_for_the_client_filter(wide_site):
     spans = re.findall(r'<td class="c none" colspan="(\d+)" data-span="(\d+)"', page)
     assert spans and all(a == b == str(len(config.CLIENTS)) for a, b in spans)
     assert "x.colSpan=c?1:+x.dataset.span" in page
+
+
+def test_client_page_names_untracked_failures_in_plain_words(live_site):
+    page = (live_site / "client-nethermind.html").read_text()
+    assert "outside the tracked EIP dirs" not in page
+    assert "in tests for EIPs this site does not track, not counted above" in page
+    assert "outside EIP dirs" not in (live_site / "index.html").read_text()
