@@ -874,7 +874,7 @@ def queue_html(snap, cells):
                    f'{E(it["verb"])} &middot; {E(OWNER_LABEL[it["owner"]])}</a>{body}'
                    + (f'<div class="muted">next: {E(it["action"])}</div>' if it["action"] != it["verb"] else "") + '</div>')
     out.append("</div>")
-    return "".join(out), items
+    return "".join(out), items, shown
 
 
 def by_verb(items):
@@ -934,7 +934,7 @@ def site(snap, attestations, out_dir):
     cells = cells_for(snap, attestations)
     with open(os.path.join(out_dir, "index.html"), "w") as f:
         f.write(page(f"{config.NAME} · {config.FORK}", "matrix", matrix_html(snap, cells), snap))
-    qbody, items = queue_html(snap, cells)
+    qbody, items, shown = queue_html(snap, cells)
     with open(os.path.join(out_dir, "queue.html"), "w") as f:
         f.write(page(f"{config.NAME} · queue", "queue", qbody, snap))
     with open(os.path.join(out_dir, "start.html"), "w") as f:
@@ -954,6 +954,8 @@ def site(snap, attestations, out_dir):
                 json.dump(handoff.brief(c, snap, why(c, snap)), f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "api", "eips.json"), "w") as f:
         json.dump(eips_doc(snap), f, indent=1, sort_keys=True)
+    with open(os.path.join(out_dir, "api", "queue.json"), "w") as f:
+        json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "source": snap.get("source", "live"), "items": shown}, f, indent=1, sort_keys=True, default=str)
     for eip in index.row_order(snap["eips"]):
         with open(os.path.join(out_dir, eip_href(eip)), "w") as f:
             f.write(page(f"{config.NAME} · EIP-{eip}", "", eip_page_html(eip, snap, cells, attestations), snap))
