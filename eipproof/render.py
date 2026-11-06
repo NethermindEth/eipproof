@@ -234,7 +234,7 @@ main{padding:20px 28px}.strip{background:#1a1320;border:1px solid #3b1d2a;border
 table.m{border-collapse:separate;border-spacing:6px;width:100%}th{color:var(--mut);font-weight:600;font-size:13px;text-align:left;padding:0 8px}
 th.row{width:150px}th.row a{color:var(--fg);font-size:15px}th.row small{display:block;color:var(--mut);font-weight:400;font-size:12.5px}th small{font-size:12px}
 .wrap{overflow-x:auto}table td.c:focus-visible,a:focus-visible,.x:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-h1{text-wrap:balance;font-size:22px;margin:4px 0 12px}h1 .muted{font-size:15px;font-weight:400}.badge.pend{background:#1f2937;color:var(--mut)}.rev,p{overflow-wrap:anywhere}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
+h1{text-wrap:balance;font-size:22px;margin:4px 0 12px}h1 .muted{font-size:15px;font-weight:400}.badge.pend{background:#1f2937;color:var(--mut)}.rev{overflow-wrap:anywhere}p{overflow-wrap:break-word}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
 td.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;vertical-align:top}
 td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outline:2px solid #e5e7eb;outline-offset:-1px}
 .hl{font-weight:700;font-size:15px}.ok .hl,.hl.ok{color:var(--ok)}.warn .hl,.hl.warn{color:var(--warn)}.bad .hl{color:var(--bad)}.stale .hl{color:var(--stale)}.none .hl{color:var(--mut)}
@@ -709,7 +709,7 @@ def asof_href(snap):
 
 
 def scoped(body):
-    return re.sub(r'<th(?![^>]*scope=)([^>]*)>', lambda m: f'<th{m.group(1)} scope="{"row" if "class=\"row" in m.group(1) else "col"}">', body)
+    return re.sub(r'<th\b(?![^>]*scope=)([^>]*)>', lambda m: f'<th{m.group(1)} scope="{"row" if "class=\"row" in m.group(1) else "col"}">', body)
 
 
 def page(title, nav, body, snap):
