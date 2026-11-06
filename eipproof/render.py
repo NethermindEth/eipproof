@@ -532,7 +532,7 @@ def linked_html(eip, snap, attestations=()):
     spec = (f'<h3>Open spec PRs</h3><p class="muted">open PRs in EIPs and execution-specs that name this EIP; shown for reference, they never change a verdict</p>'
             f'<div class="card">{pend}</div>' if pend else "")
     if snap.get("code_status") is not None:
-        return (spec + f'<h3>Code and PRs</h3><p class="muted">code merged: at least {codepr.MIN_CODE_FILES} files named for EIP-{eip} on the default branch, '
+        return (spec + f'<h3>Code and PRs</h3><p class="muted">code merged: at least {codepr.MIN_CODE_FILES} files on the default branch name EIP-{eip} in path or contents, '
                 f'or a merged PR whose title names it; spec changed since: a spec change after the last merged PR; '
                 f'PRs merged since {E(merged_since(snap, "code_status"))}; a hint from names, it never changes a test verdict</p>'
                 f'<div class="wrap"><table class="m list" data-mark="code-status">{code_html(snap, eip, attestations)}</table></div>')
@@ -946,7 +946,7 @@ def site(snap, attestations, out_dir):
                     "constants": {d["commit"]: d.get("constants", []) for d in info["deltas"]}}, eels_item(eip, snap))
     if snap.get("code_status") is not None:
         with open(os.path.join(out_dir, "api", "code.json"), "w") as f:
-            json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "rule": "hint from file and PR-title names; never changes a test verdict",
+            json.dump({"fork": config.FORK, "snapshot": snap["taken_at"], "rule": "hint from file paths, file contents and PR titles that name the EIP; never changes a test verdict",
                        "eips": {eip: codepr.cells(snap, eip, attestations) for eip in index.row_order(snap["eips"])}}, f, indent=1, sort_keys=True)
     with open(os.path.join(out_dir, "releases.html"), "w") as f:
         f.write(page(f"{config.NAME} · test releases", "releases", releases_html(snap), snap))

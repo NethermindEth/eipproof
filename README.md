@@ -26,12 +26,12 @@ GitHub repo traffic, includes maintainers; not site visits. Recorded once a day 
 
 Each EIP page also shows one line per client: what the client's own repo says about the EIP. EL EIPs list the 5 EL clients; CL EIPs list Lighthouse, Prysm, Lodestar, Nimbus and Grandine; EIPs on both layers list all 10. `api/code.json` has the same data.
 
-- **code merged**: at least 2 files on the default branch have the EIP in their path (`Eip8141`, `eip_8141`, `eip-8141`), or a PR whose title names the EIP was merged into the default branch. A PR merged into a feature branch counts only after its merge commit reaches the default branch.
+- **code merged**: at least 2 files on the default branch name the EIP in their path or contents (`Eip8141`, `eip_8141`, `EIP-8141`, `IsEip8141Enabled`), or a PR whose title names the EIP was merged into the default branch. Contents are read with `git grep` on a shallow clone at the commit shown, so the count is reproducible and uses no API quota. A PR merged into a feature branch counts only after its merge commit reaches the default branch.
 - **spec changed since**: a spec change, not attested editorial, was merged after the client's last merged PR.
 - **PR open**: an open PR names the EIP, or a merged one has not reached the default branch yet.
-- **no named code or PR**: no file and no PR title in the window names the EIP. CL clients mostly name code by fork (`gloas`), not by EIP, so this is weak evidence there. A few EIPs have a known alias (EIP-7732 is `ePBS`) in `config.EIP_ALIASES`.
+- **no named code or PR**: no file path, no file content and no PR title in the window names the EIP. Code that names only the fork (`gloas`) is not counted, so this is weak evidence for CL clients. A few EIPs have a known alias (EIP-7732 is `ePBS`) in `config.EIP_ALIASES`.
 
-A bare number is not enough: hex blobs, genesis and lock files contain it too. This line never changes a cell of the matrix; only tests do.
+A bare number is not enough: hex blobs, genesis and lock files contain it too. A match needs the `EIP` word next to the number, and lock files, `go.sum` and genesis files are skipped. This line never changes a cell of the matrix; only tests do.
 
 ## Run it
 
@@ -89,4 +89,4 @@ For a change with no behaviour, use `--editorial "<reason>"` instead.
 
 ## Credits
 
-The code and PR status rules (named files on the default branch, merged PRs including ones that landed through a feature branch, spec changes after the last PR) and the CL client list are ported from Łukasz Rozmej's core-dev-dashboard and re-implemented here in Python.
+The code and PR status rules (files on the default branch whose path or contents name the EIP, merged PRs including ones that landed through a feature branch, spec changes after the last PR) and the CL client list are ported from Łukasz Rozmej's core-dev-dashboard and re-implemented here in Python.
