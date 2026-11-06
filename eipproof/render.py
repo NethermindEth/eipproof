@@ -234,7 +234,7 @@ main{padding:20px 28px}.strip{background:#1a1320;border:1px solid #3b1d2a;border
 table.m{border-collapse:separate;border-spacing:6px;width:100%}th{color:var(--mut);font-weight:600;font-size:13px;text-align:left;padding:0 8px}
 th.row{width:150px}th.row a{color:var(--fg);font-size:15px}th.row small{display:block;color:var(--mut);font-weight:400;font-size:12.5px}th small{font-size:12px}
 .wrap{overflow-x:auto}table td.c:focus-visible,a:focus-visible,.x:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
-h2{text-wrap:balance;font-size:22px}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
+h1{text-wrap:balance;font-size:22px;margin:4px 0 12px}h1 .muted{font-size:15px;font-weight:400}.badge.pend{background:#1f2937;color:var(--mut)}.rev,p{overflow-wrap:anywhere}.q code,.cand code,.att code,.fails code,.kv code{overflow-wrap:anywhere}
 td.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;vertical-align:top}
 td.c:hover{border-color:#475569;transform:translateY(-1px)}table td.c.sel{outline:2px solid #e5e7eb;outline-offset:-1px}
 .hl{font-weight:700;font-size:15px}.ok .hl,.hl.ok{color:var(--ok)}.warn .hl,.hl.warn{color:var(--warn)}.bad .hl{color:var(--bad)}.stale .hl{color:var(--stale)}.none .hl{color:var(--mut)}
@@ -545,7 +545,7 @@ def untested_page_html(eip, snap, attestations):
     info = snap["eips"][eip]
     timeline = "".join(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
                        f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)}</div>' for rev in reversed(info["revisions"]))
-    return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h2>{stage_html(info, snap)}'
+    return (f'<h1>EIP-{eip} <span class="muted">{E(info.get("title") or "")}</span></h1>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local("api/eips.json", "JSON")}</p>'
             f'<div class="card" data-mark="no-tests"><b>no tests yet</b> <span class="muted">{E(no_tests_text(info, snap))}. '
@@ -573,7 +573,7 @@ def eip_page_html(eip, snap, cells, attestations):
         timeline.append(f'<div class="rev"><code>{a(gh(config.EIPS_REPO, "commit", rev["commit"]), rev["commit"][:8])}</code> '
                         f'<span class="muted">{E(rev["date"][:10])}</span> {E(rev["subject"])}{rev_note(eip, rev, info)} <span class="pill {STATE_CLASS[st]}">{E(word)}</span>'
                         f'{tests_line(rev, info, snap)}{consts}</div>')
-    return (f'<h2>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h2>{stage_html(info, snap)}'
+    return (f'<h1>EIP-{eip} <span class="muted">{E(info.get("title") or eip_name(info))}</span></h1>{stage_html(info, snap)}'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.EIPS_REPO}/blob/{config.EIPS_BRANCH}/{info["path"]}", "EIP text")} &middot; '
             f'{a(f"{config.GITHUB}/{config.EELS_REPO}/tree/{info["pin"]["release"].replace("@", "%40")}/{info["test_dir"]}", "EELS tests")} &middot; '
             f'{a_local(f"changes.html#eip-{eip}", "all spec changes")} &middot; {a_local(f"api/eip/{eip}.json", "JSON")}</p>'
@@ -606,7 +606,7 @@ def client_page_html(client, snap, cells, items):
     rows = "".join(f'<tr><th class="row">{a_local(eip_href(c["eip"]), "EIP-" + c["eip"])}<small>{E(eip_name(snap["eips"][c["eip"]]))}</small></th>'
                    f'<td class="c {STATE_CLASS[c["headline"]]}"><a class="hl" href="index.html#{c["eip"]}-{client}">{E(headline_text(c))}</a></td>'
                    f'<td class="why-cell"><p>{E(why(c, snap))}</p></td></tr>' for c in mine)
-    return (f'<h2>{E(label)} <span class="muted">{counts_html(mine)}</span></h2>'
+    return (f'<h1>{E(label)} <span class="muted">{counts_html(mine)}</span></h1>'
             f'<p class="muted">{a(f"{config.GITHUB}/{config.CLIENT_REPO[client]}", config.CLIENT_REPO[client])} &middot; {a_local(f"api/client/{client}.json", "JSON")}</p>'
             f'<h3>To do, most important first</h3>{todo_html}'
             f'<h3>Run</h3>{receipt}'
@@ -663,7 +663,7 @@ def feed_html(snap, rows, pending=()):
     items = "".join(f'<div class="rev" data-eip="{r["eip"]}">{a_local(eip_href(r["eip"]), "EIP-" + r["eip"])} '
                     f'<code>{a(r["url"], r["commit"][:8])}</code> <span class="muted">{E(r["date"][:10])}</span> {E(r["subject"])} '
                     f'<span class="pill {STATE_CLASS[r["state"]]}">{E(r["word"])}</span>{feed_tests(r["tests"])}</div>' for r in rows)
-    return (f'<h2>Spec changes <span class="muted">every change to a tracked EIP text, newest first</span></h2>'
+    return (f'<h1>Spec changes <span class="muted">every change to a tracked EIP text, newest first</span></h1>'
             f'<p class="muted">proven: a spec with the change undone fails a test, and EELS has that test &middot; untested: no proof yet '
             f'&middot; wording only: no behaviour &middot; older: EELS already implements a later text &middot; {a_local("api/changes.json", "JSON")}</p>'
             f'<p><label for="f">Show</label> <select id="f" onchange="filt(this.value)">{opts}</select></p>'
@@ -708,6 +708,10 @@ def asof_href(snap):
     return snap.get("asof") or build.permalink(snap["taken_at"])
 
 
+def scoped(body):
+    return re.sub(r'<th(?![^>]*scope=)([^>]*)>', lambda m: f'<th{m.group(1)} scope="{"row" if "class=\"row" in m.group(1) else "col"}">', body)
+
+
 def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     links = "".join(f'<a href="{href}" class="{"on" if key == nav else ""}">{E(label)}</a>' for key, href, label in
@@ -717,7 +721,7 @@ def page(title, nav, body, snap):
             f'<header class="top"><div class="brand">{E(config.NAME)}<span>.</span></div>{forks_nav(root)}<nav>{links}</nav>'
             f'<div class="meta">fork <b>{E(config.FORK)}</b> &middot; EL &middot; newest EELS release {a(snap["release_url"], snap["newest_release"])}<br>'
             f'as of <a href="{E(asof_href(snap))}" title="permalink to this snapshot">{E(snap["taken_at"])}</a> &middot; {a(snap["listing_url"], "hive listing")} ({snap["listing_rows"]} runs)</div></header>'
-            f'<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{body}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{scoped(body)}</main><aside id="d" role="dialog" aria-label="Cell evidence"><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):
@@ -756,7 +760,7 @@ def matrix_html(snap, cells):
                         f'{action_html(None, "")}</td>{eels_cell(eip, info, [], snap)}</tr>')
             continue
         badge = f'<div class="badge" title="EIP text changed after the version EELS implements">{len(info["deltas"])} spec change(s) since EELS</div>' if info["deltas"] else ""
-        pend = f'<div class="badge" style="background:#1f2937;color:#8b95a7" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
+        pend = f'<div class="badge pend" title="open EIP PRs, not spec yet">{len(info["pending"])} open PR(s), not counted</div>' if info["pending"] else ""
         tr = [f'<th class="row">{a_local(eip_href(eip), "EIP-" + eip)}<small>{E(eip_name(info))}</small>{stage_html(info, snap)}{badge}{pend}</th>']
         for client in config.CLIENTS:
             c = by[(eip, client)]
@@ -776,8 +780,8 @@ def matrix_html(snap, cells):
     cov = coverage_html(snap) if snap.get("meta") else ""
     toggle = ('<div class="tog" role="group" aria-label="Cell view"><button type="button" id="v-st" aria-pressed="true" onclick="view(\'st\')">Status</button>'
               '<button type="button" id="v-ac" aria-pressed="false" onclick="view(\'ac\')">Next action</button></div>')
-    intro = '<p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
-    return intro + strip + cov + toggle + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + legend + "".join(templates)
+    intro = '<h1>EIP status by client <span class="muted">one row per EIP, one column per client</span></h1><p class="muted">New here? <a href="start.html">Start here</a>: three questions, a minute each.</p>'
+    return intro + strip + cov + legend + toggle + f'<div class="wrap"><table class="m">{head}{"".join(rows)}</table></div>' + "".join(templates)
 
 
 def action_html(verb, owner):
@@ -826,7 +830,7 @@ def queue_html(snap, cells):
     kind_rank = {"run-fail": 0, "eels-update": 1, "open-delta": 2, "stale-release": 3, "run-missing": 4, "no-tests": 5}
     shown = sorted(items + eels_items(snap),
                    key=lambda it: (order.index(it["eip"]), kind_rank[it["kind"]]))
-    out = ['<h2 style="margin:4px 0 12px">Work queue <span class="muted" style="font-size:14px;font-weight:400">each item is one next action, highest-ranked EIP first</span></h2>',
+    out = ['<h1>Work queue <span class="muted">each item is one next action, highest-ranked EIP first</span></h1>',
            owner_filter(shown), '<div id="queue">']
     for i, it in enumerate(shown, 1):
         clients = ", ".join(config.CLIENT_LABEL[c] for c in it["clients"])
@@ -901,7 +905,7 @@ def start_html(snap, cells, items):
         body = '<p>nothing for the test team</p>'
     team = start_section("What do I tell the test team?",
                          "Each item names an EIP and the tests it needs. Every EIP page has a Copy as Markdown button for the message.", body)
-    return (f'<h2>Start here</h2><p class="muted">Three questions a core dev asks, a minute each. Every number comes from the snapshot shown at the top.</p>'
+    return (f'<h1>Start here</h1><p class="muted">Three questions a core dev asks, a minute each. Every number comes from the snapshot shown at the top.</p>'
             f'{clients}{eips}{team}')
 
 
@@ -980,7 +984,7 @@ def divergence_cell(cell):
 
 
 def divergences_html(doc):
-    head = (f'<h2>Divergences <span class="muted">client constants that differ from the EIP text</span></h2>'
+    head = (f'<h1>Divergences <span class="muted">client constants that differ from the EIP text</span></h1>'
             f'<p class="muted">each value is read from the client source at the shown commit and compared with the constants table of the EIP on '
             f'{E(config.EIPS_BRANCH)}; a divergence is <b>suspect</b> until a hive run of that client fails tests of that EIP, then <b>confirmed</b>; '
             f'a suspect may be an old branch or a later spec change &middot; {a_local("api/divergences.json", "JSON")}</p>')
@@ -1029,7 +1033,7 @@ def prs_doc(snap, cells):
 
 def prs_html(doc):
     label = config.CLIENT_LABEL.get(doc.get("client"), doc["repo"])
-    head = (f'<h2>Open {E(label)} PRs <span class="muted">that name a tracked EIP or use one of its spec constants</span></h2>'
+    head = (f'<h1>Open {E(label)} PRs <span class="muted">that name a tracked EIP or use one of its spec constants</span></h1>'
             f'<p class="muted">read from {a(f"{config.GITHUB}/{doc["repo"]}/pulls", doc["repo"])} on each rebuild: the title, the body and the changed lines of each open PR; '
             f'a match says the PR touches the EIP, not that it is correct &middot; run <code>{E(config.NAME)} pr-impact {E(doc["repo"])} &lt;pr&gt;</code> '
             f'for one PR &middot; {a_local("api/prs.json", "JSON")}</p>')
@@ -1113,8 +1117,8 @@ def releases_html(snap):
                            f'<span class="muted">{E(r["release"] or "release not in sim log")} &middot; pass {r["ntests"] - r["fails"]}/{r["ntests"]}</span></div>'
                            for r in doc["other_runs"]) + "</div>")
     if not doc["releases"]:
-        return '<h2>Test releases</h2><p class="muted">this snapshot has no release list</p>'
-    return (f'<h2>Test releases <span class="muted">each {E(config.RELEASE_PREFIX)}* release and the {E(config.SIMULATOR)} runs that used it in hive</span></h2>'
+        return '<h1>Test releases</h1><p class="muted">this snapshot has no release list</p>'
+    return (f'<h1>Test releases <span class="muted">each {E(config.RELEASE_PREFIX)}* release and the {E(config.SIMULATOR)} runs that used it in hive</span></h1>'
             f'<p class="muted">a cell shows the newest run of that client on that release; "in matrix" marks the run the matrix uses &middot; '
             f'{a_local("api/releases.json", "JSON")}</p>'
             f'<div class="wrap"><table class="m list">{head}{"".join(rows)}</table></div>{other}')
@@ -1126,7 +1130,7 @@ def history_html(entries):
         link = a_local(e["href"], e["taken_at"]) if e.get("href") else a(e["json"], e["taken_at"])
         items.append(f'<div class="rev">{link} <span class="muted">newest release {E(release_short(e["newest_release"]))} &middot; '
                      f'{e["runs"]} client run(s)</span>{" " + a(e["json"], "JSON") if e.get("href") and e.get("json") else ""}</div>')
-    return (f'<h2>Snapshot history <span class="muted">one entry per change in the data, newest first</span></h2>'
+    return (f'<h1>Snapshot history <span class="muted">one entry per change in the data, newest first</span></h1>'
             f'<p class="muted">each link opens the site as it was for that snapshot, shown with the current code and proofs; '
             f'older snapshots link to their JSON on the {a(gh(config.SELF_REPO, "tree", config.DATA_BRANCH), config.DATA_BRANCH)} branch</p>'
             f'<div class="card">{"".join(items)}</div>')
