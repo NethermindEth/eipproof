@@ -415,7 +415,7 @@ table.list td.c.ok{background:#f0f8f5}table.list td.c.bad{background:#fdf1ec}tab
 table.list td.c a.hl{font-weight:600;text-decoration:none}
 table.list th.row{font-weight:600;width:180px;vertical-align:top}
 table.list th small,table.m th.row small{display:block;font-weight:400;color:var(--mut);font-size:12px}
-.sub{color:var(--mut);font-size:12px}
+.sub{color:var(--mut);font-size:12px;overflow-wrap:anywhere}
 .swipe{display:none}
 .empty{padding:16px}
 .scrim{position:fixed;inset:0;z-index:45;background:rgba(20,23,28,.32)}
