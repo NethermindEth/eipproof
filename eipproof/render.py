@@ -566,11 +566,13 @@ function own(v){document.querySelectorAll('#queue .q').forEach(q=>q.hidden=!!v&&
 addEventListener('click',e=>{const t=e.target;if(!t.closest)return;const o=t.closest('[data-open]');if(o){e.preventDefault();openD(o.dataset.open,o);return}
 if(t.closest('[data-close]')||t.classList.contains('scrim')){closeD();return}
 document.querySelectorAll('details.pop[open]').forEach(p=>{if(!p.contains(t))p.open=false})});
-addEventListener('keydown',e=>{if(e.key!=='Escape')return;const p=document.querySelector('details.pop[open]');if(p){p.open=false;p.querySelector('summary').focus()}else closeD()});
+addEventListener('keydown',e=>{const d=document.getElementById('d');if(e.key==='Tab'&&d&&!d.hidden){const f=[...d.querySelectorAll('a[href],button,summary,[tabindex]')].filter(x=>x.offsetParent),a=f[0],z=f[f.length-1];
+if(!d.contains(document.activeElement)){e.preventDefault();a.focus()}else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}return}
+if(e.key!=='Escape')return;const p=document.querySelector('details.pop[open]');if(p){p.open=false;p.querySelector('summary').focus()}else closeD()});
 addEventListener('load',()=>{const p=new URLSearchParams(location.search);if(p.get('view')==='action'&&document.getElementById('v-ac'))view('ac');
 const o=document.getElementById('own');if(o&&p.get('owner')&&o.querySelector('option[value="'+CSS.escape(p.get('owner'))+'"]')){o.value=p.get('owner');own(o.value)}
 const m=document.getElementById('mf');if(m){m.hidden=false;const mc=document.getElementById('mc');if(mc.querySelector('option[value="'+CSS.escape(p.get('client')||'')+'"]'))mc.value=p.get('client')||'';document.getElementById('hp').checked=p.get('hide')==='pass';document.getElementById('me').value=p.get('eip')||'';mf()}
-const h=decodeURIComponent(location.hash.slice(1)),c=h&&document.getElementById('c-'+h);if(h&&!openD(h,c)&&c)c.scrollIntoView({block:'center'});
+const h=location.hash.slice(1),c=h&&document.getElementById('c-'+h);if(h&&!openD(h,c)&&c)c.scrollIntoView({block:'center'});
 const f=document.getElementById('f');if(f&&h.startsWith('eip-')&&f.querySelector('option[value="'+h.slice(4)+'"]')){f.value=h.slice(4);filt(f.value)}
 const s=document.getElementById('stale'),t=s&&staleText(s.dataset.taken,Date.now());if(t){s.textContent=t;s.hidden=false}
 const g=document.getElementById('age'),k=g&&g.closest('[data-taken]');if(k){g.textContent=ageText(k.dataset.taken,Date.now());if(Date.now()-Date.parse(k.dataset.taken)>216e5)k.classList.replace('ok','old')}
@@ -1103,7 +1105,7 @@ def page(title, nav, body, snap):
     root = "../../" if snap.get("source") == "archive" else ""
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{E(title)}</title><style>{CSS}</style></head><body>'
             f'{header_html(nav, snap, root)}<main>{fallback_banner(snap)}{archived_banner(snap)}{stale_banner(snap)}{scoped(body)}</main>'
-            f'<div class="scrim" hidden></div><aside id="d" role="dialog" aria-label="Evidence" hidden><div id="dc"></div></aside><script>{JS}</script></body></html>')
+            f'<div class="scrim" hidden></div><aside id="d" role="dialog" aria-modal="true" aria-label="Evidence" hidden><div id="dc"></div></aside><script>{JS}</script></body></html>')
 
 
 def cells_for(snap, attestations):

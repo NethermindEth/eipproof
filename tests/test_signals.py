@@ -75,6 +75,17 @@ def g5(root, snap):
     text = read(root, "index.html")
     assert f'data-taken="{snap["taken_at"]}"' in header(text) and 'id="age"' in header(text)
     assert 'id="stale"' in text
+    assert 'id="fallback"' not in text
+
+
+def test_offline_build_says_the_live_rebuild_did_not_run(tmp_path):
+    snap = build.load_snapshot(SNAP)
+    snap["source"] = "snapshot"
+    cli.write_site(snap, str(tmp_path))
+    for name in ("index.html", "eip-8141.html", "client-reth.html", "queue.html"):
+        main = read(tmp_path, name).split("<main>")[1]
+        assert main.startswith('<div class="strip" id="fallback" role="alert">'), name
+        assert "the live rebuild did not run" in main, name
 
 
 def g6(root, snap):
@@ -249,7 +260,26 @@ def c5(root, snap):
 
 def c6(root, snap):
     text = visible(read(root, "client-reth.html"))
-    assert "Client PRs" in text
+    section = text.split("Client PRs", 1)[1]
+    assert "paradigmxyz/reth" in section and "not collected in this snapshot" in section
+
+
+def test_drawer_is_a_modal_dialog(site):
+    root, _ = site
+    for name in ("index.html", "eip-8141.html", "client-reth.html"):
+        assert '<aside id="d" role="dialog" aria-modal="true" aria-label="Evidence" hidden>' in read(root, name), name
+
+
+def test_drawer_keeps_tab_focus_inside(site):
+    root, _ = site
+    script = read(root, "index.html").rsplit("<script>", 1)[1]
+    assert "e.key==='Tab'" in script
+
+
+def test_bad_hash_escape_does_not_stop_page_setup(site):
+    root, _ = site
+    script = read(root, "index.html").rsplit("<script>", 1)[1]
+    assert "decodeURIComponent(location.hash" not in script
 
 
 def others(root, snap):
