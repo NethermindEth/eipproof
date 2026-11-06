@@ -99,7 +99,7 @@
     }
    },
    "text": "fail 81/82",
-   "why": "1 test(s) for this EIP failed in Reth's run on v2.0.0. Next: fix the client or report the test."
+   "why": "1 test for this EIP failed in Reth's run on v2.0.0. Next: fix the client or report the test."
   },
   {
    "client": "ethrex",

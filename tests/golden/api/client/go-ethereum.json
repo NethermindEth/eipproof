@@ -164,7 +164,7 @@
     }
    },
    "text": "pass 307/307",
-   "why": "All 307 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+   "why": "All 307 tests for this EIP passed on v2.0.0. The EIP text changed 1 time since the version EELS implements. For each change, a spec with the change undone fails 1 case in EELS, and those cases pass here."
   },
   {
    "client": "go-ethereum",
@@ -285,7 +285,7 @@
     }
    },
    "text": "pass 184/184",
-   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time(s) since the version EELS implements. For each change, a spec with the change undone fails 1 case(s) in EELS, and those cases pass here."
+   "why": "All 184 tests for this EIP passed on v2.0.0. The EIP text changed 1 time since the version EELS implements. For each change, a spec with the change undone fails 1 case in EELS, and those cases pass here."
   },
   {
    "client": "go-ethereum",

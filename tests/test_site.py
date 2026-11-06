@@ -594,3 +594,37 @@ def test_matrix_legend_comes_before_the_table(live_site):
 def test_pages_carry_no_inline_styles(live_site):
     for p in html_pages(live_site):
         assert ' style="' not in p.read_text(), p
+
+
+def test_header_links_every_client_page(live_site):
+    for p in html_pages(live_site):
+        top = p.read_text().split("</header>")[0]
+        for c in config.CLIENTS:
+            assert render.client_href(c) in top, (p, c)
+
+
+def test_nav_names_the_matrix_status(live_site):
+    top = (live_site / "start.html").read_text().split("</header>")[0]
+    assert '<a href="index.html" class="">Status</a>' in top
+    assert ">Matrix<" not in top
+
+
+def test_matrix_client_columns_carry_their_client(live_site):
+    text = (live_site / "index.html").read_text()
+    for c in config.CLIENTS:
+        assert len(re.findall(rf'<td class="c [a-z]+" id="c-\d+-{c}" data-cl="{c}"', text)) == len(render.tested(build.load_snapshot(SNAP))), c
+        assert text.count(f'<th data-cl="{c}"') == 2, c
+
+
+def test_matrix_filter_offers_each_client_and_hide_passing(live_site):
+    text = (live_site / "index.html").read_text()
+    picker = re.search(r'<select id="mc"[^>]*>(.*?)</select>', text, re.S).group(1)
+    assert re.findall(r'<option value="([a-z-]*)"', picker) == [""] + config.CLIENTS
+    assert '<input type="checkbox" id="hp"' in text
+    assert "function mf(" in text
+    assert '<p class="muted" id="mf0" hidden>' in text
+
+
+def test_pages_use_real_plurals(live_site):
+    for p in html_pages(live_site):
+        assert "(s)" not in p.read_text(), (p, re.findall(r".{30}\(s\)", p.read_text())[:2])
