@@ -603,7 +603,7 @@ def client_page_html(client, snap, cells, items):
                    f'<div class="kv"><span>image</span><code>{E(run["image"] or "?")}</code></div>'
                    f'<div class="kv"><span>version</span><code>{E(run["version"])}</code></div>'
                    f'<div class="kv"><span>run</span>{E(run["start"][:16].replace("T", " "))}Z &rarr; {a(run["url"], "hive run")} &middot; {a(run["sim_log"], "sim log")}</div>'
-                   f'<div class="kv"><span>outside</span>{plural(len(run["client_wide_failures"]), "failing case")} outside the tracked EIP dirs, not counted</div></div>')
+                   f'<div class="kv"><span>other tests</span>{plural(len(run["client_wide_failures"]), "failing case")} in tests for EIPs this site does not track, not counted above</div></div>')
     else:
         receipt = f'<div class="card muted">No {E(config.SIMULATOR)} run for {E(label)}.</div>'
     todo = [it for it in items if client in it["clients"]]
@@ -785,7 +785,7 @@ def matrix_html(snap, cells):
     strip = ""
     wide = {c: r["client_wide_failures"] for c, r in snap["runs"].items() if r["client_wide_failures"] and r["release"] == snap["newest_release"]}
     if wide:
-        strip = '<div class="strip">client-wide failures outside EIP dirs (not counted in cells): ' + " &middot; ".join(
+        strip = '<div class="strip">failing cases in tests for EIPs this site does not track, not counted in the cells: ' + " &middot; ".join(
             f'{E(config.CLIENT_LABEL[c])} {len(v)}' for c, v in wide.items()) + "</div>"
     legend = ('<div class="legend">A cell shows its weakest check. The three dots are: <b>spec change</b> &middot; <b>test proof</b> &middot; <b>client run</b>.'
               '<i class="dot ok"></i>ok<i class="dot warn"></i>spec change untested<i class="dot stale"></i>old tests, re-run<i class="dot bad"></i>fails<i class="dot"></i>no data</div>')
