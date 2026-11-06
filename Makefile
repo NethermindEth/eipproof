@@ -35,4 +35,5 @@ offline: venv
 serve:
 	cd site && python3 -m http.server $(PORT)
 
-site: offline serve
+site: offline
+	$(MAKE) serve
