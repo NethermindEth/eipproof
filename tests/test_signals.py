@@ -49,10 +49,10 @@ def g1(root, snap):
 def g2(root, snap):
     for name in ("index.html", "eip-8141.html", "client-reth.html", "changes.html"):
         top = header(read(root, name))
-        for href in ("start.html", "index.html", "queue.html", "changes.html"):
+        for href in ("index.html", "queue.html", "changes.html"):
             assert f'<a href="{href}"' in visible(top).split('<details class="pop more">')[0], (name, href)
         more = popover(top, "more")
-        for href in ("releases.html", "divergences.html", "prs.html", "history.html"):
+        for href in ("start.html", "releases.html", "divergences.html", "prs.html", "history.html"):
             assert f'<a href="{href}"' in more, (name, href)
 
 
@@ -74,7 +74,7 @@ def g4(root, snap):
 def g5(root, snap):
     text = read(root, "index.html")
     assert f'data-taken="{snap["taken_at"]}"' in header(text) and 'id="age"' in header(text)
-    assert 'id="stale"' in text
+    assert 'id="stale"' in popover(header(text), "snap") and 'class="strip' not in text
     assert 'id="fallback"' not in text
 
 

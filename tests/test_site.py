@@ -208,13 +208,14 @@ def test_feed_marks_unproven_and_editorial_changes():
     assert render.rev_state("8141", info, {"commit": commit}, editorial)[1] == "wording only"
 
 
-def test_every_page_links_the_feed_and_carries_the_snapshot_age_hook(live_site, fallback_site):
-    hook = f'<div class="strip age" id="stale" role="status" hidden data-taken="{build.load_snapshot(SNAP)["taken_at"]}"></div>'
+def test_every_page_links_the_feed_and_keeps_the_snapshot_age_in_the_chip(live_site, fallback_site):
+    hook = f'<p class="stale" id="stale" role="status" hidden data-taken="{build.load_snapshot(SNAP)["taken_at"]}"></p>'
     for site in (live_site, fallback_site):
         for page in sorted(site.glob("*.html")):
             text = page.read_text()
             assert '<a href="changes.html"' in text, page.name
-            assert (hook in text) == (site == live_site), page.name
+            assert (hook in text.split("</header>")[0]) == (site == live_site), page.name
+            assert 'class="strip age" id="stale"' not in text, page.name
 
 
 def test_fallback_page_shows_one_snapshot_banner_with_its_date(fallback_site):
@@ -568,11 +569,12 @@ def test_start_page_answers_three_questions_from_the_same_snapshot(wide_site):
     assert "write tests (2)" in eels and "update tests (2)" in eels
 
 
-def test_start_page_is_first_in_the_nav_and_linked_from_the_matrix(live_site):
+def test_start_page_sits_under_more_and_the_matrix_has_no_intro(live_site):
     for name in ("index.html", "queue.html", "start.html", "client-besu.html"):
         nav = re.search(r'<nav class="pnav"[^>]*>(.*?)</nav>', (live_site / name).read_text()).group(1)
-        assert nav.startswith('<a href="start.html"') and ">Start here</a>" in nav
-    assert 'New here? <a href="start.html">Start here</a>' in (live_site / "index.html").read_text()
+        bar, more = nav.split('<details class="pop more">')
+        assert 'href="start.html"' not in bar and ">Start here</a>" in more
+    assert "New here?" not in (live_site / "index.html").read_text()
     assert "start.html" in smoke.PAGES
 
 
@@ -669,11 +671,10 @@ def test_matrix_legend_folds_to_one_line_above_the_table(live_site):
     assert "Failing cases in untracked EIP tests, not counted:" in text
 
 
-def test_matrix_keeps_the_eip_column_in_view_and_says_it_scrolls_on_phones(live_site):
+def test_matrix_keeps_the_eip_column_in_view_on_phones(live_site):
     text = (live_site / "index.html").read_text()
     assert "table.m:not(.list) th.row{position:sticky;left:0" in text
-    assert '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>' in text
-    assert ".swipe{display:none}" in text and ".swipe{display:block}" in text
+    assert "swipe" not in text
 
 
 def test_client_todo_wraps_long_failing_case_ids_on_phones():
@@ -684,3 +685,16 @@ def test_client_todo_wraps_long_failing_case_ids_on_phones():
     todo = re.search(r'<ol class="todos">.*?</ol>', page).group(0)
     assert f"<code>{render.short_test(case)}</code>" in todo
     assert ".q code," in render.CSS and "{overflow-wrap:anywhere}" in render.CSS.split(".q code,")[1].split("\n")[0]
+
+
+def test_eip_page_folds_client_prs_and_has_no_legend(live_site):
+    text = (live_site / "eip-8141.html").read_text()
+    box = re.search(r'<details class="box" data-mark="client-prs-box"><summary>Client PRs(.*?)</details>', text, re.S).group(1)
+    assert 'data-mark="client-prs"' in box
+    assert 'class="legend"' not in text
+
+
+def test_matrix_row_titles_clamp_to_two_lines_on_phones(live_site):
+    text = (live_site / "index.html").read_text()
+    assert "th.row .tt{display:block}" not in text
+    assert '<span class="st">Scheduled</span><span class="es">Draft</span>' in text
