@@ -304,3 +304,9 @@ def test_signal_is_at_most_one_click_away(site, sid):
 
 def test_other_pages_share_the_bar(site):
     others(*site)
+
+
+def test_long_unbroken_notes_wrap_on_phones():
+    from eipproof import render
+    rules = re.findall(r"(?:^|})\s*([^{}]*\.sub[^{}]*)\{([^}]*)\}", render.CSS)
+    assert any("overflow-wrap:anywhere" in body for sel, body in rules if re.search(r"(^|,)\s*\.sub\s*(,|$)", sel))
