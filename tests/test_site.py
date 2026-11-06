@@ -214,7 +214,19 @@ def test_every_page_links_the_feed_and_carries_the_snapshot_age_hook(live_site, 
         for page in sorted(site.glob("*.html")):
             text = page.read_text()
             assert '<a href="changes.html"' in text, page.name
-            assert hook in text, page.name
+            assert (hook in text) == (site == live_site), page.name
+
+
+def test_fallback_page_shows_one_snapshot_banner_with_its_date(fallback_site):
+    text = (fallback_site / "index.html").read_text()
+    assert text.count('class="strip age"') + text.count('id="fallback"') == 1
+    assert 'id="fallback" role="alert">data from snapshot 2026-' in text
+
+
+def test_matrix_title_is_one_short_heading(live_site):
+    text = (live_site / "index.html").read_text()
+    assert "<h1>EIP status by client</h1>" in text
+    assert "one row per EIP, one column per client" not in text
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
