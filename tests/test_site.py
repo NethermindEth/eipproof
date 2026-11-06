@@ -667,3 +667,10 @@ def test_matrix_legend_folds_to_one_line_above_the_table(live_site):
     text = (live_site / "index.html").read_text()
     assert '<details class="legend"><summary>What the dots mean</summary>' in text
     assert "Failing cases in untracked EIP tests, not counted:" in text
+
+
+def test_matrix_keeps_the_eip_column_in_view_and_says_it_scrolls_on_phones(live_site):
+    text = (live_site / "index.html").read_text()
+    assert "table.m:not(.list) th.row{position:sticky;left:0" in text
+    assert '<p class="muted swipe">Swipe the table sideways for more clients, or pick one client above.</p>' in text
+    assert ".swipe{display:none}" in text and ".swipe{display:block}" in text
