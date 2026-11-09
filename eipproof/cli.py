@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-from . import build, config, health, history, impact, prove, render
+from . import build, config, digest, health, history, impact, prove, render
 from .chain import headline_text
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -160,6 +160,11 @@ def main(argv=None):
     t.add_argument("--fork", choices=list(config.FORKS), default=config.DEFAULT_FORK)
     t.add_argument("--editorial", metavar="REASON", help="the change has no behaviour; record why instead of running")
     t.set_defaults(fn=cmd_prove)
+    d = sub.add_parser("digest", help="weekly Slack digest of the fork from the site API, deterministic text")
+    d.add_argument("--api", required=True, help="site api/ directory or its URL")
+    d.add_argument("--prev", metavar="FILE", help="state written by last week's digest; a missing file means no comparison")
+    d.add_argument("--state-out", metavar="FILE", help="write this week's state here for the next digest")
+    d.set_defaults(fn=digest.main)
     sub.add_parser("pr-impact", help="which tracked EIPs a pull request touches, with their current status")
     args = p.parse_args(argv)
     args.fn(args)

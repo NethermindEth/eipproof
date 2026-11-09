@@ -1,0 +1,14 @@
+*Hegotá weekly* · <https://nethermindeth.github.io/eipproof/|eipproof> · snapshot 2026-11-03 23:25 UTC · tests v2.0.0
+*EIPs*: 8 tracked: 1 Scheduled, 7 Considered; 8 with tests
+*Clients vs v2.0.0*:
+• Nethermind: 8 pass
+• Geth: 8 pass
+• Reth: 1 fails (<https://nethermindeth.github.io/eipproof/eip-8253.html|EIP-8253>) · 7 pass
+• ethrex: 8 pass
+• Besu: 8 on old tests
+*Old test release* (newest v2.0.0): Besu on v1.1.1 (8 EIPs)
+*Spec newer than tests*:
+• <https://github.com/ethereum/EIPs/compare/25ac2920ea3a958911e380498bb7c8fbca201542...9099f412d228ec80ec27b713df6da61993bf4702|EIP-7906>: 1 commit, newest 2026-10-27 (9099f412)
+• <https://github.com/ethereum/EIPs/compare/7372d10a457b29eceb02cd052345af165de1fb60...dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f|EIP-8141>: 1 commit, newest 2026-11-01 (dc5d5fa6)
+*Open spec PRs*: 21 (EIPs 21) · <https://nethermindeth.github.io/eipproof/changes.html|list>
+_Week-over-week starts with the next digest._
