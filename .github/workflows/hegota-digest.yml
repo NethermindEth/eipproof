@@ -1,0 +1,77 @@
+name: hegota-digest
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Write the digest to the job summary only, do not post or save state
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hegota-digest
+  cancel-in-progress: false
+
+env:
+  API_URL: https://nethermindeth.github.io/eipproof/api
+  DATA_BRANCH: data
+  STATE_PATH: digest/bogota.json
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: make venv
+      - run: |
+          if git fetch -q --depth=1 origin "refs/heads/$DATA_BRANCH"; then
+            git show "FETCH_HEAD:$STATE_PATH" > "$RUNNER_TEMP/prev.json" 2>/dev/null || rm -f "$RUNNER_TEMP/prev.json"
+          fi
+          .venv/bin/python -m eipproof.cli digest --api "$API_URL" --prev "$RUNNER_TEMP/prev.json" \
+            --state-out "$RUNNER_TEMP/state.json" > "$RUNNER_TEMP/digest.txt"
+          { echo '```'; cat "$RUNNER_TEMP/digest.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - id: post
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ] || [ "$DRY_RUN" = true ]; then
+            echo "::notice title=dry run::not posted; SLACK_WEBHOOK_URL set: $([ -n "$SLACK_WEBHOOK_URL" ] && echo yes || echo no), dry_run: ${DRY_RUN:-false}"
+            echo "posted=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          jq -n --rawfile text "$RUNNER_TEMP/digest.txt" '{text: $text, unfurl_links: false, unfurl_media: false}' \
+            | curl -fsS --retry 3 -X POST -H 'Content-Type: application/json' --data @- "$SLACK_WEBHOOK_URL"
+          echo
+          echo "posted=true" >> "$GITHUB_OUTPUT"
+          echo "posted to Slack" >> "$GITHUB_STEP_SUMMARY"
+      - if: steps.post.outputs.posted == 'true'
+        run: |
+          for i in 1 2 3; do
+            if git fetch -q --depth=1 origin "refs/heads/$DATA_BRANCH"; then
+              git checkout -q -B "$DATA_BRANCH" FETCH_HEAD
+            else
+              git checkout -q --orphan "$DATA_BRANCH"
+              git rm -rqf .
+            fi
+            install -D "$RUNNER_TEMP/state.json" "$STATE_PATH"
+            git add "$STATE_PATH"
+            git diff --cached --quiet && break
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "digest state $(jq -r .snapshot "$STATE_PATH")"
+            if git push -q origin "HEAD:refs/heads/$DATA_BRANCH"; then break; fi
+            if [ "$i" = 3 ]; then exit 1; fi
+          done
+          echo "state saved to $DATA_BRANCH:$STATE_PATH" >> "$GITHUB_STEP_SUMMARY"

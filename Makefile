@@ -21,7 +21,7 @@ test: venv
 	$(PY) -m pytest -q tests
 
 golden: venv
-	UPDATE_GOLDEN=1 $(PY) -m pytest -q tests/test_site.py
+	UPDATE_GOLDEN=1 $(PY) -m pytest -q tests/test_site.py tests/test_digest.py
 
 check: venv
 	$(PY) -m eipproof.sitecheck site
