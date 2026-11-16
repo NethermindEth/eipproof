@@ -48,12 +48,12 @@
   "reth": {
    "4758": "pass",
    "7906": "pass",
-   "8141": "pass",
+   "8141": "fail",
    "8151": "open",
    "8250": "pass",
    "8253": "fail",
    "8272": "pass",
-   "8298": "pass"
+   "8298": "fail"
   }
  },
  "newest_release": "tests-bogota-devnet@v2.0.0",
@@ -105,6 +105,10 @@
   "ethereum/EIPs#12629",
   "ethereum/EIPs#12642",
   "ethereum/EIPs#12644",
+  "ethereum/EIPs#12653",
+  "ethereum/EIPs#12656",
+  "ethereum/EIPs#12659",
+  "ethereum/EIPs#12668",
   "ethereum/execution-specs#2619",
   "ethereum/execution-specs#3350",
   "ethereum/execution-specs#3351",
@@ -116,12 +120,11 @@
   "ethereum/execution-specs#3899",
   "ethereum/execution-specs#3900",
   "ethereum/execution-specs#3902",
-  "ethereum/execution-specs#3923",
   "ethereum/execution-specs#3936",
   "ethereum/execution-specs#3947",
   "ethereum/execution-specs#3957"
  ],
- "snapshot": "2026-11-10T12:36:04Z",
+ "snapshot": "2026-11-16T08:49:35Z",
  "stages": {
   "3298": "Considered",
   "4758": "Considered",
