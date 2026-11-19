@@ -1,7 +1,7 @@
 {
  "clones": {
-  "count": 2728,
-  "uniques": 760
+  "count": 2396,
+  "uniques": 717
  },
  "from_site": {
   "count": 0,
@@ -9,76 +9,28 @@
  },
  "paths": [
   {
-   "count": 4,
-   "path": "/NethermindEth/eipproof/pull/16",
-   "title": "/pull/16",
-   "uniques": 4
-  },
-  {
-   "count": 4,
+   "count": 1,
    "path": "/NethermindEth/eipproof",
    "title": "Overview",
-   "uniques": 2
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/.github/workflows/pages.yml",
-   "title": "/blob/main/.github/workflows/pages.yml",
    "uniques": 1
   },
   {
    "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/Makefile",
-   "title": "/blob/main/Makefile",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/build.py",
-   "title": "/blob/main/eipproof/build.py",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/cli.py",
-   "title": "/blob/main/eipproof/cli.py",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/history.py",
-   "title": "/blob/main/eipproof/history.py",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/prove.py",
-   "title": "/blob/main/eipproof/prove.py",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/sitecheck.py",
-   "title": "/blob/main/eipproof/sitecheck.py",
-   "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/blob/main/eipproof/sources.py",
-   "title": "/blob/main/eipproof/sources.py",
+   "path": "/NethermindEth/eipproof/pull/16",
+   "title": "/pull/16",
    "uniques": 1
   }
  ],
  "referrers": [
   {
-   "count": 5,
+   "count": 2,
    "referrer": "github.com",
-   "uniques": 5
+   "uniques": 2
   }
  ],
  "views": {
-  "count": 26,
-  "uniques": 6
+  "count": 2,
+  "uniques": 2
  },
  "window_days": 14
 }
