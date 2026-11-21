@@ -1,7 +1,7 @@
 {
  "clones": {
-  "count": 2294,
-  "uniques": 716
+  "count": 1883,
+  "uniques": 627
  },
  "from_site": {
   "count": 0,
@@ -13,24 +13,18 @@
    "path": "/NethermindEth/eipproof",
    "title": "Overview",
    "uniques": 1
-  },
-  {
-   "count": 1,
-   "path": "/NethermindEth/eipproof/pull/16",
-   "title": "/pull/16",
-   "uniques": 1
   }
  ],
  "referrers": [
   {
-   "count": 2,
+   "count": 1,
    "referrer": "github.com",
-   "uniques": 2
+   "uniques": 1
   }
  ],
  "views": {
-  "count": 2,
-  "uniques": 2
+  "count": 1,
+  "uniques": 1
  },
  "window_days": 14
 }
