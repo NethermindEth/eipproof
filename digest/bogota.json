@@ -2,18 +2,18 @@
  "behind": {
   "7906": "9099f412d228ec80ec27b713df6da61993bf4702",
   "8141": "dc5d5fa688b7fe87b95a907fcc128b4fde2f4d2f",
-  "8151": "af5ea76669821d1eb8dfc60e3373a0a7fa9a7759"
+  "8151": "8194528a2ee9a4893a398a5871c470ab0ac3b09a"
  },
  "cells": {
   "besu": {
-   "4758": "stale-release",
-   "7906": "stale-release",
-   "8141": "stale-release",
-   "8151": "stale-release",
-   "8250": "stale-release",
-   "8253": "stale-release",
-   "8272": "stale-release",
-   "8298": "stale-release"
+   "4758": "pass",
+   "7906": "fail",
+   "8141": "fail",
+   "8151": "open",
+   "8250": "pass",
+   "8253": "pass",
+   "8272": "pass",
+   "8298": "pass"
   },
   "ethrex": {
    "4758": "pass",
@@ -97,7 +97,6 @@
   "ethereum/EIPs#12537",
   "ethereum/EIPs#12548",
   "ethereum/EIPs#12559",
-  "ethereum/EIPs#12588",
   "ethereum/EIPs#12596",
   "ethereum/EIPs#12605",
   "ethereum/EIPs#12616",
@@ -105,10 +104,12 @@
   "ethereum/EIPs#12629",
   "ethereum/EIPs#12642",
   "ethereum/EIPs#12644",
-  "ethereum/EIPs#12653",
   "ethereum/EIPs#12656",
   "ethereum/EIPs#12659",
   "ethereum/EIPs#12668",
+  "ethereum/EIPs#12670",
+  "ethereum/EIPs#12686",
+  "ethereum/EIPs#12702",
   "ethereum/execution-specs#2619",
   "ethereum/execution-specs#3350",
   "ethereum/execution-specs#3351",
@@ -118,13 +119,16 @@
   "ethereum/execution-specs#3856",
   "ethereum/execution-specs#3888",
   "ethereum/execution-specs#3899",
-  "ethereum/execution-specs#3900",
   "ethereum/execution-specs#3902",
   "ethereum/execution-specs#3936",
-  "ethereum/execution-specs#3947",
-  "ethereum/execution-specs#3957"
+  "ethereum/execution-specs#3957",
+  "ethereum/execution-specs#4008",
+  "ethereum/execution-specs#4017",
+  "ethereum/execution-specs#4034",
+  "ethereum/execution-specs#4046",
+  "ethereum/execution-specs#4047"
  ],
- "snapshot": "2026-11-16T08:49:35Z",
+ "snapshot": "2026-11-23T08:36:49Z",
  "stages": {
   "3298": "Considered",
   "4758": "Considered",
