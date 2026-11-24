@@ -2,7 +2,7 @@
 name = "eipproof"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["pyyaml>=6"]
+dependencies = ["pyyaml>=6.0.4"]
 
 [dependency-groups]
 dev = ["pytest>=8"]
